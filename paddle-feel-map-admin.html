@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Paddle Feel Map — Admin</title>
+<style>
+  :root{
+    --bg:#04141f; --panel:#0a2233; --panel2:#0d2a3d; --line:rgba(34,211,238,.30);
+    --line2:rgba(34,211,238,.16); --accent:#22d3ee; --accent2:#38e0c8; --ink:#e6f6fb;
+    --muted:#8fb4c4; --warn:#f59e0b; --danger:#ef6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,Arial,sans-serif;
+       -webkit-font-smoothing:antialiased}
+  .fm-head{padding:18px 20px 4px}
+  .fm-head h1{margin:0;font-size:26px;letter-spacing:.5px;color:#ff8a00;text-transform:uppercase;font-weight:800}
+  .fm-head .sub{color:var(--muted);font-size:13px;margin:4px 0 0}
+  .fm-wrap{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:22px;max-width:1120px;margin:8px auto 40px;padding:0 20px}
+  @media(max-width:820px){ .fm-wrap{grid-template-columns:1fr} }
+
+  /* ---- MAP ---- */
+  .fm-stage{position:relative;width:100%}
+  .fm-map{position:relative;width:100%;aspect-ratio:1/1;margin:0 auto;max-width:620px;
+          background:radial-gradient(circle at 50% 50%, rgba(20,90,120,.55) 0%, rgba(6,26,38,.96) 70%);
+          border-radius:18px;border:1px solid var(--line);box-shadow:0 0 40px rgba(34,211,238,.12) inset, 0 8px 30px rgba(0,0,0,.5)}
+  .fm-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .fm-grid{stroke:var(--line);fill:none}
+  .fm-grid-soft{stroke:var(--line2);fill:none}
+  .fm-tick{stroke:var(--line);stroke-width:.5}
+  .fm-axis{stroke:var(--accent);stroke-width:.7;opacity:.55}
+  .fm-center{fill:var(--accent)}
+  .fm-edge{position:absolute;color:#fff;font-weight:800;letter-spacing:1px;font-size:clamp(13px,2.4vw,19px);
+           text-shadow:0 0 10px rgba(34,211,238,.5);pointer-events:none;z-index:3}
+  .fm-edge.top{top:1.5%;left:50%;transform:translateX(-50%)}
+  .fm-edge.bottom{bottom:1.5%;left:50%;transform:translateX(-50%)}
+  .fm-edge.left{left:2%;top:50%;transform:translateY(-50%)}
+  .fm-edge.right{right:2%;top:50%;transform:translateY(-50%)}
+  .fm-arrow{stroke:#fff;stroke-width:1.1;fill:none;opacity:.85}
+
+  .fm-quad{position:absolute;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+           background:rgba(6,26,38,.85);border:1.5px solid var(--accent);color:var(--accent);font-weight:800;font-size:13px;
+           cursor:pointer;z-index:4;transition:transform .12s, background .12s}
+  .fm-quad{z-index:6}
+  .fm-quad:hover{transform:scale(1.12);background:var(--accent);color:#04141f}
+  .fm-quad.a{top:9%;left:9%;transform:translate(-50%,-50%)} .fm-quad.a:hover{transform:translate(-50%,-50%) scale(1.12)}
+  .fm-quad.b{top:9%;left:91%;transform:translate(-50%,-50%)} .fm-quad.b:hover{transform:translate(-50%,-50%) scale(1.12)}
+  .fm-quad.c{top:91%;left:9%;transform:translate(-50%,-50%)} .fm-quad.c:hover{transform:translate(-50%,-50%) scale(1.12)}
+  .fm-quad.d{top:91%;left:91%;transform:translate(-50%,-50%)} .fm-quad.d:hover{transform:translate(-50%,-50%) scale(1.12)}
+
+  .fm-markers{position:absolute;inset:0;z-index:5;pointer-events:none}
+  /* The marker is anchored on the DOT only; the label floats to the side so it
+     never shifts the recorded position. */
+  .fm-dot{position:absolute;width:14px;height:14px;transform:translate(-50%,-50%);
+          cursor:grab;touch-action:none;user-select:none;pointer-events:auto}
+  .fm-dot:active{cursor:grabbing}
+  .fm-dot .pt{display:block;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 8px rgba(0,0,0,.6)}
+  .fm-dot .nm{position:absolute;left:20px;top:50%;transform:translateY(-50%);white-space:nowrap;
+              font-size:11px;font-weight:700;color:#fff;background:rgba(4,20,31,.78);padding:1px 6px;border-radius:6px;
+              max-width:150px;overflow:hidden;text-overflow:ellipsis}
+  .fm-dot.off{display:none}
+
+  /* ---- PANEL ---- */
+  .fm-panel{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;height:max-content}
+  .fm-panel h2{margin:0 0 10px;font-size:15px;color:var(--accent);letter-spacing:.4px;text-transform:uppercase}
+  .fm-add{display:flex;gap:8px;margin-bottom:6px}
+  .fm-add select{flex:1;min-width:0;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);
+                 border-radius:9px;padding:9px 10px;font-size:13px}
+  .fm-add button{background:var(--accent);color:#04141f;border:0;border-radius:9px;padding:0 14px;font-weight:800;cursor:pointer;font-size:13px}
+  .fm-add button:disabled{opacity:.4;cursor:default}
+  .fm-status{font-size:12px;color:var(--muted);min-height:16px;margin:6px 2px 12px}
+  .fm-status.warn{color:var(--warn)} .fm-status.ok{color:var(--accent2)}
+
+  .fm-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto}
+  .fm-li{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:7px 9px}
+  .fm-li .sw{width:12px;height:12px;border-radius:50%;border:1.5px solid #fff;flex:0 0 auto}
+  .fm-li .lbl{flex:1;min-width:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fm-li .xy{font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+  .fm-li.off .lbl,.fm-li.off .xy{opacity:.45}
+  .fm-eye,.fm-del{background:none;border:0;cursor:pointer;color:var(--muted);font-size:14px;line-height:1;padding:2px;flex:0 0 auto}
+  .fm-eye:hover{color:var(--accent)} .fm-del:hover{color:var(--danger)}
+  .fm-empty{color:var(--muted);font-size:12.5px;padding:6px 2px}
+  .fm-hint{color:var(--muted);font-size:11.5px;margin-top:12px;line-height:1.5}
+
+  .fm-infobtn{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;
+              border:1.5px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;font-weight:800;
+              font-size:12px;vertical-align:middle;margin-left:8px}
+  .fm-infobtn:hover{background:var(--accent);color:#04141f}
+
+  /* ---- OVERLAY ---- */
+  .fm-ov{position:fixed;inset:0;background:rgba(2,10,16,.72);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .fm-ov.show{display:flex}
+  .fm-box{background:var(--panel);border:1px solid var(--line);border-radius:14px;max-width:420px;width:100%;padding:20px 22px;position:relative;
+          box-shadow:0 20px 60px rgba(0,0,0,.6)}
+  .fm-box h3{margin:0 0 4px;font-size:17px;color:var(--accent)}
+  .fm-box .quadsub{color:var(--muted);font-size:12px;margin:0 0 12px;text-transform:uppercase;letter-spacing:.6px}
+  .fm-box p{margin:8px 0;font-size:14px;line-height:1.55;color:var(--ink)}
+  .fm-box .k{color:var(--accent2);font-weight:700}
+  .fm-x{position:absolute;top:10px;right:12px;background:none;border:0;color:var(--muted);font-size:22px;cursor:pointer;line-height:1}
+  .fm-x:hover{color:#fff}
+</style>
+</head>
+<body>
+  <div class="fm-head">
+    <h1>Paddle Feel Map · Admin</h1>
+    <p class="sub">Add a paddle, then drag it to position. X / Y save to the Google Sheet automatically (−5 to +5 each axis).
+      <button class="fm-infobtn" id="fmInfoBtn" aria-label="About the feel map">i</button>
+    </p>
+  </div>
+
+  <div class="fm-wrap">
+    <div class="fm-stage">
+      <div class="fm-map" id="fmMap">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <rect class="fm-grid" x="10" y="10" width="80" height="80" rx="6"/>
+          <rect class="fm-grid-soft" x="23.33" y="23.33" width="53.34" height="53.34" rx="4.5"/>
+          <rect class="fm-grid-soft" x="36.67" y="36.67" width="26.66" height="26.66" rx="3"/>
+          <line class="fm-axis" x1="10" y1="50" x2="90" y2="50"/>
+          <line class="fm-axis" x1="50" y1="10" x2="50" y2="90"/>
+          <g id="fmTicks"></g>
+          <path class="fm-arrow" d="M50 11 l-2.2 3 M50 11 l2.2 3"/>
+          <path class="fm-arrow" d="M89 50 l-3 -2.2 M89 50 l-3 2.2"/>
+          <path class="fm-arrow" d="M50 89 l-2.2 -3 M50 89 l2.2 -3"/>
+          <path class="fm-arrow" d="M11 50 l3 -2.2 M11 50 l3 2.2"/>
+          <circle class="fm-center" cx="50" cy="50" r="1.2"/>
+        </svg>
+        <span class="fm-edge top">STIFF</span>
+        <span class="fm-edge bottom">SOFT</span>
+        <span class="fm-edge left">DENSE</span>
+        <span class="fm-edge right">HOLLOW</span>
+        <button class="fm-quad a" data-q="A" title="Stiff + Dense">A</button>
+        <button class="fm-quad b" data-q="B" title="Stiff + Hollow">B</button>
+        <button class="fm-quad c" data-q="C" title="Soft + Dense">C</button>
+        <button class="fm-quad d" data-q="D" title="Soft + Hollow">D</button>
+        <div class="fm-markers" id="fmMarkers"></div>
+      </div>
+    </div>
+
+    <div class="fm-panel">
+      <h2>Add paddle</h2>
+      <div class="fm-add">
+        <select id="fmSelect"><option value="">Loading paddles…</option></select>
+        <button id="fmAdd" disabled>Add</button>
+      </div>
+      <div class="fm-status" id="fmStatus"></div>
+      <h2>On the map</h2>
+      <ul class="fm-list" id="fmList"><li class="fm-empty">No paddles yet.</li></ul>
+      <p class="fm-hint">Toggle the eye to show/hide a paddle on the public Lab chart without losing its position. The × removes it from the sheet entirely.</p>
+    </div>
+  </div>
+
+  <!-- Quadrant / info overlay -->
+  <div class="fm-ov" id="fmOv"><div class="fm-box" id="fmBox"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ============================ CONFIG ============================ */
+  // Paste your deployed Apps Script Web App URL (ends in /exec) here:
+  var FEEL_API = '';
+
+  // Main paddle database (for the Add list):
+  var DB_CSV   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
+  var DB_PROXY = 'https://corsproxy.io/?'+encodeURIComponent(DB_CSV);
+
+  // Feel-map sheet (existing saved positions):
+  var FEEL_CSV   = 'https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
+  var FEEL_PROXY = 'https://corsproxy.io/?'+encodeURIComponent(FEEL_CSV);
+
+  var LS_KEY = 'feelMapAdminState_v1';
+  var PAD = 0.10, HALF = 40;                 // plot inset 10%, half-span 40% (=5 units)
+  var PALETTE = ['#22d3ee','#f59e0b','#ec4899','#34d399','#a78bfa','#fb7185','#facc15',
+                 '#60a5fa','#f97316','#2dd4bf','#c084fc','#4ade80','#fca5a5','#38bdf8'];
+
+  var QUAD = {
+    A:{name:'Quad A · Stiff + Dense', feel:'Solid, rigid, unyielding.', perc:'Board-like, linear.'},
+    B:{name:'Quad B · Stiff + Hollow', feel:'Loud, sharp, crisp.', perc:'Pingy, explosive.'},
+    C:{name:'Quad C · Soft + Dense', feel:'Muted, plush, damped.', perc:'Pillow-like, arm-friendly.'},
+    D:{name:'Quad D · Soft + Hollow', feel:'Springy, airy.', perc:'Trampoline feel — “catch & release.”'}
+  };
+  var INFO_TEXT = 'Paddle positions reflect subjective feel — dense vs. hollow and stiff vs. soft — and are approximate. A quantified version using audio (x-axis) and vibration (y-axis) frequencies is in the works.';
+
+  /* ============================ STATE ============================ */
+  var paddles = [];     // {company,paddle} from DB
+  var items = [];       // {company,paddle,x,y,on,color}
+  var elMap=document.getElementById('fmMap'), elMarkers=document.getElementById('fmMarkers'),
+      elList=document.getElementById('fmList'), elSel=document.getElementById('fmSelect'),
+      elAdd=document.getElementById('fmAdd'), elStatus=document.getElementById('fmStatus');
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function keyOf(c,p){return (c+'||'+p).toLowerCase().trim();}
+  function clamp(v,a,b){return v<a?a:v>b?b:v;}
+  function round10(v){return Math.round(v*1e10)/1e10;}
+  function fmt(v){return (v>=0?'+':'')+Number(v).toFixed(2);}
+
+  /* coordinate mapping (data -5..5  <->  percent 10..90) */
+  function xPct(x){return 50 + (x/5)*HALF;}
+  function yPct(y){return 50 - (y/5)*HALF;}
+
+  function setStatus(msg, cls){ elStatus.textContent=msg||''; elStatus.className='fm-status'+(cls?(' '+cls):''); }
+
+  /* ============================ TICKS ============================ */
+  (function ticks(){
+    var g=document.getElementById('fmTicks'), s='';
+    for(var i=-5;i<=5;i++){ if(i===0) continue;
+      var px=xPct(i), py=yPct(i), len=(Math.abs(i)===5?0:1.6);
+      if(len){ s+='<line class="fm-tick" x1="'+px+'" y1="48.4" x2="'+px+'" y2="51.6"/>';
+               s+='<line class="fm-tick" x1="48.4" y1="'+py+'" x2="51.6" y2="'+py+'"/>'; }
+    }
+    g.innerHTML=s;
+  })();
+
+  /* ============================ SHEET WRITE ============================ */
+  function write(rows){
+    saveLocal();
+    if(!FEEL_API){ setStatus('Positions saved locally. Set FEEL_API in the file to sync the Google Sheet.', 'warn'); return; }
+    try{
+      fetch(FEEL_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},
+                      body:JSON.stringify({rows:rows})});
+      setStatus('Saved to sheet ✓','ok');
+    }catch(e){ setStatus('Save failed — check FEEL_API.','warn'); }
+  }
+  function rowOf(it,extra){ var o={company:it.company,paddle:it.paddle,x:it.x,y:it.y,on:it.on}; if(extra) for(var k in extra)o[k]=extra[k]; return o; }
+  function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(items)); }catch(e){} }
+  function loadLocal(){ try{ var v=localStorage.getItem(LS_KEY); return v?JSON.parse(v):null; }catch(e){ return null; } }
+
+  /* ============================ RENDER ============================ */
+  function colorFor(i){ return PALETTE[i%PALETTE.length]; }
+
+  function render(){
+    // markers
+    elMarkers.innerHTML='';
+    items.forEach(function(it,idx){
+      var d=document.createElement('div');
+      d.className='fm-dot'+(it.on?'':' off');
+      d.style.left=xPct(it.x)+'%'; d.style.top=yPct(it.y)+'%';
+      d.dataset.idx=idx;
+      d.innerHTML='<span class="pt" style="background:'+it.color+'"></span><span class="nm">'+esc(it.paddle)+'</span>';
+      elMarkers.appendChild(d);
+      attachDrag(d, idx);
+    });
+    // list
+    if(!items.length){ elList.innerHTML='<li class="fm-empty">No paddles yet.</li>'; return; }
+    elList.innerHTML = items.map(function(it,idx){
+      return '<li class="fm-li'+(it.on?'':' off')+'">'
+        + '<span class="sw" style="background:'+it.color+'"></span>'
+        + '<span class="lbl" title="'+esc(it.company+' — '+it.paddle)+'">'+esc(it.paddle)+'</span>'
+        + '<span class="xy">'+fmt(it.x)+', '+fmt(it.y)+'</span>'
+        + '<button class="fm-eye" data-idx="'+idx+'" title="Show/hide on public chart">'+(it.on?'●':'○')+'</button>'
+        + '<button class="fm-del" data-idx="'+idx+'" title="Remove from sheet">×</button>'
+        + '</li>';
+    }).join('');
+  }
+
+  function updateOne(idx){
+    var it=items[idx];
+    var dot=elMarkers.querySelector('.fm-dot[data-idx="'+idx+'"]');
+    if(dot){ dot.style.left=xPct(it.x)+'%'; dot.style.top=yPct(it.y)+'%'; }
+    var li=elList.children[idx]; if(li){ var xy=li.querySelector('.xy'); if(xy) xy.textContent=fmt(it.x)+', '+fmt(it.y); }
+  }
+
+  /* ============================ DRAG ============================ */
+  function attachDrag(dot, idx){
+    dot.addEventListener('pointerdown', function(ev){
+      ev.preventDefault(); dot.setPointerCapture(ev.pointerId);
+      // Remember where on the dot the user grabbed, so it tracks the cursor
+      // exactly instead of snapping its center to the pointer.
+      var r0=elMap.getBoundingClientRect(), S0=r0.width;
+      var offX=(ev.clientX-r0.left)-xPct(items[idx].x)/100*S0;
+      var offY=(ev.clientY-r0.top)-yPct(items[idx].y)/100*S0;
+      function move(e){
+        var r=elMap.getBoundingClientRect(), S=r.width;
+        var px=clamp((e.clientX-r.left)-offX, PAD*S, (1-PAD)*S);
+        var py=clamp((e.clientY-r.top)-offY, PAD*S, (1-PAD)*S);
+        var x=round10(clamp(((px/S*100)-50)/HALF*5, -5, 5));
+        var y=round10(clamp((50-(py/S*100))/HALF*5, -5, 5));
+        items[idx].x=x; items[idx].y=y; updateOne(idx);
+      }
+      function up(e){
+        dot.releasePointerCapture(ev.pointerId);
+        dot.removeEventListener('pointermove',move);
+        dot.removeEventListener('pointerup',up);
+        write([rowOf(items[idx])]);
+      }
+      dot.addEventListener('pointermove',move);
+      dot.addEventListener('pointerup',up);
+    });
+  }
+
+  /* ============================ ACTIONS ============================ */
+  function addPaddle(){
+    var v=elSel.value; if(v==='') return;
+    var p=paddles[+v]; if(!p) return;
+    if(items.some(function(it){return keyOf(it.company,it.paddle)===keyOf(p.company,p.paddle);})){
+      setStatus('“'+p.paddle+'” is already on the map.','warn'); return;
+    }
+    var it={company:p.company,paddle:p.paddle,x:0,y:0,on:true,color:colorFor(items.length)};
+    items.push(it); render(); write([rowOf(it)]);
+    setStatus('Added “'+p.paddle+'”. Drag it into place.','ok');
+  }
+  function toggle(idx){ items[idx].on=!items[idx].on; render(); write([rowOf(items[idx])]); }
+  function remove(idx){
+    var it=items[idx]; items.splice(idx,1);
+    items.forEach(function(x,i){ x.color=colorFor(i); });
+    render(); write([rowOf(it,{action:'delete'})]);
+  }
+
+  elAdd.addEventListener('click', addPaddle);
+  elList.addEventListener('click', function(e){
+    var eye=e.target.closest('.fm-eye'), del=e.target.closest('.fm-del');
+    if(eye) toggle(+eye.dataset.idx);
+    else if(del) remove(+del.dataset.idx);
+  });
+
+  /* ============================ OVERLAY ============================ */
+  var ov=document.getElementById('fmOv'), box=document.getElementById('fmBox');
+  function showQuad(q){
+    var d=QUAD[q];
+    box.innerHTML='<button class="fm-x" aria-label="Close">&times;</button>'
+      +'<h3>'+esc(d.name.split('·')[0].trim())+'</h3>'
+      +'<p class="quadsub">'+esc(d.name.split('·')[1].trim())+'</p>'
+      +'<p><span class="k">Feel:</span> '+esc(d.feel)+'</p>'
+      +'<p><span class="k">Player perception:</span> '+esc(d.perc)+'</p>';
+    ov.classList.add('show');
+  }
+  function showInfo(){
+    box.innerHTML='<button class="fm-x" aria-label="Close">&times;</button>'
+      +'<h3>About the Feel Map</h3><p>'+esc(INFO_TEXT)+'</p>';
+    ov.classList.add('show');
+  }
+  document.querySelectorAll('.fm-quad').forEach(function(b){ b.addEventListener('click',function(){showQuad(b.dataset.q);}); });
+  document.getElementById('fmInfoBtn').addEventListener('click', showInfo);
+  ov.addEventListener('click', function(e){ if(e.target===ov||e.target.closest('.fm-x')) ov.classList.remove('show'); });
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') ov.classList.remove('show'); });
+
+  /* ============================ LOADERS ============================ */
+  function norm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
+  function parseBool(v){ var s=String(v==null?'':v).trim().toLowerCase(); return !(s==='false'||s==='0'||s==='no'||s==='off'); }
+
+  function loadDB(url, fb){
+    Papa.parse(url,{download:true,header:true,skipEmptyLines:true,complete:function(res){
+      var data=(res.data||[]).filter(function(r){return r.Company&&r.Paddle;});
+      if(!data.length){ if(fb) return loadDB(fb,null); elSel.innerHTML='<option value="">Could not load paddles</option>'; return; }
+      paddles=data.map(function(r){return {company:String(r.Company).trim(),paddle:String(r.Paddle).trim()};})
+                  .sort(function(a,b){return (a.company+' '+a.paddle).localeCompare(b.company+' '+b.paddle,undefined,{sensitivity:'base'});});
+      elSel.innerHTML='<option value="">Select a paddle…</option>'+paddles.map(function(p,i){
+        return '<option value="'+i+'">'+esc(p.company+' — '+p.paddle)+'</option>';}).join('');
+      elAdd.disabled=false;
+    },error:function(){ if(fb) loadDB(fb,null); else elSel.innerHTML='<option value="">Could not load paddles</option>'; }});
+  }
+
+  function loadFeel(url, fb){
+    Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
+      var rows=res.data||[]; if(rows.length<1){ if(fb) return loadFeel(fb,null); return finishFeel([]); }
+      var head=rows[0].map(norm), ci={};
+      ['company','paddle','x','y','on'].forEach(function(k){ ci[k]=head.indexOf(k); });
+      var out=[];
+      for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue;
+        var c=ci.company>-1?r[ci.company]:'', p=ci.paddle>-1?r[ci.paddle]:'';
+        if(!c||!p) continue;
+        out.push({company:String(c).trim(),paddle:String(p).trim(),
+                  x:round10(clamp(parseFloat(r[ci.x])||0,-5,5)),
+                  y:round10(clamp(parseFloat(r[ci.y])||0,-5,5)),
+                  on:ci.on>-1?parseBool(r[ci.on]):true});
+      }
+      finishFeel(out);
+    },error:function(){ if(fb) loadFeel(fb,null); else finishFeel([]); }});
+  }
+
+  function finishFeel(sheetItems){
+    // The Google Sheet is the source of truth. Use it whenever it has rows;
+    // fall back to the local browser cache only if the sheet read failed/empty.
+    var base = (sheetItems && sheetItems.length) ? sheetItems : (loadLocal()||[]);
+    items = base.map(function(it,i){ return {company:it.company,paddle:it.paddle,
+              x:round10(clamp(+it.x||0,-5,5)), y:round10(clamp(+it.y||0,-5,5)),
+              on:it.on!==false, color:colorFor(i)}; });
+    render();
+    if(FEEL_API){ setStatus(''); } else { setStatus('FEEL_API not set — positions save to this browser only.', 'warn'); }
+  }
+
+  /* ============================ INIT ============================ */
+  loadDB(DB_CSV, DB_PROXY);
+  var fc=FEEL_CSV+'&cb='+Date.now();                  // cache-bust Google's feed
+  loadFeel(fc, 'https://corsproxy.io/?'+encodeURIComponent(fc));
+})();
+</script>
+</body>
+</html>
