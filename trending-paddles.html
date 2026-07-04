@@ -1,0 +1,430 @@
+<!--
+  Johnkew Pickleball — "Trending Paddles" (homepage section)
+  Self-contained page. Pulls the SAME live paddle Google Sheet as the Paddle Database,
+  plus the engagement Stats sheet's Votes + ViewsLog tabs (both timestamped) to compute
+  REAL rolling-window trending — top 4 paddles in the Past 24 Hours / Past Week / Past Month.
+
+  ADD TO SQUARESPACE: on the homepage (johnkewpickleball.com/), add a Code block wherever
+  you want this section to appear, paste this whole snippet (Display Source OFF), save.
+
+  REQUIRES the updated engagement-apps-script.gs (adds a "ViewsLog" tab that timestamps
+  every view/lab-add) to be deployed — see PROJECT-CONTEXT.md / the .gs file's header
+  comment for the redeploy steps. Until that's live, the Past Week/Month columns will be
+  mostly empty (there's no history to look back on yet) and will fill in over time.
+-->
+<script>
+// Apply theme before paint: saved choice, else the visitor's device setting. Shared 'pbTheme'
+// key with the Comparison Lab / Raw Data / Discount Codes pages (same Squarespace origin).
+(function(){ try{ var s=localStorage.getItem('pbTheme');
+  var dark = s ? s==='dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+}catch(e){} })();
+function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-theme')==='dark'?'light':'dark';
+  r.setAttribute('data-theme',n); try{ localStorage.setItem('pbTheme',n); }catch(e){} }
+</script>
+
+<div class="trend">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <header class="trend__head">
+    <button id="trendThemeToggle" class="trend-theme-toggle" type="button" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark mode">
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+    <h2 class="trend__title">Trending Paddles</h2>
+    <p class="trend__lead">The most popular paddles right now, ranked by views, comparisons, and votes.</p>
+  </header>
+
+  <div class="trend__status" id="trendStatus">Loading trending paddles…</div>
+
+  <div class="trend__body" id="trendBody" hidden>
+    <section class="trend__window">
+      <h3 class="trend__wtitle">Past 24 Hours</h3>
+      <div class="trend-grid" id="trendGrid24"></div>
+    </section>
+    <section class="trend__window">
+      <h3 class="trend__wtitle">Past Week</h3>
+      <div class="trend-grid" id="trendGridWeek"></div>
+    </section>
+    <section class="trend__window">
+      <h3 class="trend__wtitle">Past Month</h3>
+      <div class="trend-grid" id="trendGridMonth"></div>
+    </section>
+  </div>
+</div>
+
+<!-- Spin Durability Tier info popup (tap the "i" on a badge) -->
+<div class="trend-dur-info-overlay" id="trendDurInfoOverlay" onclick="if(event.target===this)closeTrendDurInfo()">
+  <div class="trend-dur-info-box">
+    <h3>Spin Durability Tier<button class="trend-dur-info-close" onclick="closeTrendDurInfo()" aria-label="Close">&times;</button></h3>
+    <p>Spin durability tiers are based on an accelerated wear test that measures how well a paddle maintains spin over time. Initial spin is measured using a ball cannon (60&nbsp;MPH, paddle clamped at 30&deg;), followed by 100 impacts at 70&nbsp;MPH to simulate wear. Spin is then re-measured under identical conditions.</p>
+    <ul class="trend-dur-info-tiers">
+      <li class="trend-badge-tier-1"><b>Tier 1:</b> &lt;5% spin loss (Elite)</li>
+      <li class="trend-badge-tier-2"><b>Tier 2:</b> 5&ndash;9.9% spin loss</li>
+      <li class="trend-badge-tier-3"><b>Tier 3:</b> 10&ndash;19.9% spin loss</li>
+      <li class="trend-badge-tier-4"><b>Tier 4:</b> &ge;20% spin loss</li>
+    </ul>
+    <p>This accelerated laboratory test is designed to compare surface durability under controlled conditions. Actual on-court wear will vary based on play style, conditions, and maintenance.</p>
+  </div>
+</div>
+
+<style>
+  .trend *{box-sizing:border-box;margin:0;padding:0}
+  .trend{
+    --green:#1a7a4a;--green-light:#e8f5ee;--green-mid:#2d9c5f;
+    --navy:#0d1f2d;--muted:#64748b;--border:#e2e8f0;--bg:#f8faf9;--white:#fff;
+    --text:#1a2535;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
+    font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+    padding:32px 18px 44px;width:100%;
+  }
+  .trend__head{max-width:1180px;margin:0 auto 8px;text-align:center;position:relative;padding:0 46px}
+  .trend__title{color:var(--navy);font-size:clamp(24px,4vw,34px);font-weight:800;letter-spacing:-.5px;line-height:1.1}
+  .trend__lead{color:var(--muted);font-size:14.5px;margin-top:8px}
+  .trend__status{max-width:1180px;margin:36px auto;text-align:center;color:var(--muted);font-size:15px}
+  .trend__body{max-width:1180px;margin:0 auto}
+  .trend__window{margin-top:26px}
+  .trend__window:first-child{margin-top:22px}
+  .trend__wtitle{color:var(--navy);font-size:16px;font-weight:700;letter-spacing:-.2px;margin-bottom:12px;
+    display:flex;align-items:center;gap:8px}
+  .trend__wtitle::before{content:'';width:4px;height:16px;border-radius:2px;background:var(--green)}
+  .trend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .trend-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13.5px;padding:24px 10px;
+    border:1px dashed var(--border);border-radius:var(--radius)}
+
+  /* theme toggle */
+  .trend-theme-toggle{position:absolute;top:0;right:0;width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--white);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .trend-theme-toggle:hover{border-color:var(--green);color:var(--green)}
+  .trend-theme-toggle svg{width:19px;height:19px}
+  .trend-theme-toggle .sun{display:none}
+  [data-theme="dark"] .trend-theme-toggle .sun{display:block}
+  [data-theme="dark"] .trend-theme-toggle .moon{display:none}
+
+  /* paddle summary card — mirrors the Paddle Database's grid card exactly */
+  .trend-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;
+    display:block;text-decoration:none;color:inherit;cursor:pointer;transition:.18s}
+  .trend-card:hover{border-color:var(--green-mid);box-shadow:var(--shadow);transform:translateY(-1px)}
+  .trend-card-photo{width:100%;aspect-ratio:16/10;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:10px;display:none}
+  .trend-card-headrow{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .trend-card-namewrap{min-width:0}
+  .trend-card-brand{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:2px}
+  .trend-card-name{font-size:15px;font-weight:500;margin-bottom:10px;line-height:1.3}
+  .trend-card-views{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;color:var(--muted);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;margin-top:1px}
+  .trend-card-views svg{width:15px;height:15px}
+  .trend-card-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+  .trend-badge{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:500}
+  .trend-badge-shape{background:#eff6ff;color:#1d4ed8}
+  .trend-badge-build{background:#f5f3ff;color:#6d28d9}
+  .trend-badge-spin-Elite{background:#7c3aed;color:#fff}
+  .trend-badge-spin-Good{background:#059669;color:#fff}
+  .trend-badge-spin-Fair{background:#d97706;color:#fff}
+  .trend-badge-spin-Poor{background:#dc2626;color:#fff}
+  .trend-badge-tier{background:#eef2f7;color:#334155;display:inline-flex;align-items:center;gap:4px}
+  .trend-badge-tier-1{background:#e8f5ee;color:#15803d}
+  .trend-badge-tier-2{background:#e6f1fb;color:#1d4ed8}
+  .trend-badge-tier-3{background:#fdf2e3;color:#b45309}
+  .trend-badge-tier-4{background:#fdeaea;color:#c0392b}
+  .trend-dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
+  .trend-dur-i:hover{opacity:.65}
+  .trend-card-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
+  .trend-metric{text-align:center}
+  .trend-metric-val{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
+  .trend-metric-lbl{font-size:10px;color:var(--muted);margin-top:1px}
+  .trend-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+  .trend-price-main{font-size:16px;font-weight:600;color:var(--text)}
+  .trend-price-disc{font-size:12px;color:var(--green);font-weight:500}
+  .trend-discount-code{font-size:10px;font-family:'DM Mono',monospace;background:var(--green-light);color:var(--green);padding:2px 6px;border-radius:4px;margin-top:2px;display:inline-block}
+  .trend-score-bar-wrap{width:80px}
+  .trend-score-label{font-size:10px;color:var(--muted);text-align:right;margin-bottom:2px}
+  .trend-score-bar{height:5px;border-radius:3px;background:#e2e8f0;overflow:hidden}
+  .trend-score-fill{height:100%;border-radius:3px;background:var(--green)}
+
+  /* durability info popup */
+  .trend-dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:20px}
+  .trend-dur-info-overlay.open{display:flex}
+  .trend-dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
+  .trend-dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy,#0d1f2d);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .trend-dur-info-box p{font-size:14px;line-height:1.6;color:#1a2535;margin-bottom:12px}
+  .trend-dur-info-tiers{list-style:none;margin:0 0 12px;padding:0}
+  .trend-dur-info-tiers li{font-size:14px;padding:7px 12px;border-radius:8px;margin-bottom:5px;font-weight:500}
+  .trend-dur-info-tiers li b{font-weight:700}
+  .trend-dur-info-close{background:none;border:none;font-size:22px;line-height:1;color:#64748b;cursor:pointer;padding:2px 4px;flex-shrink:0}
+  .trend-dur-info-close:hover{color:#1a2535}
+
+  @media(max-width:640px){
+    .trend{padding:24px 12px 34px}
+    .trend__head{padding:0 44px}
+    .trend-theme-toggle{width:34px;height:34px}
+    .trend-theme-toggle svg{width:17px;height:17px}
+  }
+
+  /* ===== DARK MODE ===== */
+  [data-theme="dark"] .trend{
+    --green:#2fae6b;--green-light:#123726;--green-mid:#3ac47c;
+    --muted:#96a7b8;--border:#2a3a49;--bg:#0e1621;--white:#17222e;--text:#e6edf3;
+    --shadow:0 1px 3px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4);
+  }
+  [data-theme="dark"] .trend__title,
+  [data-theme="dark"] .trend__wtitle{color:var(--text)}
+  [data-theme="dark"] .trend-card-photo{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
+  [data-theme="dark"] .trend-badge-shape{background:#16304d;color:#8ab4f8}
+  [data-theme="dark"] .trend-badge-build{background:#2a2247;color:#c4b5fd}
+  [data-theme="dark"] .trend-badge-tier{background:#26313d;color:#cbd5e1}
+  [data-theme="dark"] .trend-badge-tier-1{background:#123528;color:#6ee7b7}
+  [data-theme="dark"] .trend-badge-tier-2{background:#16304d;color:#93c5fd}
+  [data-theme="dark"] .trend-badge-tier-3{background:#3a2c14;color:#fcd34d}
+  [data-theme="dark"] .trend-badge-tier-4{background:#3a1d1d;color:#fca5a5}
+  [data-theme="dark"] .trend-score-bar{background:#2a3a49}
+  [data-theme="dark"] .trend-discount-code{background:var(--green-light);color:#5fe0a0}
+  [data-theme="dark"] .trend-empty{border-color:var(--border);color:var(--muted)}
+  [data-theme="dark"] .trend-dur-info-box{background:#17222e}
+  [data-theme="dark"] .trend-dur-info-box h3{color:#e6edf3}
+  [data-theme="dark"] .trend-dur-info-box p{color:#e6edf3}
+  [data-theme="dark"] .trend-dur-info-close{color:#96a7b8}
+  [data-theme="dark"] .trend-dur-info-close:hover{color:#e6edf3}
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var CSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
+  var PROXY     = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
+  var STATS_SHEET_ID = '1OUARTyxhMzNwb_enXfyqJEv0ds5rLG9KvsoX9oz_B0E';
+  var PHOTO_BASE = 'https://johnkewpickleball-dev.github.io/paddle-database/images/';
+  var DB_URL     = 'https://www.johnkewpickleball.com/paddle-database';
+
+  var DAY = 86400000;
+  var PADDLES = [], VOTES = [], VIEWSLOG = [];
+  var loaded = { paddles:false, votes:false, log:false };
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function parseNum(v){ if(!v || /^(#|N\/A|nan|TBD)/i.test(String(v).trim())) return null;
+    var n=parseFloat(String(v).replace(/[^0-9.\-]/g,'')); return isNaN(n)?null:n; }
+  function statsKey(p){ return (p.company+'||'+p.paddle).toLowerCase().trim(); }
+  function photoSlug(p){ return (p.company+'-'+p.paddle).toLowerCase().replace(/\+/g,'-plus').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+
+  // Flexible timestamp parsing (gviz CSV exports dates in the sheet's locale format).
+  function parseTS(s){
+    if(!s) return null;
+    var str=String(s).trim();
+    var d=new Date(str);
+    if(!isNaN(d.getTime())) return d;
+    var m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if(m){ var y=+m[3]; if(y<100)y+=2000;
+      return new Date(y, +m[1]-1, +m[2], +(m[4]||0), +(m[5]||0), +(m[6]||0)); }
+    return null;
+  }
+
+  /* ---- main paddle sheet: just the fields the summary card needs ---- */
+  function buildColMap(headers){
+    var norm=function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');};
+    var rules=[
+      ['company',['company','brand']],['paddle',['paddle','model','name']],
+      ['price',['retailprice','price','msrp']],['discountedPrice',['discountedprice','saleprice']],
+      ['discountCode',['discountcode','couponcode','code']],['discount',['discount','discountamount']],
+      ['shape',['shape']],['build',['build','buildgeneration','generation']],
+      ['thickness',['corethicknessmm','corethickness','thickness']],
+      ['spinRPM',['spinrpm','rpm']],['spinCategory',['spincategory','spinrating']],
+      ['spinDurTier',['spindurabilitytier','spindurability','durabilitytier']],
+      ['serveSpeed',['servespeedmph','servespeed','speed','servemph']],
+      ['firepower',['firepower']]
+    ];
+    var map={}, nh=headers.map(norm);
+    var usedCol=function(i){ return Object.keys(map).some(function(f){return map[f]===i;}); };
+    nh.forEach(function(n,i){ if(usedCol(i))return;
+      for(var r=0;r<rules.length;r++){ var field=rules[r][0], aliases=rules[r][1];
+        if(map[field]!==undefined) continue;
+        if(aliases.indexOf(n)>-1){ map[field]=i; break; } } });
+    nh.forEach(function(n,i){ if(usedCol(i))return;
+      for(var r=0;r<rules.length;r++){ var field=rules[r][0], aliases=rules[r][1];
+        if(map[field]!==undefined) continue;
+        if(aliases.some(function(a){return n.indexOf(a)===0 || a.indexOf(n)===0;})){ map[field]=i; break; } } });
+    return map;
+  }
+  function ingestPaddles(rows){
+    var head=rows[0], data=rows.slice(1), map=buildColMap(head);
+    var g=function(row,f){ return map[f]!==undefined ? row[map[f]] : undefined; };
+    var out=[];
+    data.forEach(function(row){
+      var company=g(row,'company'), paddle=g(row,'paddle');
+      if(!company || !paddle) return;
+      out.push({
+        company:String(company).trim(), paddle:String(paddle).trim(),
+        price:parseNum(g(row,'price')), discountedPrice:parseNum(g(row,'discountedPrice')),
+        discountCode:g(row,'discountCode')?String(g(row,'discountCode')).trim():'',
+        discount:parseNum(g(row,'discount')),
+        shape:g(row,'shape')?String(g(row,'shape')).trim():'',
+        build:g(row,'build')?String(g(row,'build')).trim():'',
+        thickness:parseNum(g(row,'thickness')),
+        spinRPM:parseNum(g(row,'spinRPM')), spinCategory:g(row,'spinCategory')?String(g(row,'spinCategory')).trim():'',
+        spinDurTier:g(row,'spinDurTier')?String(g(row,'spinDurTier')).trim():'',
+        serveSpeed:parseNum(g(row,'serveSpeed')), firepower:parseNum(g(row,'firepower'))
+      });
+    });
+    PADDLES=out; loaded.paddles=true; maybeRender();
+  }
+
+  /* ---- votes + viewslog (both timestamped) ---- */
+  function ingestVotes(rows){
+    var head=rows[0].map(function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');});
+    var ci={ts:head.indexOf('timestamp'),company:head.indexOf('company'),paddle:head.indexOf('paddle'),vote:head.indexOf('vote')};
+    var out=[];
+    for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue;
+      var c=r[ci.company], p=r[ci.paddle]; if(!c||!p) continue;
+      var ts=parseTS(r[ci.ts]); if(!ts) continue;
+      out.push({key:(String(c)+'||'+String(p)).toLowerCase().trim(), ts:ts, vote:(String(r[ci.vote]||'').trim().toLowerCase()==='down')?'down':'up'});
+    }
+    VOTES=out; loaded.votes=true; maybeRender();
+  }
+  function ingestViewsLog(rows){
+    var head=rows[0].map(function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');});
+    var ci={ts:head.indexOf('timestamp'),company:head.indexOf('company'),paddle:head.indexOf('paddle'),action:head.indexOf('action')};
+    var out=[];
+    for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue;
+      var c=r[ci.company], p=r[ci.paddle]; if(!c||!p) continue;
+      var ts=parseTS(r[ci.ts]); if(!ts) continue;
+      out.push({key:(String(c)+'||'+String(p)).toLowerCase().trim(), ts:ts, action:(String(r[ci.action]||'').trim().toLowerCase()==='labadd')?'labadd':'view'});
+    }
+    VIEWSLOG=out; loaded.log=true; maybeRender();
+  }
+
+  function maybeRender(){ if(loaded.paddles && loaded.votes && loaded.log) render(); }
+
+  /* ---- ranking: same formula as the Database (views+labAdds, tallied x1.5, +-10 per vote), windowed ---- */
+  function tally(n){ return Math.round((Number(n)||0)*1.5); }
+  function topN(windowMs, n){
+    var cutoff = Date.now() - windowMs;
+    var m = {};
+    function ensure(k){ return m[k] || (m[k]={views:0,labAdds:0,up:0,down:0}); }
+    VIEWSLOG.forEach(function(r){ if(r.ts.getTime()<cutoff) return;
+      var e=ensure(r.key); if(r.action==='labadd') e.labAdds++; else e.views++; });
+    VOTES.forEach(function(r){ if(r.ts.getTime()<cutoff) return;
+      var e=ensure(r.key); if(r.vote==='down') e.down++; else e.up++; });
+    var scored = PADDLES.map(function(p){
+      var s = m[statsKey(p)] || {views:0,labAdds:0,up:0,down:0};
+      var score = tally(s.views+s.labAdds) + 10*s.up - 10*s.down;
+      return {p:p, score:score, views:tally(s.views+s.labAdds)};
+    });
+    scored.sort(function(a,b){ return b.score-a.score; });
+    return scored.slice(0,n).filter(function(x){return x.p;});
+  }
+
+  /* ---- card rendering (mirrors the Database's paddle-card) ---- */
+  function fmtPrice(v){ return v==null?'—':'$'+Number(v).toFixed(2); }
+  function fmtInt(v){ return v==null?'—':Math.round(v).toLocaleString(); }
+  function fmt(v,dec){ dec=dec==null?1:dec; return v==null?'—':Number(v).toFixed(dec); }
+  function spinBadge(cat){ if(!cat) return ''; return '<span class="trend-badge trend-badge-spin-'+esc(cat)+'" title="Spin Category">'+esc(cat)+' Spin</span>'; }
+  function durTierBadge(p){
+    var t=(p.spinDurTier||'').trim(); if(!t) return '';
+    var m=t.match(/[1-4]/); var cls=m?('trend-badge-tier-'+m[0]):''; var label=m?('Spin T'+m[0]):t;
+    return '<span class="trend-badge trend-badge-tier '+cls+'" title="Spin Durability Tier">'+esc(label)
+      +'<svg class="trend-dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openTrendDurInfo()">'
+      +'<circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>';
+  }
+  function discountTypeOf(p){
+    if(p.discount!=null && p.discount>0) return p.discount<1 ? 'pct' : 'usd';
+    return null;
+  }
+  function computePricing(p){
+    var price=p.price, isSelkirk=!!(p.company && p.company.toLowerCase().indexOf('selkirk')>-1);
+    if(isSelkirk){
+      var giftCard = price ? (price>300?40:price>200?30:price>100?20:price>50?10:0) : 0;
+      return { isSelkirk:true, finalPrice:price, savedAmt:0, giftCard:giftCard,
+               hasDiscount: !!(p.discountCode && giftCard>0),
+               label: giftCard>0 ? ('Receive $'+giftCard+' digital gift card') : '' };
+    }
+    if(!price) return { isSelkirk:false, finalPrice:price, savedAmt:0, giftCard:0, hasDiscount:false, label:'' };
+    var finalPrice=price, savedAmt=0;
+    var dp=p.discountedPrice;
+    if(dp!=null && dp>0 && dp<price-0.005){ finalPrice=dp; savedAmt=price-dp; }
+    else {
+      var d=p.discount, type=discountTypeOf(p);
+      if(d!=null && d>0){
+        if(type==='pct'){ var frac=d<1?d:d/100; savedAmt=price*frac; finalPrice=price-savedAmt; }
+        else if(type==='usd'){ savedAmt=d; finalPrice=price-savedAmt; }
+      }
+    }
+    if(savedAmt<0.005){ finalPrice=price; savedAmt=0; }
+    return { isSelkirk:false, finalPrice:finalPrice, savedAmt:savedAmt, giftCard:0,
+             hasDiscount: !!(p.discountCode && savedAmt>0.005) };
+  }
+  function scoreBar(score,max){ max=max||100;
+    var pct=Math.min(100,Math.max(0,(score||0)/max*100));
+    return '<div class="trend-score-bar"><div class="trend-score-fill" style="width:'+pct.toFixed(1)+'%"></div></div>';
+  }
+  function eyeSvg(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>'; }
+  function dbPhotoTag(p){
+    var base=PHOTO_BASE+photoSlug(p);
+    var primary=base+'.png', fb=[base+'.jpg'];
+    return '<img class="trend-card-photo" src="'+primary+'" data-fb=\''+JSON.stringify(fb)+'\' alt="" onload="this.style.display=\'block\'" onerror="trendImgErr(this)">';
+  }
+  window.trendImgErr=function(img){ var fb=[]; try{fb=JSON.parse(img.getAttribute('data-fb')||'[]');}catch(e){}
+    if(fb.length){ img.setAttribute('data-fb',JSON.stringify(fb.slice(1))); img.src=fb[0]; } else { img.remove(); } };
+
+  function cardHTML(p, viewCount, windowLabel){
+    var pr=computePricing(p);
+    var priceHTML;
+    if(pr.isSelkirk) priceHTML='<div class="trend-price-main">'+fmtPrice(p.price)+'</div>'+(pr.giftCard>0?'<div class="trend-price-disc">+$'+pr.giftCard+' gift card</div>':'');
+    else if(pr.savedAmt>0.005) priceHTML='<div class="trend-price-main">'+fmtPrice(pr.finalPrice)+'</div><div style="font-size:11px;color:var(--muted);text-decoration:line-through">'+fmtPrice(p.price)+'</div>';
+    else priceHTML='<div class="trend-price-main">'+fmtPrice(p.price)+'</div>';
+    var detailUrl = DB_URL+'?paddle='+encodeURIComponent(p.company+'||'+p.paddle);
+    return '<a class="trend-card" href="'+detailUrl+'" title="View '+esc(p.company)+' '+esc(p.paddle)+' in the Paddle Database">'
+      + dbPhotoTag(p)
+      + '<div class="trend-card-headrow"><div class="trend-card-namewrap">'
+      +   '<div class="trend-card-brand">'+esc(p.company)+'</div><div class="trend-card-name">'+esc(p.paddle)+'</div>'
+      + '</div>'
+      + '<div class="trend-card-views" title="Views '+esc(windowLabel)+'">'+eyeSvg()+'<span>'+fmtInt(viewCount)+'</span></div>'
+      + '</div>'
+      + '<div class="trend-card-badges">'
+      +   (p.shape?'<span class="trend-badge trend-badge-shape" title="Shape">'+esc(p.shape)+'</span>':'')
+      +   (p.build?'<span class="trend-badge trend-badge-build" title="Build">'+esc(p.build)+'</span>':'')
+      +   spinBadge(p.spinCategory) + durTierBadge(p)
+      + '</div>'
+      + '<div class="trend-card-metrics">'
+      +   '<div class="trend-metric"><div class="trend-metric-val">'+(p.spinRPM?fmtInt(p.spinRPM):'—')+'</div><div class="trend-metric-lbl">Spin RPM</div></div>'
+      +   '<div class="trend-metric"><div class="trend-metric-val">'+(p.serveSpeed?fmt(p.serveSpeed):'—')+'</div><div class="trend-metric-lbl">Serve MPH</div></div>'
+      +   '<div class="trend-metric"><div class="trend-metric-val">'+(p.thickness?p.thickness+'mm':'—')+'</div><div class="trend-metric-lbl">Thickness</div></div>'
+      + '</div>'
+      + '<div class="trend-card-footer"><div>'+priceHTML
+      +   (p.discountCode?'<div class="trend-discount-code">'+esc(p.discountCode)+'</div>':'')
+      + '</div>'
+      + '<div class="trend-score-bar-wrap"><div class="trend-score-label">Firepower '+(p.firepower!=null?Math.round(p.firepower):'—')+'</div>'+scoreBar(p.firepower)+'</div>'
+      + '</div></a>';
+  }
+
+  function renderGrid(id, list, windowLabel){
+    var el=document.getElementById(id);
+    if(!list.length){ el.innerHTML='<div class="trend-empty">Not enough recent activity yet — check back soon.</div>'; return; }
+    el.innerHTML=list.map(function(x){ return cardHTML(x.p, x.views, windowLabel); }).join('');
+  }
+  function render(){
+    renderGrid('trendGrid24', topN(DAY,4), 'in the past 24 hours');
+    renderGrid('trendGridWeek', topN(7*DAY,4), 'in the past week');
+    renderGrid('trendGridMonth', topN(30*DAY,4), 'in the past month');
+    document.getElementById('trendStatus').hidden=true;
+    document.getElementById('trendBody').hidden=false;
+  }
+
+  window.openTrendDurInfo=function(){ document.getElementById('trendDurInfoOverlay').classList.add('open'); };
+  window.closeTrendDurInfo=function(){ document.getElementById('trendDurInfoOverlay').classList.remove('open'); };
+
+  function load(url, fallback, cb){
+    Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
+      var rows=res.data||[];
+      if(rows.length){ cb(rows); }
+      else if(fallback){ load(fallback,null,cb); }
+    }, error:function(){ if(fallback) load(fallback,null,cb); }});
+  }
+
+  function init(){
+    load(CSV_URL, PROXY, ingestPaddles);
+    var votesCsv='https://docs.google.com/spreadsheets/d/'+STATS_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet=Votes&cb='+Date.now();
+    load(votesCsv, 'https://corsproxy.io/?'+encodeURIComponent(votesCsv), ingestVotes);
+    var logCsv='https://docs.google.com/spreadsheets/d/'+STATS_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet=ViewsLog&cb='+Date.now();
+    load(logCsv, 'https://corsproxy.io/?'+encodeURIComponent(logCsv), ingestViewsLog);
+  }
+
+  if(window.Papa) init();
+  else window.addEventListener('load', function(){ if(window.Papa) init(); else document.getElementById('trendStatus').textContent='Could not load the data library.'; });
+})();
+</script>
