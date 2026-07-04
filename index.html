@@ -1226,7 +1226,9 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
 
 // Deep link from Trending Paddles (or any external link): ?paddle=Company||Paddle
 // opens straight to that paddle's detail modal instead of the plain grid.
+let deepLinkDone = false;
 function applyPaddleDeepLink(){
+  if(deepLinkDone) return;
   try{
     const qs = new URLSearchParams(location.search);
     const want = qs.get('paddle');
@@ -1234,7 +1236,7 @@ function applyPaddleDeepLink(){
     const key = want.toLowerCase();
     let idx = PADDLES.findIndex(p => (p.company+'||'+p.paddle).toLowerCase()===key);
     if(idx<0) idx = PADDLES.findIndex(p => (p.company+' '+p.paddle).toLowerCase()===key.replace(/\|\|/g,' '));
-    if(idx>-1) openModal(idx);
+    if(idx>-1){ openModal(idx); deepLinkDone = true; }
   }catch(e){}
 }
 
@@ -1374,7 +1376,8 @@ applyPaddleDeepLink();
     const dc=document.querySelector('#sortChips .chip[data-sort="popularity-desc"]');
     if(dc) dc.classList.add('active');
     applyFilters('popularity-desc');
-    setTimeout(function(){ applyFilters('popularity-desc'); }, 200);
+    applyPaddleDeepLink();
+    setTimeout(function(){ applyFilters('popularity-desc'); applyPaddleDeepLink(); }, 200);
   }
 
   function tryFetch(url, fallback) {
@@ -1424,6 +1427,7 @@ applyPaddleDeepLink();
         m[(String(c)+'||'+String(pd)).toLowerCase().trim()]={views:+r[ci.views]||0,labAdds:+r[ci.labadds]||0,up:+r[ci.up]||0,down:+r[ci.down]||0}; }
       STATS_MAP=m; refreshStatViews();
       if(typeof applyFilters==='function') applyFilters();   // re-sort once popularity data is in
+      if(typeof applyPaddleDeepLink==='function') applyPaddleDeepLink();
     },error:function(){}});
   }
 
