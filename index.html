@@ -88,11 +88,13 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .card-name{font-size:15px;font-weight:500;margin-bottom:10px;line-height:1.3}
 .card-photo{width:100%;aspect-ratio:16/10;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:10px}
 
-/* to-scale modal photo: box represents a fixed 8in (w) x 17in (h) physical footprint;
-   the image height is set inline per-paddle to (length/17)*100%, so paddles render at
-   their true relative size. A subtle inch ruler runs down the left edge and along the
-   bottom. See also .pcl-photo in paddle-comparison-lab.html (same concept, duplicated). */
-.modal-photo-box{position:relative;width:100%;aspect-ratio:8/17;max-width:220px;margin:0 auto 16px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible}
+/* to-scale modal photo: box represents a fixed 8.5in (w) x 17in (h) physical footprint
+   (widened slightly past the true 8in ruler max so the rare paddle over 8in wide, e.g.
+   the Avoura Rhapsody at 8.31in, isn't clipped); the image height is set inline per-paddle
+   to (length/17)*100%, so paddles render at their true relative size. A subtle inch ruler
+   (still only marking 0/2/4/6/8) runs down the left edge and along the bottom. See also
+   .pcl-photo in paddle-comparison-lab.html (same concept, duplicated). */
+.modal-photo-box{position:relative;width:100%;aspect-ratio:8.5/17;max-width:220px;margin:0 auto 16px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible}
 .modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
 .pd-scale-axis{position:absolute;inset:0;pointer-events:none}
@@ -889,7 +891,7 @@ function dbPhoto(p, cls){
 // ── To-scale modal photo: image window represents a fixed 17in (tall) x 8in (wide)
 // footprint; each paddle's image is drawn at (length/17)*100% height so paddles render
 // at their true relative size next to one another, with a subtle inch ruler for reference.
-const PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8;
+const PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8.5;
 const PD_SCALE_AXIS_HTML = (function(){
   const vTicks=[16,12,8,4], hTicks=[0,2,4,6,8];
   const v = vTicks.map(h=>{
