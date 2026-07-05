@@ -87,7 +87,19 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .card-brand{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:2px}
 .card-name{font-size:15px;font-weight:500;margin-bottom:10px;line-height:1.3}
 .card-photo{width:100%;aspect-ratio:16/10;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:10px}
-.modal-photo{width:100%;max-height:300px;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:16px}
+
+/* to-scale modal photo: box represents a fixed 8in (w) x 17in (h) physical footprint;
+   the image height is set inline per-paddle to (length/17)*100%, so paddles render at
+   their true relative size. A subtle inch ruler runs down the left edge and along the
+   bottom. See also .pcl-photo in paddle-comparison-lab.html (same concept, duplicated). */
+.modal-photo-box{position:relative;width:100%;aspect-ratio:8/17;max-width:220px;margin:0 auto 16px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible}
+.modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
+.modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
+.pd-scale-axis{position:absolute;inset:0;pointer-events:none}
+.pd-scale-tick-v{position:absolute;left:0;width:5px;height:1px;background:#cbd5e1}
+.pd-scale-tick-h{position:absolute;bottom:0;height:5px;width:1px;background:#cbd5e1}
+.pd-scale-num-v{position:absolute;left:7px;font-size:8px;line-height:1;color:#94a3b8;transform:translateY(-50%);font-family:'DM Mono',monospace}
+.pd-scale-num-h{position:absolute;bottom:6px;font-size:8px;line-height:1;color:#94a3b8;transform:translateX(-50%);font-family:'DM Mono',monospace}
 .card-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
 .badge{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:500}
 .badge-shape{background:#eff6ff;color:#1d4ed8}
@@ -199,7 +211,6 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .page-btn:disabled{opacity:.4;cursor:not-allowed}
 
 /* paddle photo zoom lightbox */
-.modal-photo{cursor:zoom-in}
 .pz-overlay{position:fixed;inset:0;background:rgba(8,12,18,.93);z-index:9999;display:none;align-items:center;justify-content:center;touch-action:none}
 .pz-overlay.open{display:flex}
 .pz-stage{position:relative;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
@@ -236,7 +247,9 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .sort-wrap select{background:var(--white);color:var(--text)}
 [data-theme="dark"] .mf-thumb{color:var(--muted)}
 [data-theme="dark"] .view-btn.active{background:var(--green-light);color:#5fe0a0}
-[data-theme="dark"] .card-photo,[data-theme="dark"] .modal-photo{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
+[data-theme="dark"] .card-photo,[data-theme="dark"] .modal-photo-box{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
+[data-theme="dark"] .pd-scale-tick-v,[data-theme="dark"] .pd-scale-tick-h{background:rgba(255,255,255,.3)}
+[data-theme="dark"] .pd-scale-num-v,[data-theme="dark"] .pd-scale-num-h{color:rgba(255,255,255,.6)}
 [data-theme="dark"] .dr-track,[data-theme="dark"] .score-bar,[data-theme="dark"] .perf-bar-wrap{background:#2a3a49}
 [data-theme="dark"] .dur-info-box h3{color:var(--text)}
 [data-theme="dark"] .discount-code{background:var(--green-light);color:#5fe0a0}
@@ -872,6 +885,34 @@ function dbPhoto(p, cls){
   const fb = override ? [] : [base+'.jpg'];            // fall back to the old .jpg
   return `<img class="${cls}" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none" onload="this.style.display='block'" onerror="dbImgErr(this)"${z}>`;
 }
+
+// ── To-scale modal photo: image window represents a fixed 17in (tall) x 8in (wide)
+// footprint; each paddle's image is drawn at (length/17)*100% height so paddles render
+// at their true relative size next to one another, with a subtle inch ruler for reference.
+const PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8;
+const PD_SCALE_AXIS_HTML = (function(){
+  const vTicks=[16,12,8,4], hTicks=[0,2,4,6,8];
+  const v = vTicks.map(h=>{
+    const top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
+    const unit = h===16 ? ' in' : '';
+    return `<div class="pd-scale-tick-v" style="top:${top}%"></div><div class="pd-scale-num-v" style="top:${top}%">${h}${unit}</div>`;
+  }).join('');
+  const hh = hTicks.map(w=>{
+    const left=(w/PD_MAX_WID_IN*100).toFixed(2);
+    const unit = w===8 ? ' in' : '';
+    return `<div class="pd-scale-tick-h" style="left:${left}%"></div><div class="pd-scale-num-h" style="left:${left}%">${w}${unit}</div>`;
+  }).join('');
+  return `<div class="pd-scale-axis">${v}${hh}</div>`;
+})();
+function dbPhotoScaled(p){
+  const k=p.company+'||'+p.paddle, override=PHOTO_URLS[k], base=PHOTO_BASE+photoSlug(p);
+  const primary = override || (base+'.png');
+  const fb = override ? [] : [base+'.jpg'];
+  let len = p.length; if(!len || len<=0) len = PD_MAX_LEN_IN*0.97;
+  len = Math.min(len, PD_MAX_LEN_IN);
+  const pct = (len/PD_MAX_LEN_IN*100).toFixed(2);
+  return `<div class="modal-photo-box">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src)"></div></div>`;
+}
 function renderGrid(page){
   const start=(page-1)*PAGE_SIZE, end=start+PAGE_SIZE;
   const slice=filtered.slice(start,end);
@@ -1009,7 +1050,7 @@ function openModal(idx){
       ${feedbackRow(p, idx)}
     </div>
     <div class="modal-body">
-      ${dbPhoto(p,'modal-photo')}
+      ${dbPhotoScaled(p)}
       <div class="modal-section">
         <div class="modal-section-title">Performance</div>
         <div class="perf-grid">
