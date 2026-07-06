@@ -244,7 +244,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-photo-flip-inner.flipped .pcl-photo-face-front{pointer-events:none}
   .pcl-photo-face-back{transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:8px;background:#f8fafc;pointer-events:none}
   .pcl-photo-flip-inner.flipped .pcl-photo-face-back{pointer-events:auto}
-  .pcl-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
+  .pcl-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start}
   .pcl-photo img{width:auto;max-width:none;height:100%;object-fit:contain;cursor:zoom-in}
   .pcl-photo .ph-txt{font-size:13px;font-weight:600;color:#94a3b8}
   .pcl-photo .ph-sub{font-size:11px;color:#a7b3c2;margin-top:3px;padding:0 10px}
@@ -495,23 +495,24 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function hostedURL(p){ return PHOTO_BASE + photoSlug(p) + '.png'; }      // transparent PNG first
   function hostedURLJpg(p){ return PHOTO_BASE + photoSlug(p) + '.jpg'; }   // fall back to the old .jpg
 
-  // To-scale photo: the paddle itself is still scaled against a 17in (tall) x 8.5in
-  // (wide) footprint (PD_MAX_LEN_IN / PD_MAX_WID_IN) — untouched, so real dimensions
-  // stay accurate. The image WINDOW is wider than that footprint (PD_WIN_WID_IN, doubled
-  // from 8.5 to 17in) purely to give the unscaled x-ray face room to breathe without
-  // clipping; the paddle/ruler are centered inside that extra width via the margin term
-  // below, so nothing about the scaling math itself changes.
-  var PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8.5, PD_WIN_WID_IN = 17;
+  // To-scale photo: height is scaled against PD_MAX_LEN_IN (17in tall), so real length
+  // stays accurate; width is left to the photo's native aspect ratio (photos are cropped
+  // tight to the paddle silhouette, so width falls out proportionally correct). The image
+  // WINDOW is wider than the paddle's own footprint (PD_WIN_WID_IN, doubled from 8.5 to
+  // 17in) purely to give the unscaled x-ray face room to breathe without clipping. The
+  // photo is LEFT-aligned in the stage (not centered), so the paddle's left edge always
+  // sits at the window's left inner edge — i.e. right on the "0" tick — regardless of
+  // that paddle's actual width; the right edge then lands wherever its real width falls.
+  var PD_MAX_LEN_IN = 17, PD_WIN_WID_IN = 17;
   var PD_SCALE_AXIS_HTML = (function(){
     var vTicks=[16,12,8,4], hTicks=[0,2,4,6,8], v='', hh='';
-    var hMarginPct = (PD_WIN_WID_IN-PD_MAX_WID_IN)/(2*PD_WIN_WID_IN)*100;
     vTicks.forEach(function(h){
       var top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
       var unit = h===16 ? ' in' : '';
       v += '<div class="pd-scale-tick-v" style="top:'+top+'%"></div><div class="pd-scale-num-v" style="top:'+top+'%">'+h+unit+'</div>';
     });
     hTicks.forEach(function(w){
-      var left=(hMarginPct + w/PD_WIN_WID_IN*100).toFixed(2);
+      var left=(w/PD_WIN_WID_IN*100).toFixed(2);
       var unit = w===8 ? ' in' : '';
       hh += '<div class="pd-scale-tick-h" style="left:'+left+'%"></div><div class="pd-scale-num-h" style="left:'+left+'%">'+w+unit+'</div>';
     });
@@ -737,11 +738,16 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + '<div class="pcl-photo-stage"><img src="'+esc(cands[0])+'" data-fb="'+esc(JSON.stringify(cands.slice(1)))+'" onerror="pclImgErr(this)" alt="'+esc(p.paddle)+'" style="height:'+lenPct(p)+'%"></div></div>';
     var photoBack = '<div class="pcl-photo-face pcl-photo-face-back"><img class="pcl-xray-img" src="'+esc(xraySrc)+'" alt="" onload="var b=document.getElementById(\'xrayBadge'+slot+'\'); if(b) b.style.display=\'flex\';" onerror="this.style.display=\'none\'"></div>';
     var photoInner = '<div class="pcl-photo-flip-inner" id="pclXrayInner'+slot+'">'+photoFront+photoBack+'</div>';
+    // Badge sits ~65% of the way across the paddle's own (real) width, just right of the
+    // handle/shoulder transition — computed per-paddle since the photo is left-aligned and
+    // paddle width now varies in box-relative terms (no longer a fixed centered footprint).
+    var badgeW = (p.width && p.width>0) ? p.width : 7.6;
+    var badgeLeftPct = (badgeW*0.65/PD_WIN_WID_IN*100).toFixed(2);
     return '<div class="paddle-card">'
       + '<button class="pcl-slot-remove" data-remove="'+slot+'" title="Remove">×</button>'
       + '<div class="pcl-photo-row">'
         + '<div class="pcl-photo" data-key="'+esc(p.key)+'">'+photoInner
-          + '<button class="xray-badge" id="xrayBadge'+slot+'" type="button" style="display:none" onclick="toggleXray('+slot+')">'+XRAY_ICON_SVG+'<span class="xray-badge-label">X-Ray</span></button>'
+          + '<button class="xray-badge" id="xrayBadge'+slot+'" type="button" style="display:none;left:'+badgeLeftPct+'%" onclick="toggleXray('+slot+')">'+XRAY_ICON_SVG+'<span class="xray-badge-label">X-Ray</span></button>'
         + '</div>'
       + '</div>'
       + '<div class="card-brand">'+esc(p.company)+'</div>'

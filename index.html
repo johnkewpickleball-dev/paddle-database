@@ -103,7 +103,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .modal-photo-flip-inner.flipped .modal-photo-face-front{pointer-events:none}
 .modal-photo-face-back{transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;background:#fff;border:1px solid var(--border);pointer-events:none}
 .modal-photo-flip-inner.flipped .modal-photo-face-back{pointer-events:auto}
-.modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
+.modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:flex-start}
 .modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
 .modal-xray-img{height:100%;width:auto;max-width:100%;object-fit:contain;cursor:zoom-in;display:block}
 .xray-badge{display:none;position:absolute;left:56.5%;bottom:9%;z-index:5;align-items:center;gap:5px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 11px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
@@ -909,23 +909,25 @@ function dbPhoto(p, cls){
   return `<img class="${cls}" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none" onload="this.style.display='block'" onerror="dbImgErr(this)"${z}>`;
 }
 
-// ── To-scale modal photo: the paddle itself is still scaled against a 17in (tall) x
-// 8.5in (wide) footprint (PD_MAX_LEN_IN / PD_MAX_WID_IN) — untouched, so real dimensions
-// stay accurate. The image WINDOW is wider than that footprint (PD_WIN_WID_IN, doubled
+// ── To-scale modal photo: height is scaled against PD_MAX_LEN_IN (17in tall), so real
+// length stays accurate; width is left to the photo's native aspect ratio (photos are
+// cropped tight to the paddle silhouette, so width falls out proportionally correct).
+// The image WINDOW is wider than the paddle's own footprint (PD_WIN_WID_IN, doubled
 // from 8.5 to 17in) purely to give the unscaled x-ray face room to breathe without
-// clipping; the paddle/ruler are centered inside that extra width via flexbox + the
-// margin term below, so nothing about the scaling math itself changes.
-const PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8.5, PD_WIN_WID_IN = 17;
+// clipping. The photo is now LEFT-aligned in the stage (not centered), so the paddle's
+// left edge always sits at the window's left inner edge — i.e. right on the "0" tick —
+// regardless of that paddle's actual width. Reading off where the right edge of the
+// paddle lands on the 0/2/4/6/8in ticks tells you its real width at a glance.
+const PD_MAX_LEN_IN = 17, PD_WIN_WID_IN = 17;
 const PD_SCALE_AXIS_HTML = (function(){
   const vTicks=[16,12,8,4], hTicks=[0,2,4,6,8];
-  const hMarginPct = (PD_WIN_WID_IN-PD_MAX_WID_IN)/(2*PD_WIN_WID_IN)*100;
   const v = vTicks.map(h=>{
     const top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
     const unit = h===16 ? ' in' : '';
     return `<div class="pd-scale-tick-v" style="top:${top}%"></div><div class="pd-scale-num-v" style="top:${top}%">${h}${unit}</div>`;
   }).join('');
   const hh = hTicks.map(w=>{
-    const left=(hMarginPct + w/PD_WIN_WID_IN*100).toFixed(2);
+    const left=(w/PD_WIN_WID_IN*100).toFixed(2);
     const unit = w===8 ? ' in' : '';
     return `<div class="pd-scale-tick-h" style="left:${left}%"></div><div class="pd-scale-num-h" style="left:${left}%">${w}${unit}</div>`;
   }).join('');
@@ -949,12 +951,17 @@ function dbPhotoScaled(p){
   len = Math.min(len, PD_MAX_LEN_IN);
   const pct = (len/PD_MAX_LEN_IN*100).toFixed(2);
   const xraySrc = PHOTO_BASE+photoSlug(p)+'-x-ray.png';
+  // Badge sits ~65% of the way across the paddle's own (real) width, just right of the
+  // handle/shoulder transition — computed per-paddle since the photo is left-aligned and
+  // paddle width now varies in box-relative terms (no longer a fixed centered footprint).
+  const badgeW = (p.width && p.width>0) ? p.width : 7.6;
+  const badgeLeftPct = (badgeW*0.65/PD_WIN_WID_IN*100).toFixed(2);
   const front = `<div class="modal-photo-face modal-photo-face-front">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src); if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE)"></div></div>`;
   const back = `<div class="modal-photo-face modal-photo-face-back"><img class="modal-xray-img" src="${xraySrc}" alt="" onclick="openPaddleZoom(this.src); if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE)" onload="var b=document.getElementById('xrayBadge'); if(b) b.style.display='flex';" onerror="this.style.display='none'"></div>`;
   return `<div class="modal-photo-row">
     <div class="modal-photo-box">
       <div class="modal-photo-flip-inner" id="xrayFlipInner">${front}${back}</div>
-      <button class="xray-badge" id="xrayBadge" type="button" style="display:none" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-Ray</span></button>
+      <button class="xray-badge" id="xrayBadge" type="button" style="display:none;left:${badgeLeftPct}%" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-Ray</span></button>
     </div>
   </div>`;
 }
