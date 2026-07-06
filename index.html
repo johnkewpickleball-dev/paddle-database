@@ -95,7 +95,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
    (still only marking 0/2/4/6/8) runs down the left edge and along the bottom. See also
    .pcl-photo in paddle-comparison-lab.html (same concept, duplicated). */
 .modal-photo-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
-.modal-photo-box{position:relative;flex:0 1 220px;aspect-ratio:8.5/17;max-width:220px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible;perspective:1400px}
+.modal-photo-box{position:relative;flex:0 1 440px;aspect-ratio:17/17;max-width:440px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible;perspective:1400px}
 .modal-photo-flip-inner{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.15,.2,1);transform-style:preserve-3d}
 .modal-photo-flip-inner.flipped{transform:rotateY(180deg)}
 .modal-photo-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
@@ -106,7 +106,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
 .modal-xray-img{height:100%;width:auto;max-width:100%;object-fit:contain;cursor:zoom-in;display:block}
-.xray-badge{display:none;position:absolute;left:63%;bottom:9%;z-index:5;align-items:center;gap:5px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 11px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
+.xray-badge{display:none;position:absolute;left:56.5%;bottom:9%;z-index:5;align-items:center;gap:5px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 11px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
 .xray-badge:hover{animation:none;background:#1e293b}
 .xray-badge.active{background:var(--green);animation:none}
 .xray-badge svg{width:16px;height:16px;flex:0 0 auto}
@@ -906,19 +906,23 @@ function dbPhoto(p, cls){
   return `<img class="${cls}" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none" onload="this.style.display='block'" onerror="dbImgErr(this)"${z}>`;
 }
 
-// ── To-scale modal photo: image window represents a fixed 17in (tall) x 8in (wide)
-// footprint; each paddle's image is drawn at (length/17)*100% height so paddles render
-// at their true relative size next to one another, with a subtle inch ruler for reference.
-const PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8.5;
+// ── To-scale modal photo: the paddle itself is still scaled against a 17in (tall) x
+// 8.5in (wide) footprint (PD_MAX_LEN_IN / PD_MAX_WID_IN) — untouched, so real dimensions
+// stay accurate. The image WINDOW is wider than that footprint (PD_WIN_WID_IN, doubled
+// from 8.5 to 17in) purely to give the unscaled x-ray face room to breathe without
+// clipping; the paddle/ruler are centered inside that extra width via flexbox + the
+// margin term below, so nothing about the scaling math itself changes.
+const PD_MAX_LEN_IN = 17, PD_MAX_WID_IN = 8.5, PD_WIN_WID_IN = 17;
 const PD_SCALE_AXIS_HTML = (function(){
   const vTicks=[16,12,8,4], hTicks=[0,2,4,6,8];
+  const hMarginPct = (PD_WIN_WID_IN-PD_MAX_WID_IN)/(2*PD_WIN_WID_IN)*100;
   const v = vTicks.map(h=>{
     const top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
     const unit = h===16 ? ' in' : '';
     return `<div class="pd-scale-tick-v" style="top:${top}%"></div><div class="pd-scale-num-v" style="top:${top}%">${h}${unit}</div>`;
   }).join('');
   const hh = hTicks.map(w=>{
-    const left=(w/PD_MAX_WID_IN*100).toFixed(2);
+    const left=(hMarginPct + w/PD_WIN_WID_IN*100).toFixed(2);
     const unit = w===8 ? ' in' : '';
     return `<div class="pd-scale-tick-h" style="left:${left}%"></div><div class="pd-scale-num-h" style="left:${left}%">${w}${unit}</div>`;
   }).join('');
