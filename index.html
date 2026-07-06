@@ -94,9 +94,24 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
    to (length/17)*100%, so paddles render at their true relative size. A subtle inch ruler
    (still only marking 0/2/4/6/8) runs down the left edge and along the bottom. See also
    .pcl-photo in paddle-comparison-lab.html (same concept, duplicated). */
-.modal-photo-box{position:relative;width:100%;aspect-ratio:8.5/17;max-width:220px;margin:0 auto 16px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible}
+.modal-photo-row{display:flex;align-items:center;justify-content:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+.modal-photo-box{position:relative;flex:0 1 220px;aspect-ratio:8.5/17;max-width:220px;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:visible;perspective:1400px}
+.modal-photo-flip-inner{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.15,.2,1);transform-style:preserve-3d}
+.modal-photo-flip-inner.flipped{transform:rotateY(180deg)}
+.modal-photo-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.modal-photo-face-front{pointer-events:auto}
+.modal-photo-flip-inner.flipped .modal-photo-face-front{pointer-events:none}
+.modal-photo-face-back{transform:rotateY(180deg);display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;background:#fff;border:1px solid var(--border);pointer-events:none}
+.modal-photo-flip-inner.flipped .modal-photo-face-back{pointer-events:auto}
 .modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
+.modal-xray-img{height:100%;width:auto;max-width:100%;object-fit:contain;cursor:zoom-in;display:block}
+.xray-badge{display:none;align-items:center;gap:6px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 2.2s ease-in-out infinite;flex-shrink:0}
+.xray-badge:hover{animation:none;background:#1e293b}
+.xray-badge.active{background:var(--green);animation:none}
+.xray-badge svg{width:16px;height:16px;flex:0 0 auto}
+@keyframes xrayPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,23,42,.45)}60%{box-shadow:0 0 0 8px rgba(15,23,42,0)}}
+@media (prefers-reduced-motion:reduce){.xray-badge{animation:none}}
 .pd-scale-axis{position:absolute;inset:0;pointer-events:none}
 .pd-scale-tick-v{position:absolute;left:0;width:5px;height:1px;background:#cbd5e1}
 .pd-scale-tick-h{position:absolute;bottom:0;height:5px;width:1px;background:#cbd5e1}
@@ -249,7 +264,10 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .sort-wrap select{background:var(--white);color:var(--text)}
 [data-theme="dark"] .mf-thumb{color:var(--muted)}
 [data-theme="dark"] .view-btn.active{background:var(--green-light);color:#5fe0a0}
-[data-theme="dark"] .card-photo,[data-theme="dark"] .modal-photo-box{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
+[data-theme="dark"] .card-photo,[data-theme="dark"] .modal-photo-box,[data-theme="dark"] .modal-photo-face-back{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
+[data-theme="dark"] .xray-badge{background:#1e293b}
+[data-theme="dark"] .xray-badge:hover{background:#28394d}
+[data-theme="dark"] .xray-badge.active{background:var(--green)}
 [data-theme="dark"] .pd-scale-tick-v,[data-theme="dark"] .pd-scale-tick-h{background:rgba(255,255,255,.3)}
 [data-theme="dark"] .pd-scale-num-v,[data-theme="dark"] .pd-scale-num-h{color:rgba(255,255,255,.6)}
 [data-theme="dark"] .dr-track,[data-theme="dark"] .score-bar,[data-theme="dark"] .perf-bar-wrap{background:#2a3a49}
@@ -906,6 +924,19 @@ const PD_SCALE_AXIS_HTML = (function(){
   }).join('');
   return `<div class="pd-scale-axis">${v}${hh}</div>`;
 })();
+const XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+function toggleXray(prefix){
+  prefix = prefix || '';
+  const inner = document.getElementById('xrayFlipInner'+prefix);
+  const badge = document.getElementById('xrayBadge'+prefix);
+  if(!inner) return;
+  const on = inner.classList.toggle('flipped');
+  if(badge){
+    badge.classList.toggle('active', on);
+    const lbl = badge.querySelector('.xray-badge-label');
+    if(lbl) lbl.textContent = on ? 'BACK TO PHOTO' : 'X-RAY VIEW';
+  }
+}
 function dbPhotoScaled(p){
   const k=p.company+'||'+p.paddle, override=PHOTO_URLS[k], base=PHOTO_BASE+photoSlug(p);
   const primary = override || (base+'.png');
@@ -913,7 +944,13 @@ function dbPhotoScaled(p){
   let len = p.length; if(!len || len<=0) len = PD_MAX_LEN_IN*0.97;
   len = Math.min(len, PD_MAX_LEN_IN);
   const pct = (len/PD_MAX_LEN_IN*100).toFixed(2);
-  return `<div class="modal-photo-box">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src)"></div></div>`;
+  const xraySrc = PHOTO_BASE+photoSlug(p)+'-x-ray.png';
+  const front = `<div class="modal-photo-face modal-photo-face-front">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src)"></div></div>`;
+  const back = `<div class="modal-photo-face modal-photo-face-back"><img class="modal-xray-img" src="${xraySrc}" alt="" onclick="openPaddleZoom(this.src)" onload="var b=document.getElementById('xrayBadge'); if(b) b.style.display='flex';" onerror="this.style.display='none'"></div>`;
+  return `<div class="modal-photo-row">
+    <div class="modal-photo-box"><div class="modal-photo-flip-inner" id="xrayFlipInner">${front}${back}</div></div>
+    <button class="xray-badge" id="xrayBadge" type="button" style="display:none" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-RAY VIEW</span></button>
+  </div>`;
 }
 function renderGrid(page){
   const start=(page-1)*PAGE_SIZE, end=start+PAGE_SIZE;
