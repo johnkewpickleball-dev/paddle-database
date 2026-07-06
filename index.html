@@ -106,10 +106,10 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
 .modal-xray-img{height:100%;width:auto;max-width:100%;object-fit:contain;cursor:zoom-in;display:block}
-.xray-badge{display:none;align-items:center;gap:7px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center}
+.xray-badge{display:none;position:absolute;left:63%;bottom:9%;z-index:5;align-items:center;gap:5px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 11px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
 .xray-badge:hover{animation:none;background:#1e293b}
 .xray-badge.active{background:var(--green);animation:none}
-.xray-badge svg{width:20px;height:20px;flex:0 0 auto}
+.xray-badge svg{width:16px;height:16px;flex:0 0 auto}
 @keyframes xrayPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(15,23,42,.45)}50%{transform:scale(1.07);box-shadow:0 0 0 9px rgba(15,23,42,0)}}
 @media (prefers-reduced-motion:reduce){.xray-badge{animation:none}}
 .pd-scale-axis{position:absolute;inset:0;pointer-events:none}
@@ -944,8 +944,10 @@ function dbPhotoScaled(p){
   const front = `<div class="modal-photo-face modal-photo-face-front">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src)"></div></div>`;
   const back = `<div class="modal-photo-face modal-photo-face-back"><img class="modal-xray-img" src="${xraySrc}" alt="" onclick="openPaddleZoom(this.src)" onload="var b=document.getElementById('xrayBadge'); if(b) b.style.display='flex';" onerror="this.style.display='none'"></div>`;
   return `<div class="modal-photo-row">
-    <div class="modal-photo-box"><div class="modal-photo-flip-inner" id="xrayFlipInner">${front}${back}</div></div>
-    <button class="xray-badge" id="xrayBadge" type="button" style="display:none" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-Ray</span></button>
+    <div class="modal-photo-box">
+      <div class="modal-photo-flip-inner" id="xrayFlipInner">${front}${back}</div>
+      <button class="xray-badge" id="xrayBadge" type="button" style="display:none" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-Ray</span></button>
+    </div>
   </div>`;
 }
 function renderGrid(page){

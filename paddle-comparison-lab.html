@@ -254,10 +254,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-photo .ph-sub{font-size:11px;color:#a7b3c2;margin-top:3px;padding:0 10px}
   .pcl-photo .ph-replace{position:absolute;top:6px;right:6px;background:rgba(13,31,45,.78);color:#fff;border:none;border-radius:6px;font-size:11px;padding:4px 8px;cursor:pointer;opacity:0;transition:.15s;z-index:2}
   .pcl-photo:hover .ph-replace{opacity:1}
-  .xray-badge{display:none;align-items:center;gap:7px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center}
+  .xray-badge{display:none;position:absolute;left:63%;bottom:9%;z-index:5;align-items:center;gap:5px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 11px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center;box-shadow:0 2px 8px rgba(0,0,0,.35);white-space:nowrap}
   .xray-badge:hover{animation:none;background:#1e293b}
   .xray-badge.active{background:var(--green);animation:none}
-  .xray-badge svg{width:20px;height:20px;flex:0 0 auto}
+  .xray-badge svg{width:16px;height:16px;flex:0 0 auto}
   @keyframes xrayPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(15,23,42,.45)}50%{transform:scale(1.07);box-shadow:0 0 0 9px rgba(15,23,42,0)}}
   @media (prefers-reduced-motion:reduce){.xray-badge{animation:none}}
   .pd-scale-axis{position:absolute;inset:0;pointer-events:none}
@@ -734,8 +734,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     return '<div class="paddle-card">'
       + '<button class="pcl-slot-remove" data-remove="'+slot+'" title="Remove">×</button>'
       + '<div class="pcl-photo-row">'
-        + '<div class="pcl-photo" data-key="'+esc(p.key)+'">'+photoInner+'</div>'
-        + '<button class="xray-badge" id="xrayBadge'+slot+'" type="button" style="display:none" onclick="toggleXray('+slot+')">'+XRAY_ICON_SVG+'<span class="xray-badge-label">X-Ray</span></button>'
+        + '<div class="pcl-photo" data-key="'+esc(p.key)+'">'+photoInner
+          + '<button class="xray-badge" id="xrayBadge'+slot+'" type="button" style="display:none" onclick="toggleXray('+slot+')">'+XRAY_ICON_SVG+'<span class="xray-badge-label">X-Ray</span></button>'
+        + '</div>'
       + '</div>'
       + '<div class="card-brand">'+esc(p.company)+'</div>'
       + '<div class="card-name">'+esc(p.paddle)+'</div>'
