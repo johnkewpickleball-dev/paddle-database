@@ -698,7 +698,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     return '<div class="pcl-eng">'
       + '<div class="pcl-eng-info">'
         + '<div class="pcl-eng-counts">'
-          + '<span title="Total views (database + comparison lab)">'+EYE_SVG+'<b class="cv-num">'+cumViews(p)+'</b> views</span>'
+          + '<span title="Total views (database + comparison lab + radiology lab)">'+EYE_SVG+'<b class="cv-num">'+cumViews(p)+'</b> views</span>'
           + '<span title="Times added to the comparison lab">'+SCALE_SVG+'<b>'+((s.labAdds||0)+(LEGACY_LABADD_BOOST[statsKey(p)]||0))+'</b> compares</span>'
         + '</div>'
         + '<div class="pcl-eng-vote" data-vk="'+esc(statsKey(p))+'">'
