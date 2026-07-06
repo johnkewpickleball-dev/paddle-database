@@ -106,11 +106,11 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .modal-photo-stage{position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center}
 .modal-photo-img{width:auto;max-width:none;object-fit:contain;cursor:zoom-in}
 .modal-xray-img{height:100%;width:auto;max-width:100%;object-fit:contain;cursor:zoom-in;display:block}
-.xray-badge{display:none;align-items:center;gap:6px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 2.2s ease-in-out infinite;flex-shrink:0}
+.xray-badge{display:none;align-items:center;gap:7px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:9px 16px;font-size:11.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;font-family:inherit;text-transform:uppercase;animation:xrayPulse 1.6s ease-in-out infinite;flex-shrink:0;transform-origin:center}
 .xray-badge:hover{animation:none;background:#1e293b}
 .xray-badge.active{background:var(--green);animation:none}
-.xray-badge svg{width:16px;height:16px;flex:0 0 auto}
-@keyframes xrayPulse{0%,100%{box-shadow:0 0 0 0 rgba(15,23,42,.45)}60%{box-shadow:0 0 0 8px rgba(15,23,42,0)}}
+.xray-badge svg{width:20px;height:20px;flex:0 0 auto}
+@keyframes xrayPulse{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(15,23,42,.45)}50%{transform:scale(1.07);box-shadow:0 0 0 9px rgba(15,23,42,0)}}
 @media (prefers-reduced-motion:reduce){.xray-badge{animation:none}}
 .pd-scale-axis{position:absolute;inset:0;pointer-events:none}
 .pd-scale-tick-v{position:absolute;left:0;width:5px;height:1px;background:#cbd5e1}
@@ -924,18 +924,14 @@ const PD_SCALE_AXIS_HTML = (function(){
   }).join('');
   return `<div class="pd-scale-axis">${v}${hh}</div>`;
 })();
-const XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+const XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>';
 function toggleXray(prefix){
   prefix = prefix || '';
   const inner = document.getElementById('xrayFlipInner'+prefix);
   const badge = document.getElementById('xrayBadge'+prefix);
   if(!inner) return;
   const on = inner.classList.toggle('flipped');
-  if(badge){
-    badge.classList.toggle('active', on);
-    const lbl = badge.querySelector('.xray-badge-label');
-    if(lbl) lbl.textContent = on ? 'BACK TO PHOTO' : 'X-RAY VIEW';
-  }
+  if(badge){ badge.classList.toggle('active', on); }
 }
 function dbPhotoScaled(p){
   const k=p.company+'||'+p.paddle, override=PHOTO_URLS[k], base=PHOTO_BASE+photoSlug(p);
@@ -949,7 +945,7 @@ function dbPhotoScaled(p){
   const back = `<div class="modal-photo-face modal-photo-face-back"><img class="modal-xray-img" src="${xraySrc}" alt="" onclick="openPaddleZoom(this.src)" onload="var b=document.getElementById('xrayBadge'); if(b) b.style.display='flex';" onerror="this.style.display='none'"></div>`;
   return `<div class="modal-photo-row">
     <div class="modal-photo-box"><div class="modal-photo-flip-inner" id="xrayFlipInner">${front}${back}</div></div>
-    <button class="xray-badge" id="xrayBadge" type="button" style="display:none" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-RAY VIEW</span></button>
+    <button class="xray-badge" id="xrayBadge" type="button" style="display:none" onclick="toggleXray()">${XRAY_ICON_SVG}<span class="xray-badge-label">X-Ray</span></button>
   </div>`;
 }
 function renderGrid(page){
