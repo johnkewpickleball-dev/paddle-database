@@ -66,6 +66,21 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .sidebar select:focus{border-color:var(--green)}
 .reset-btn{width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:white;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit;transition:.15s}
 .reset-btn:hover{border-color:var(--red);color:var(--red)}
+/* Searchable multi-select dropdown (used for Core Type, which has too many
+   distinct values for a chip group to stay readable). */
+.chip-select{position:relative}
+.chip-select-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;color:var(--text);background:var(--white);cursor:pointer;text-align:left}
+.chip-select-btn:hover{border-color:var(--green)}
+.chip-select-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip-select-chevron{width:14px;height:14px;flex-shrink:0;color:var(--muted)}
+.chip-select-panel{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;background:var(--white);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);flex-direction:column;overflow:hidden}
+.chip-select-panel.open{display:flex}
+.chip-select-search{border:none;border-bottom:1px solid var(--border);padding:8px 10px;font-size:13px;font-family:inherit;color:var(--text);background:transparent;outline:none}
+.chip-select-list{max-height:200px;overflow-y:auto}
+.chip-select-opt{display:flex;align-items:center;gap:8px;padding:6px 10px;font-size:13px;color:var(--text);cursor:pointer}
+.chip-select-opt:hover{background:var(--bg)}
+.chip-select-opt input{accent-color:var(--green);width:14px;height:14px;flex-shrink:0}
+.chip-select-empty{padding:10px;font-size:12px;color:var(--muted);text-align:center}
 
 /* PAGE TITLE */
 .rl-page-title{margin-bottom:18px}
@@ -270,7 +285,9 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .reset-btn,
 [data-theme="dark"] .view-btn,
 [data-theme="dark"] .sidebar select,
-[data-theme="dark"] .sort-wrap select{background:var(--white);color:var(--text)}
+[data-theme="dark"] .sort-wrap select,
+[data-theme="dark"] .chip-select-btn,
+[data-theme="dark"] .chip-select-panel{background:var(--white);color:var(--text)}
 [data-theme="dark"] .mf-thumb{color:var(--muted)}
 [data-theme="dark"] .view-btn.active{background:var(--green-light);color:#5fe0a0}
 [data-theme="dark"] .card-photo,[data-theme="dark"] .modal-photo-box,[data-theme="dark"] .modal-photo-face-back{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
@@ -364,8 +381,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 
     <div class="filter-section">
       <div class="filter-title">Core Type</div>
-      <div class="filter-chip-group" id="coreTypeFilter">
-        <div class="chip active" data-val="">All</div>
+      <div class="chip-select" id="coreTypeFilter">
+        <button type="button" class="chip-select-btn" id="coreTypeBtn">
+          <span class="chip-select-label" id="coreTypeLabel">All</span>
+          <svg class="chip-select-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="chip-select-panel" id="coreTypePanel">
+          <input type="text" class="chip-select-search" id="coreTypeSearch" placeholder="Search core type…" autocomplete="off">
+          <div class="chip-select-list" id="coreTypeList"></div>
+        </div>
       </div>
     </div>
 
@@ -409,7 +433,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         <svg class="rl-title-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>
         <h1 class="rl-title-text">Radiology Lab</h1>
       </div>
-      <p class="rl-page-desc">Explore under the hood of each paddle with x-ray imaging. Filter by core type, build, and more.</p>
+      <p class="rl-page-desc">Explore under the hood of each paddle with x-ray imaging. Filter by core type, build, and more. Only paddles with x-rays live here.</p>
     </div>
     <div class="toolbar">
       <div class="result-count"><strong id="resultCount">385</strong> paddles found</div>
@@ -503,9 +527,50 @@ function populateDynamicChips(id, values){
   });
   setupMultiChipGroup(id);
 }
+// Core Type has too many distinct values for a chip group to stay readable, so it's a
+// searchable multi-select dropdown instead: a button showing the current selection, a
+// text filter, and a checkbox list. Rebuilt from scratch on every (re)population, same
+// as the dynamic chip groups, so a live-data refresh never leaves stale listeners behind.
+function populateCoreTypeDropdown(values){
+  const list = document.getElementById('coreTypeList');
+  list.innerHTML = values.length
+    ? values.map(v=>`<label class="chip-select-opt"><input type="checkbox" value="${escAttr(v)}">${v}</label>`).join('')
+    : `<div class="chip-select-empty">No values found</div>`;
+  list.querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.addEventListener('change', ()=>{ updateCoreTypeLabel(); applyFilters(); });
+  });
+  updateCoreTypeLabel();
+}
+function updateCoreTypeLabel(){
+  const checked = coreTypeVals();
+  const label = document.getElementById('coreTypeLabel');
+  label.textContent = !checked.length ? 'All' : checked.length===1 ? checked[0] : checked.length+' selected';
+}
+function coreTypeVals(){
+  return [...document.querySelectorAll('#coreTypeList input:checked')].map(cb=>cb.value);
+}
+(function setupCoreTypeDropdown(){
+  const btn=document.getElementById('coreTypeBtn'), panel=document.getElementById('coreTypePanel'), search=document.getElementById('coreTypeSearch');
+  btn.addEventListener('click', e=>{
+    e.stopPropagation();
+    const opening = !panel.classList.contains('open');
+    panel.classList.toggle('open', opening);
+    if(opening){ search.value=''; document.querySelectorAll('#coreTypeList .chip-select-opt').forEach(o=>o.style.display=''); search.focus(); }
+  });
+  search.addEventListener('input', ()=>{
+    const q=search.value.toLowerCase();
+    document.querySelectorAll('#coreTypeList .chip-select-opt').forEach(opt=>{
+      opt.style.display = opt.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+  });
+  document.addEventListener('click', e=>{
+    if(panel.classList.contains('open') && !e.target.closest('#coreTypeFilter')) panel.classList.remove('open');
+  });
+})();
+
 function refreshDynamicChips(){
   populateDynamicChips('processFilter', [...new Set(PADDLES.map(p=>p.process).filter(Boolean))].sort());
-  populateDynamicChips('coreTypeFilter', [...new Set(PADDLES.map(p=>p.coreType).filter(Boolean))].sort());
+  populateCoreTypeDropdown([...new Set(PADDLES.map(p=>p.coreType).filter(Boolean))].sort());
 }
 
 // Collect every active chip value for a multi-select group (ignores the "All" chip).
@@ -528,7 +593,7 @@ function getFilters(){
     shape: chipVals('shapeFilter'),
     build: chipVals('buildFilter'),
     process: chipVals('processFilter'),
-    coreType: chipVals('coreTypeFilter'),
+    coreType: coreTypeVals(),
     firepowerTier: chipVals('firepowerFilter'),
     kewcorTier: chipVals('kewcorFilter'),
     sort: document.getElementById('sortSelect').value,
@@ -1093,8 +1158,9 @@ setupMultiChipGroup('shapeFilter');
 setupMultiChipGroup('buildFilter');
 setupMultiChipGroup('firepowerFilter');
 setupMultiChipGroup('kewcorFilter');
-// processFilter / coreTypeFilter chip listeners are (re)wired inside populateDynamicChips(),
-// since their chips are generated at runtime rather than fixed in the HTML.
+// processFilter chip listeners are (re)wired inside populateDynamicChips(), since its chips
+// are generated at runtime rather than fixed in the HTML. coreTypeFilter is a searchable
+// checkbox dropdown instead of a chip group — see populateCoreTypeDropdown()/setupCoreTypeDropdown().
 
 document.getElementById('searchInput').addEventListener('input',applyFilters);
 
@@ -1104,11 +1170,14 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   document.getElementById('searchInput').value='';
   document.getElementById('sortSelect').value='popularity-desc';
   document.querySelectorAll('#sortChips .chip').forEach(c=>c.classList.toggle('active', c.dataset.sort==='popularity-desc'));
-  ['shapeFilter','buildFilter','processFilter','coreTypeFilter','firepowerFilter','kewcorFilter'].forEach(id=>{
+  ['shapeFilter','buildFilter','processFilter','firepowerFilter','kewcorFilter'].forEach(id=>{
     const chips=document.getElementById(id).querySelectorAll('.chip');
     chips.forEach(c=>c.classList.remove('active'));
     chips[0].classList.add('active');
   });
+  document.querySelectorAll('#coreTypeList input:checked').forEach(cb=>cb.checked=false);
+  updateCoreTypeLabel();
+  document.getElementById('coreTypePanel').classList.remove('open');
   applyFilters();
 });
 
