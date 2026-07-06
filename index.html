@@ -914,20 +914,25 @@ function dbPhoto(p, cls){
 // cropped tight to the paddle silhouette, so width falls out proportionally correct).
 // The image WINDOW is wider than the paddle's own footprint (PD_WIN_WID_IN, doubled
 // from 8.5 to 17in) purely to give the unscaled x-ray face room to breathe without
-// clipping. The photo is now LEFT-aligned in the stage (not centered), so the paddle's
-// left edge always sits at the window's left inner edge — i.e. right on the "0" tick —
-// regardless of that paddle's actual width. Reading off where the right edge of the
-// paddle lands on the 0/2/4/6/8in ticks tells you its real width at a glance.
+// clipping. The paddle's left edge always sits right on the "0" tick regardless of its
+// actual width, so reading off where the right edge lands on the 0/2/4/6/8in ticks gives
+// its real width at a glance. To keep the paddle roughly centered in the (much wider)
+// window rather than jammed against the left side, the whole axis+photo is shifted right
+// by PD_H_OFFSET_PCT so that the "4in" mark (~half of a typical paddle's width) lands at
+// the window's horizontal center; the y-axis is shifted the same amount so it still rises
+// straight up from the x-axis's "0" tick.
 const PD_MAX_LEN_IN = 17, PD_WIN_WID_IN = 17;
+const PD_H_CENTER_IN = 4;
+const PD_H_OFFSET_PCT = 50 - (PD_H_CENTER_IN/PD_WIN_WID_IN*100);
 const PD_SCALE_AXIS_HTML = (function(){
   const vTicks=[16,12,8,4], hTicks=[0,2,4,6,8];
   const v = vTicks.map(h=>{
     const top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
     const unit = h===16 ? ' in' : '';
-    return `<div class="pd-scale-tick-v" style="top:${top}%"></div><div class="pd-scale-num-v" style="top:${top}%">${h}${unit}</div>`;
+    return `<div class="pd-scale-tick-v" style="top:${top}%;left:calc(${PD_H_OFFSET_PCT.toFixed(2)}% + 0px)"></div><div class="pd-scale-num-v" style="top:${top}%;left:calc(${PD_H_OFFSET_PCT.toFixed(2)}% + 7px)">${h}${unit}</div>`;
   }).join('');
   const hh = hTicks.map(w=>{
-    const left=(w/PD_WIN_WID_IN*100).toFixed(2);
+    const left=(PD_H_OFFSET_PCT + w/PD_WIN_WID_IN*100).toFixed(2);
     const unit = w===8 ? ' in' : '';
     return `<div class="pd-scale-tick-h" style="left:${left}%"></div><div class="pd-scale-num-h" style="left:${left}%">${w}${unit}</div>`;
   }).join('');
@@ -954,9 +959,10 @@ function dbPhotoScaled(p){
   // Badge sits ~65% of the way across the paddle's own (real) width, just right of the
   // handle/shoulder transition — computed per-paddle since the photo is left-aligned and
   // paddle width now varies in box-relative terms (no longer a fixed centered footprint).
+  // Shifted right by the same PD_H_OFFSET_PCT as the photo/axis so it stays paddle-relative.
   const badgeW = (p.width && p.width>0) ? p.width : 7.6;
-  const badgeLeftPct = (badgeW*0.65/PD_WIN_WID_IN*100).toFixed(2);
-  const front = `<div class="modal-photo-face modal-photo-face-front">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src); if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE)"></div></div>`;
+  const badgeLeftPct = (PD_H_OFFSET_PCT + badgeW*0.65/PD_WIN_WID_IN*100).toFixed(2);
+  const front = `<div class="modal-photo-face modal-photo-face-front">${PD_SCALE_AXIS_HTML}<div class="modal-photo-stage" style="padding-left:${PD_H_OFFSET_PCT.toFixed(2)}%"><img class="modal-photo-img" src="${primary}" data-fb='${JSON.stringify(fb)}' alt="" style="display:none;height:${pct}%" onload="this.style.display='block'" onerror="dbImgErr(this)" onclick="openPaddleZoom(this.src); if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE)"></div></div>`;
   const back = `<div class="modal-photo-face modal-photo-face-back"><img class="modal-xray-img" src="${xraySrc}" alt="" onclick="openPaddleZoom(this.src); if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE)" onload="var b=document.getElementById('xrayBadge'); if(b) b.style.display='flex';" onerror="this.style.display='none'"></div>`;
   return `<div class="modal-photo-row">
     <div class="modal-photo-box">

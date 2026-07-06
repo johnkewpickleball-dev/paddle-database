@@ -500,19 +500,25 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // tight to the paddle silhouette, so width falls out proportionally correct). The image
   // WINDOW is wider than the paddle's own footprint (PD_WIN_WID_IN, doubled from 8.5 to
   // 17in) purely to give the unscaled x-ray face room to breathe without clipping. The
-  // photo is LEFT-aligned in the stage (not centered), so the paddle's left edge always
-  // sits at the window's left inner edge — i.e. right on the "0" tick — regardless of
-  // that paddle's actual width; the right edge then lands wherever its real width falls.
+  // paddle's left edge always sits right on the "0" tick regardless of its actual width,
+  // so reading off where the right edge lands on the 0/2/4/6/8in ticks gives its real
+  // width at a glance. To keep the paddle roughly centered in the (much wider) window
+  // rather than jammed against the left side, the whole axis+photo is shifted right by
+  // PD_H_OFFSET_PCT so that the "4in" mark (~half of a typical paddle's width) lands at
+  // the window's horizontal center; the y-axis is shifted the same amount so it still
+  // rises straight up from the x-axis's "0" tick.
   var PD_MAX_LEN_IN = 17, PD_WIN_WID_IN = 17;
+  var PD_H_CENTER_IN = 4;
+  var PD_H_OFFSET_PCT = 50 - (PD_H_CENTER_IN/PD_WIN_WID_IN*100);
   var PD_SCALE_AXIS_HTML = (function(){
     var vTicks=[16,12,8,4], hTicks=[0,2,4,6,8], v='', hh='';
     vTicks.forEach(function(h){
       var top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
       var unit = h===16 ? ' in' : '';
-      v += '<div class="pd-scale-tick-v" style="top:'+top+'%"></div><div class="pd-scale-num-v" style="top:'+top+'%">'+h+unit+'</div>';
+      v += '<div class="pd-scale-tick-v" style="top:'+top+'%;left:calc('+PD_H_OFFSET_PCT.toFixed(2)+'% + 0px)"></div><div class="pd-scale-num-v" style="top:'+top+'%;left:calc('+PD_H_OFFSET_PCT.toFixed(2)+'% + 7px)">'+h+unit+'</div>';
     });
     hTicks.forEach(function(w){
-      var left=(w/PD_WIN_WID_IN*100).toFixed(2);
+      var left=(PD_H_OFFSET_PCT + w/PD_WIN_WID_IN*100).toFixed(2);
       var unit = w===8 ? ' in' : '';
       hh += '<div class="pd-scale-tick-h" style="left:'+left+'%"></div><div class="pd-scale-num-h" style="left:'+left+'%">'+w+unit+'</div>';
     });
@@ -735,14 +741,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var cands=photoCandidates(p);
     var xraySrc = PHOTO_BASE + photoSlug(p) + '-x-ray.png';
     var photoFront = '<div class="pcl-photo-face pcl-photo-face-front">' + PD_SCALE_AXIS_HTML
-      + '<div class="pcl-photo-stage"><img src="'+esc(cands[0])+'" data-fb="'+esc(JSON.stringify(cands.slice(1)))+'" onerror="pclImgErr(this)" alt="'+esc(p.paddle)+'" style="height:'+lenPct(p)+'%"></div></div>';
+      + '<div class="pcl-photo-stage" style="padding-left:'+PD_H_OFFSET_PCT.toFixed(2)+'%"><img src="'+esc(cands[0])+'" data-fb="'+esc(JSON.stringify(cands.slice(1)))+'" onerror="pclImgErr(this)" alt="'+esc(p.paddle)+'" style="height:'+lenPct(p)+'%"></div></div>';
     var photoBack = '<div class="pcl-photo-face pcl-photo-face-back"><img class="pcl-xray-img" src="'+esc(xraySrc)+'" alt="" onload="var b=document.getElementById(\'xrayBadge'+slot+'\'); if(b) b.style.display=\'flex\';" onerror="this.style.display=\'none\'"></div>';
     var photoInner = '<div class="pcl-photo-flip-inner" id="pclXrayInner'+slot+'">'+photoFront+photoBack+'</div>';
     // Badge sits ~65% of the way across the paddle's own (real) width, just right of the
     // handle/shoulder transition — computed per-paddle since the photo is left-aligned and
     // paddle width now varies in box-relative terms (no longer a fixed centered footprint).
+    // Shifted right by the same PD_H_OFFSET_PCT as the photo/axis so it stays paddle-relative.
     var badgeW = (p.width && p.width>0) ? p.width : 7.6;
-    var badgeLeftPct = (badgeW*0.65/PD_WIN_WID_IN*100).toFixed(2);
+    var badgeLeftPct = (PD_H_OFFSET_PCT + badgeW*0.65/PD_WIN_WID_IN*100).toFixed(2);
     return '<div class="paddle-card">'
       + '<button class="pcl-slot-remove" data-remove="'+slot+'" title="Remove">×</button>'
       + '<div class="pcl-photo-row">'
