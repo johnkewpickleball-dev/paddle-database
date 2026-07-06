@@ -8,7 +8,7 @@
   ?compare=Company%7C%7CPaddle  (%7C%7C = ||), which pre-fills the first box.
 
   PADDLE PHOTOS:
-   - Drag & drop (or click) a photo onto any card's image area to set it.
+   - Click any card's image area to upload a photo for it.
    - Uploaded photos are saved in THIS browser (localStorage) so only you see them.
    - To show photos to ALL visitors, host the images and add them to PHOTO_URLS below
      (key = "Company||Paddle"); those take priority and are public.
@@ -240,7 +240,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-photo{position:relative;flex:0 1 220px;max-width:220px;aspect-ratio:8.5/17;border:2px dashed #cbd5e1;border-radius:10px;background:#f8fafc;
     display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;cursor:pointer;overflow:visible;transition:.15s;perspective:1400px}
   .pcl-photo:hover{border-color:var(--green-mid);background:#f1f7f4}
-  .pcl-photo.drag{border-color:var(--green);background:var(--green-light)}
   .pcl-photo-flip-inner{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.15,.2,1);transform-style:preserve-3d}
   .pcl-photo-flip-inner.flipped{transform:rotateY(180deg)}
   .pcl-photo-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
@@ -609,7 +608,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // An <img> tries each in turn (onerror) and falls back to the placeholder if none load.
   function photoCandidates(p){ var c=[]; if(PHOTO_URLS[p.key]) c.push(PHOTO_URLS[p.key]); else { c.push(hostedURL(p)); c.push(hostedURLJpg(p)); } var s=loadStore(); if(s[p.key]) c.push(s[p.key]); return c; }
   function setPhoto(key,dataURL){ var s=loadStore(); if(dataURL) s[key]=dataURL; else delete s[key]; saveStore(s); render(); }
-  var PH_HTML='<div class="ph-txt">Paddle Image Coming Soon</div><div class="ph-sub">Drag &amp; drop a photo, or click to upload</div>';
+  var PH_HTML='<div class="ph-txt">Paddle Image Coming Soon</div><div class="ph-sub">Click to upload a photo</div>';
   window.pclImgErr=function(img){ var fb=[]; try{fb=JSON.parse(img.getAttribute('data-fb')||'[]');}catch(e){}
     if(fb.length){ img.setAttribute('data-fb',JSON.stringify(fb.slice(1))); img.src=fb[0]; }
     else { var z=img.closest('.pcl-photo'); if(z) z.innerHTML=PH_HTML; } };
@@ -1334,7 +1333,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     polys.forEach(function(p){ radarObserver.observe(p); });
   }
 
-  /* ---- photo drag/drop + click ---- */
+  /* ---- photo upload click ---- */
   var fileInput=document.getElementById('pclFile');
   fileInput.addEventListener('change', function(){ if(fileInput.files&&fileInput.files[0]&&dropTargetKey){ var k=dropTargetKey; fileToPhoto(fileInput.files[0], function(d){ setPhoto(k,d); }); } fileInput.value=''; });
   document.getElementById('pclApp').addEventListener('click', function(e){
@@ -1350,9 +1349,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var th=e.target.closest('.pcl-thumb');
     if(th && th.tagName==='IMG' && window.openPaddleZoom){ openPaddleZoom(th.src); }
   });
-  ['dragenter','dragover'].forEach(function(ev){ document.getElementById('pclApp').addEventListener(ev,function(e){ var z=e.target.closest('.pcl-photo'); if(z){ e.preventDefault(); z.classList.add('drag'); } }); });
-  ['dragleave','drop'].forEach(function(ev){ document.getElementById('pclApp').addEventListener(ev,function(e){ var z=e.target.closest('.pcl-photo'); if(z) z.classList.remove('drag'); }); });
-  document.getElementById('pclApp').addEventListener('drop', function(e){ var z=e.target.closest('.pcl-photo'); if(!z)return; e.preventDefault(); var f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f&&/^image\//.test(f.type)){ var k=z.getAttribute('data-key'); fileToPhoto(f,function(d){ setPhoto(k,d); }); } });
 
   /* ---- deep link ---- */
   /* ---- shareable links ---- */
