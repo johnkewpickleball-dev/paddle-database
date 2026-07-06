@@ -67,6 +67,13 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .reset-btn{width:100%;margin-top:4px;padding:8px;border:1px solid var(--border);border-radius:7px;background:white;font-size:13px;color:var(--muted);cursor:pointer;font-family:inherit;transition:.15s}
 .reset-btn:hover{border-color:var(--red);color:var(--red)}
 
+/* PAGE TITLE */
+.rl-page-title{margin-bottom:18px}
+.rl-page-title-row{display:flex;align-items:center;gap:12px}
+.rl-title-icon{width:40px;height:40px;flex-shrink:0}
+.rl-title-text{font-size:26px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.rl-page-desc{font-size:14px;color:var(--muted);margin-top:6px;max-width:640px;line-height:1.5}
+
 /* TOOLBAR */
 .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
 .result-count{font-size:14px;color:var(--muted)}
@@ -397,6 +404,13 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 
   <!-- MAIN -->
   <main class="main">
+    <div class="rl-page-title">
+      <div class="rl-page-title-row">
+        <svg class="rl-title-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>
+        <h1 class="rl-title-text">Radiology Lab</h1>
+      </div>
+      <p class="rl-page-desc">Explore under the hood of each paddle with x-ray imaging. Filter by core type, build, and more.</p>
+    </div>
     <div class="toolbar">
       <div class="result-count"><strong id="resultCount">385</strong> paddles found</div>
       <div class="sort-wrap">
