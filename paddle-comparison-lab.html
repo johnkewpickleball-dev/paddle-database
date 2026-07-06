@@ -1342,6 +1342,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     if(e.target.closest('[data-clear]')){ clearSlot(+e.target.closest('[data-clear]').getAttribute('data-clear')); return; }
     var zone=e.target.closest('.pcl-photo');
     if(zone){
+      if(e.target.closest('.xray-badge')){ return; }
       if(e.target.classList && e.target.classList.contains('ph-replace')){ dropTargetKey=zone.getAttribute('data-key'); fileInput.click(); return; }
       if(e.target.tagName==='IMG'){ if(window.openPaddleZoom) openPaddleZoom(e.target.src); return; }
       dropTargetKey=zone.getAttribute('data-key'); fileInput.click(); return;
