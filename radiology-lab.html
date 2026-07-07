@@ -315,6 +315,49 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .mat-handle-note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
 .mat-glossary-box{max-width:640px}
 .mat-glossary-box .materials-table{margin-top:10px}
+
+/* Mobile overrides for the x-ray/photo stack + materials table — deliberately placed in a
+   second @media (max-width:860px) block HERE, after the desktop rules above, rather than
+   folded into the first mobile media query near the top of the file. CSS resolves ties in
+   specificity by source order, and several of these selectors (.xray-stack-frame.front,
+   .materials-table td, etc.) have the exact same specificity as the desktop rules they need
+   to override — if this block came before those rules in the file, the unconditional desktop
+   rules would win the tie even while this media query is active, silently no-opping the
+   override. Putting it after guarantees it wins whenever the media query matches. */
+@media (max-width:860px){
+  /* X-ray/photo stack: the desktop version is an interactive overlapping-cards toggle (tap
+     the small "peeking" back photo to swap it forward, tap the big front one to zoom) — that
+     layered/rotated presentation and its swap gesture don't translate well to a narrow
+     screen. On mobile this becomes a plain vertical stack instead: x-ray always on top,
+     paddle photo always on bottom (order set via the role class, not the swappable
+     front/back class, since xrayStackClick's mobile branch — see JS — never actually swaps
+     them), each one independently tappable to open the zoom lightbox. */
+  .xray-stack{height:auto;padding:0;background:none;max-width:100%;display:flex;flex-direction:column;gap:12px}
+  .xray-stack-frame,.xray-stack-frame.front,.xray-stack-frame.back{position:static;width:100%;height:auto;transform:none;opacity:1;box-shadow:var(--shadow);animation:none;cursor:zoom-in}
+  .xray-stack-frame.back:hover,.xray-stack-frame.front:hover{transform:none}
+  .xray-stack-frame.xray-role{order:1}
+  .xray-stack-frame.photo-role{order:2}
+  .xray-stack-frame .xray-stack-img{width:100%;height:auto;max-height:340px;object-fit:contain}
+  .xray-stack-hint{display:none}
+
+  /* "Inside the Core" materials table: table-layout:fixed's percentage columns (38/18/44%)
+     get crushed below ~860px — the Notes column especially ends up a few characters wide,
+     wrapping into many lines and ballooning row height. Rather than keep a table at all on
+     mobile, turn each row into a full-width block: the material name acts as a header, with
+     Structural Stiffness and Notes as labeled sub-rows underneath. This is CSS-only (the
+     table/th/td markup from coreMaterialsTableHtml/buildMaterialsGlossary doesn't change),
+     using generated label content instead of the now-hidden <thead> column headers. */
+  .materials-table,.materials-table thead,.materials-table tbody,.materials-table tr,.materials-table th,.materials-table td{display:block;width:auto}
+  .materials-table thead{display:none}
+  .materials-table tr{border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px}
+  .materials-table tr:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+  .materials-table tr:last-child td{border-bottom:none}
+  .materials-table td{border-bottom:none;padding:2px 0}
+  .materials-table td:first-child{font-size:14px;padding-bottom:6px}
+  .materials-table td:nth-child(2)::before{content:"Structural Stiffness — ";font-weight:600;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+  .materials-table td:nth-child(3)::before{content:"Notes";display:block;font-weight:600;color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;margin-top:6px}
+}
+
 .perf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .perf-card{background:var(--bg);border-radius:8px;padding:12px;text-align:center}
 .perf-num{font-size:20px;font-weight:600;color:var(--text)}
@@ -1266,8 +1309,15 @@ function dbPhotoScaled(p){
 // prominent — animated with a CSS transition on the same two DOM nodes, no re-render needed.
 // Clicking the prominent (front) photo opens the full-screen zoom instead. Both the swap and
 // the zoom count as a view, matching the site-wide rule that any x-ray interaction is a view.
+//
+// Below the mobile breakpoint (see the @media (max-width:860px) CSS) the stack becomes a
+// plain vertical layout — x-ray on top, photo on bottom, both always visible side by side
+// rather than overlapping — so there's nothing to "bring forward" anymore. Every tap on
+// mobile just zooms whichever image was tapped, regardless of its front/back class.
+const RL_MOBILE_BREAKPOINT = 860;
 function xrayStackClick(el){
-  if(el.classList.contains('back')){ swapXrayStack(); return; }
+  const isMobileStack = window.innerWidth <= RL_MOBILE_BREAKPOINT;
+  if(!isMobileStack && el.classList.contains('back')){ swapXrayStack(); return; }
   const img = el.querySelector('img');
   if(img && img.src) openPaddleZoom(img.src);
   if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE);
