@@ -191,9 +191,12 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .badge-tier-4{background:#fdeaea;color:#c0392b}
 .dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
 .dur-i:hover{opacity:.65}
-.dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px}
-.dur-info-overlay.open{display:flex}
-.dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
+/* The overlay itself scrolls (not a nested flex-centered box) — see the longer explanation
+   above .modal-overlay for why centered-flex-item + internal overflow-y:auto is unreliable
+   on iOS Safari for tall content. */
+.dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dur-info-overlay.open{display:block}
+.dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
 .dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .dur-info-box p{font-size:14px;line-height:1.6;color:var(--text);margin-bottom:12px}
 .dur-info-tiers{list-style:none;margin:0 0 12px;padding:0}
@@ -228,17 +231,21 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .list-metric small{display:block;font-size:10px;font-weight:400;color:var(--muted)}
 .list-header{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr 80px;gap:12px;padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 
-/* MODAL */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px}
-.modal-overlay.open{display:flex}
-/* min-height:0 is required here: .modal is a flex item of .modal-overlay (display:flex), and
-   flex items default to min-height:auto, which sizes them to fit ALL their content and only
-   THEN applies max-height — in practice this meant overflow-y:auto never actually engaged once
-   the "Inside the Core" table + full spec grid made the content taller than 90vh, so the modal
-   just rendered past the bottom of the screen with nothing to scroll. Since the modal is a
-   position:fixed ancestor, page scroll can't reveal that overflow either — dragging on it just
-   scrolled the page underneath instead, which is exactly what looked like "getting stuck". */
-.modal{background:white;border-radius:14px;max-width:680px;width:100%;max-height:90vh;min-height:0;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+/* MODAL
+   This used to be a centered flexbox (.modal-overlay {display:flex; align-items:center})
+   holding an internally-scrolling box (.modal {max-height:90vh; overflow-y:auto}). That
+   nested-scroll-inside-a-centered-flex-item pattern has a cluster of known iOS Safari
+   reliability problems (min-height:auto silently defeating max-height, centered overflow
+   content not always being reachable by scroll, scroll-gesture arbitration between the two
+   nested containers behaving inconsistently depending on exactly where a touch starts) — a
+   screen recording confirmed the modal would scroll for a few swipes, then stop responding
+   to swipes starting on the card, while a swipe starting just off the card's edge could
+   continue it. Rather than keep patching that combination, the overlay itself is now the
+   only scroll container; .modal is a plain block with no scroll/height constraints of its
+   own, avoiding nested scrolling entirely. */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-overlay.open{display:block}
+.modal{background:white;border-radius:14px;max-width:680px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-header{padding:24px 24px 0;border-bottom:1px solid var(--border);margin-bottom:0}
 .modal-brand{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:4px}
 .modal-name{font-size:22px;font-weight:600;margin-bottom:12px}
@@ -1485,7 +1492,9 @@ function openModal(idx){
       <button class="btn-secondary" onclick="closeModal()">Close</button>
     </div>
   `;
-  document.getElementById('modalOverlay').classList.add('open');
+  const modalOverlayEl = document.getElementById('modalOverlay');
+  modalOverlayEl.classList.add('open');
+  modalOverlayEl.scrollTop = 0;
   lockBodyScroll();
   recordView(p);
 }
