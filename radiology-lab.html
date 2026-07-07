@@ -1380,6 +1380,40 @@ function render(){
   renderPagination();
 }
 
+// Robust scroll lock: plain `overflow:hidden` on <body> is well known to be unreliable on
+// iOS Safari for blocking touch-driven scroll, and — as confirmed by a screen recording —
+// the page kept scrolling underneath the modal even with overflow:hidden set, which also
+// meant position:fixed overlays could visibly drift/scroll along with the page instead of
+// staying put. Freezing <body> itself with position:fixed (offset by the saved scroll
+// position) removes the scrolling context entirely, which is the standard reliable fix for
+// this class of iOS bug. Ref-counted because the zoom lightbox can be opened from inside the
+// already-open modal — closing the zoom must not prematurely unlock scroll for the modal
+// that's still open underneath it.
+let _scrollLockY = 0, _scrollLockCount = 0;
+function lockBodyScroll(){
+  if(_scrollLockCount===0){
+    _scrollLockY = window.scrollY || window.pageYOffset || 0;
+    document.body.style.position='fixed';
+    document.body.style.top=(-_scrollLockY)+'px';
+    document.body.style.left='0';
+    document.body.style.right='0';
+    document.body.style.width='100%';
+  }
+  _scrollLockCount++;
+}
+function unlockBodyScroll(){
+  _scrollLockCount=Math.max(0,_scrollLockCount-1);
+  if(_scrollLockCount===0){
+    document.body.style.position='';
+    document.body.style.top='';
+    document.body.style.left='';
+    document.body.style.right='';
+    document.body.style.width='';
+    window.scrollTo(0,_scrollLockY);
+  }
+}
+window.lockBodyScroll=lockBodyScroll;
+window.unlockBodyScroll=unlockBodyScroll;
 function openModal(idx){
   const p=PADDLES[idx];
   CURRENT_MODAL_PADDLE = p;
@@ -1452,13 +1486,13 @@ function openModal(idx){
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow='hidden';
+  lockBodyScroll();
   recordView(p);
 }
 
 function closeModal(){
   document.getElementById('modalOverlay').classList.remove('open');
-  document.body.style.overflow='';
+  unlockBodyScroll();
   CURRENT_MODAL_PADDLE = null;
 }
 
@@ -1813,7 +1847,7 @@ applyPaddleDeepLink();
   }
   function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); updateBaseOffset(); }
   function settleAtBase(){ refreshPzLayout(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
+  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
     // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
     // tick the overlay becomes visible, so re-measure a few times just after opening — this
     // is what previously required a manual drag to "fix"; now it settles on its own.
@@ -1826,7 +1860,7 @@ applyPaddleDeepLink();
     window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
     window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) settleAtBase(); });
   }
-  function close(){ ov.classList.remove('open'); img.src=''; document.body.style.overflow=''; }
+  function close(){ ov.classList.remove('open'); img.src=''; if(window.unlockBodyScroll) window.unlockBodyScroll(); else document.body.style.overflow=''; }
   document.getElementById('pzClose').addEventListener('click',close);
   ov.addEventListener('click',function(e){ if(e.target===ov||e.target===stage) close(); });
   document.addEventListener('keydown',function(e){ if(ov.classList.contains('open')&&e.key==='Escape') close(); });

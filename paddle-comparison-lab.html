@@ -1585,6 +1585,27 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 (function(){
   var ov=document.getElementById('pzOverlay'),img=document.getElementById('pzImg'),stage=document.getElementById('pzStage');
   if(!ov) return;
+  // Robust scroll lock: plain overflow:hidden on <body> is unreliable on iOS Safari for
+  // blocking touch-driven scroll (confirmed via screen recording on the same zoom lightbox
+  // elsewhere in this app) — freezing <body> with position:fixed (offset by the saved scroll
+  // position) removes the scrolling context entirely instead.
+  var _scrollLockY=0;
+  function lockBodyScroll(){
+    _scrollLockY=window.scrollY||window.pageYOffset||0;
+    document.body.style.position='fixed';
+    document.body.style.top=(-_scrollLockY)+'px';
+    document.body.style.left='0';
+    document.body.style.right='0';
+    document.body.style.width='100%';
+  }
+  function unlockBodyScroll(){
+    document.body.style.position='';
+    document.body.style.top='';
+    document.body.style.left='';
+    document.body.style.right='';
+    document.body.style.width='';
+    window.scrollTo(0,_scrollLockY);
+  }
   var scale=1,tx=0,ty=0,MIN=1,MAX=6;
   var baseTx=0,baseTy=0; // the tx/ty that actually renders centered on the real visible screen
   function apply(){ img.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+scale.toFixed(3)+')'; }
@@ -1618,7 +1639,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); updateBaseOffset(); }
   function settleAtBase(){ refreshPzLayout(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
+  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); lockBodyScroll(); refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
     // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
     // tick the overlay becomes visible, so re-measure a few times just after opening — this
     // is what previously required a manual drag to "fix"; now it settles on its own.
@@ -1631,7 +1652,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
     window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) settleAtBase(); });
   }
-  function close(){ ov.classList.remove('open'); img.src=''; document.body.style.overflow=''; }
+  function close(){ ov.classList.remove('open'); img.src=''; unlockBodyScroll(); }
   document.getElementById('pzClose').addEventListener('click',close);
   ov.addEventListener('click',function(e){ if(e.target===ov||e.target===stage) close(); });
   document.addEventListener('keydown',function(e){ if(ov.classList.contains('open')&&e.key==='Escape') close(); });
