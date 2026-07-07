@@ -257,7 +257,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pd-scale-axis{position:absolute;inset:0;pointer-events:none}
   .pd-scale-tick-v{position:absolute;left:0;width:5px;height:1px;background:#cbd5e1}
   .pd-scale-tick-h{position:absolute;bottom:0;height:5px;width:1px;background:#cbd5e1}
-  .pd-scale-num-v{position:absolute;left:7px;font-size:8px;line-height:1;color:#94a3b8;transform:translateY(-50%);font-family:'DM Mono',monospace}
+  .pd-scale-num-v{position:absolute;font-size:8px;line-height:1;color:#94a3b8;transform:translate(-100%,-50%);font-family:'DM Mono',monospace}
   .pd-scale-num-h{position:absolute;bottom:6px;font-size:8px;line-height:1;color:#94a3b8;transform:translateX(-50%);font-family:'DM Mono',monospace}
   .pcl-slot-remove{position:absolute;top:8px;right:8px;background:#fff;border:1px solid var(--border);border-radius:50%;width:24px;height:24px;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;z-index:2}
   .pcl-slot-remove:hover{border-color:#ef4444;color:#ef4444}
@@ -515,7 +515,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     vTicks.forEach(function(h){
       var top=((PD_MAX_LEN_IN-h)/PD_MAX_LEN_IN*100).toFixed(2);
       var unit = h===16 ? ' in' : '';
-      v += '<div class="pd-scale-tick-v" style="top:'+top+'%;left:calc('+PD_H_OFFSET_PCT.toFixed(2)+'% + 0px)"></div><div class="pd-scale-num-v" style="top:'+top+'%;left:calc('+PD_H_OFFSET_PCT.toFixed(2)+'% + 7px)">'+h+unit+'</div>';
+      v += '<div class="pd-scale-tick-v" style="top:'+top+'%;left:calc('+PD_H_OFFSET_PCT.toFixed(2)+'% + 0px)"></div><div class="pd-scale-num-v" style="top:'+top+'%;left:calc('+PD_H_OFFSET_PCT.toFixed(2)+'% - 7px)">'+h+unit+'</div>';
     });
     hTicks.forEach(function(w){
       var left=(PD_H_OFFSET_PCT + w/PD_WIN_WID_IN*100).toFixed(2);
