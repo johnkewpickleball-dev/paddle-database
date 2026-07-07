@@ -280,24 +280,24 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .spec-label{font-size:11px;color:var(--muted);margin-bottom:2px}
 .spec-value{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
 
-/* ── X-ray/photo stacked toggle (Radiology Lab's signature hero interaction) ── */
+/* ── X-ray/photo hero: simple side-by-side images (x-ray left, paddle photo right), each
+   click-to-zoom. REPLACED 2026-07-07 — this used to be an overlapping "stacked cards" toggle
+   (tap the small peeking photo to swap it forward) with a 3D-ish layered/rotated presentation,
+   pulse animation, and several simultaneous CSS transitions on transform/top/left/etc. Removed
+   because it was suspected (not fully confirmed, but plausible — it's the heaviest bit of
+   GPU-composited/animated CSS on this page) as a contributor to Radiology Lab's live rendering
+   problems on the real Squarespace cross-origin embed; simplifying it was worth trying since
+   the iframe-height fix alone didn't resolve the reported issue. See
+   vh_iframe_resize_feedback_loop memory for the fuller investigation history. */
 .xray-stack-wrap{margin-bottom:20px}
-.xray-stack{position:relative;width:100%;max-width:460px;height:420px;margin:0 auto;background:var(--bg);border-radius:16px;padding:16px}
-.xray-stack-frame{position:absolute;border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;transition:top .5s cubic-bezier(.4,.15,.2,1),left .5s cubic-bezier(.4,.15,.2,1),bottom .5s cubic-bezier(.4,.15,.2,1),right .5s cubic-bezier(.4,.15,.2,1),width .5s cubic-bezier(.4,.15,.2,1),height .5s cubic-bezier(.4,.15,.2,1),transform .5s cubic-bezier(.4,.15,.2,1),opacity .4s ease,box-shadow .4s ease}
-/* Background is tied to what's INSIDE the frame (x-ray vs. paddle photo), not to which
-   role (front/prominent vs. back/peeking) it's currently playing — the swap only toggles
-   front/back classes, so xray-role/photo-role stay fixed to the same element permanently. */
+.xray-stack{display:flex;gap:14px;width:100%;max-width:520px;margin:0 auto}
+.xray-stack-frame{position:relative;flex:1 1 0;aspect-ratio:1/1.15;border-radius:12px;overflow:hidden;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;cursor:zoom-in}
 .xray-stack-frame.xray-role{background:#000}
 .xray-stack-frame.photo-role{background:#fff}
 [data-theme="dark"] .xray-stack-frame.photo-role{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%)}
-.xray-stack-frame.front{top:16px;left:16px;right:auto;bottom:auto;width:64%;height:68%;z-index:2;transform:rotate(0deg);cursor:zoom-in;opacity:1;box-shadow:0 10px 30px rgba(0,0,0,.22)}
-.xray-stack-frame.back{top:auto;left:auto;bottom:16px;right:16px;width:56%;height:60%;z-index:1;transform:rotate(-3deg);cursor:pointer;opacity:.85;box-shadow:0 4px 14px rgba(0,0,0,.16);animation:xrayStackPulse 2.6s ease-in-out infinite}
-.xray-stack-frame.back:hover{opacity:1;transform:rotate(-3deg) scale(1.05)}
-@keyframes xrayStackPulse{0%,100%{box-shadow:0 4px 14px rgba(0,0,0,.16)}50%{box-shadow:0 0 0 6px rgba(250,204,21,.3),0 4px 14px rgba(0,0,0,.16)}}
 .xray-stack-img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 .xray-stack-tag{position:absolute;bottom:7px;left:7px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(15,23,42,.78);color:#fff;letter-spacing:.3px;display:flex;align-items:center;gap:4px}
 .xray-stack-tag svg{width:11px;height:11px;flex-shrink:0}
-.xray-stack-frame.back .xray-stack-tag{font-size:9px;padding:2px 6px}
 .xray-stack-hint{text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
 
 /* ── Core materials table + pills + glossary ── */
@@ -332,22 +332,17 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 /* Mobile overrides for the x-ray/photo stack + materials table — deliberately placed in a
    second @media (max-width:860px) block HERE, after the desktop rules above, rather than
    folded into the first mobile media query near the top of the file. CSS resolves ties in
-   specificity by source order, and several of these selectors (.xray-stack-frame.front,
+   specificity by source order, and several of these selectors (.xray-stack-frame,
    .materials-table td, etc.) have the exact same specificity as the desktop rules they need
    to override — if this block came before those rules in the file, the unconditional desktop
    rules would win the tie even while this media query is active, silently no-opping the
    override. Putting it after guarantees it wins whenever the media query matches. */
 @media (max-width:860px){
-  /* X-ray/photo stack: the desktop version is an interactive overlapping-cards toggle (tap
-     the small "peeking" back photo to swap it forward, tap the big front one to zoom) — that
-     layered/rotated presentation and its swap gesture don't translate well to a narrow
-     screen. On mobile this becomes a plain vertical stack instead: x-ray always on top,
-     paddle photo always on bottom (order set via the role class, not the swappable
-     front/back class, since xrayStackClick's mobile branch — see JS — never actually swaps
-     them), each one independently tappable to open the zoom lightbox. */
-  .xray-stack{height:auto;padding:0;background:none;max-width:100%;display:flex;flex-direction:column;gap:12px}
-  .xray-stack-frame,.xray-stack-frame.front,.xray-stack-frame.back{position:static;width:100%;height:auto;transform:none;opacity:1;box-shadow:var(--shadow);animation:none;cursor:zoom-in}
-  .xray-stack-frame.back:hover,.xray-stack-frame.front:hover{transform:none}
+  /* X-ray/photo hero: side-by-side on desktop (see rule above), stacked vertically on
+     mobile — x-ray always on top, paddle photo always on bottom (order set via the role
+     class), each one independently tappable to open the zoom lightbox. */
+  .xray-stack{flex-direction:column;gap:12px;max-width:100%}
+  .xray-stack-frame{aspect-ratio:auto;width:100%;height:auto}
   .xray-stack-frame.xray-role{order:1}
   .xray-stack-frame.photo-role{order:2}
   .xray-stack-frame .xray-stack-img{width:100%;height:auto;max-height:340px;object-fit:contain}
@@ -1328,32 +1323,16 @@ function dbPhotoScaled(p){
   </div>`;
 }
 
-// ── Radiology Lab hero: x-ray shown large/prominent by default, the plain paddle photo
-// smaller and stacked behind it. Clicking the small "peeking" photo swaps which one is
-// prominent — animated with a CSS transition on the same two DOM nodes, no re-render needed.
-// Clicking the prominent (front) photo opens the full-screen zoom instead. Both the swap and
-// the zoom count as a view, matching the site-wide rule that any x-ray interaction is a view.
+// ── Radiology Lab hero: x-ray and paddle photo shown side by side (x-ray left, photo
+// right) — REPLACED 2026-07-07, see the CSS comment above .xray-stack-wrap for why. Each
+// image is independently clickable to open the full-screen zoom; clicking counts as a view,
+// matching the site-wide rule that any x-ray interaction is a view.
 //
-// Below the mobile breakpoint (see the @media (max-width:860px) CSS) the stack becomes a
-// plain vertical layout — x-ray on top, photo on bottom, both always visible side by side
-// rather than overlapping — so there's nothing to "bring forward" anymore. Every tap on
-// mobile just zooms whichever image was tapped, regardless of its front/back class.
-const RL_MOBILE_BREAKPOINT = 860;
+// Below the mobile breakpoint (see the @media (max-width:860px) CSS) the pair becomes a
+// plain vertical stack — x-ray on top, photo on bottom.
 function xrayStackClick(el){
-  const isMobileStack = window.innerWidth <= RL_MOBILE_BREAKPOINT;
-  if(!isMobileStack && el.classList.contains('back')){ swapXrayStack(); return; }
   const img = el.querySelector('img');
   if(img && img.src) openPaddleZoom(img.src);
-  if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE);
-}
-function swapXrayStack(){
-  const stack = document.getElementById('xrayStack');
-  if(!stack) return;
-  const front = stack.querySelector('.xray-stack-frame.front');
-  const back = stack.querySelector('.xray-stack-frame.back');
-  if(!front || !back) return;
-  front.classList.remove('front'); front.classList.add('back');
-  back.classList.remove('back'); back.classList.add('front');
   if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE);
 }
 function rlPhotoStack(p){
@@ -1363,16 +1342,16 @@ function rlPhotoStack(p){
   const xraySrc = PHOTO_BASE+photoSlug(p)+'-x-ray.png';
   return `<div class="xray-stack-wrap">
     <div class="xray-stack" id="xrayStack">
-      <div class="xray-stack-frame photo-role back" onclick="xrayStackClick(this)">
-        <img class="xray-stack-img" src="${photoSrc}" data-fb='${JSON.stringify(photoFb)}' alt="" onerror="dbImgErr(this)">
-        <div class="xray-stack-tag">Paddle Photo</div>
-      </div>
-      <div class="xray-stack-frame xray-role front" onclick="xrayStackClick(this)">
+      <div class="xray-stack-frame xray-role" onclick="xrayStackClick(this)">
         <img class="xray-stack-img" src="${xraySrc}" alt="" onerror="this.closest('.xray-stack-frame').style.display='none'">
         <div class="xray-stack-tag xray-stack-tag-xray">${XRAY_ICON_SVG}X-Ray</div>
       </div>
+      <div class="xray-stack-frame photo-role" onclick="xrayStackClick(this)">
+        <img class="xray-stack-img" src="${photoSrc}" data-fb='${JSON.stringify(photoFb)}' alt="" onerror="dbImgErr(this)">
+        <div class="xray-stack-tag">Paddle Photo</div>
+      </div>
     </div>
-    <div class="xray-stack-hint">Tap the smaller photo to bring it forward — tap the large one to zoom in</div>
+    <div class="xray-stack-hint">Click either image to zoom in</div>
   </div>`;
 }
 function renderGrid(page){
