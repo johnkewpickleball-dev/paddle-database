@@ -1902,5 +1902,41 @@ applyPaddleDeepLink();
     if(z==='reset'){scale=1;tx=baseTx;ty=baseTy;apply();} else zoomAt(0,0, z==='in'?scale*1.4:scale/1.4); }); });
 })();
 </script>
+<script>
+// TEMPORARY DIAGNOSTIC HUD — activate by adding ?debug=1 to the URL. Shows live touch/scroll
+// state on screen so we can see exactly what's happening during the "scroll gets stuck" bug
+// without needing a remote debugger. Safe to remove once the root cause is found; does
+// nothing unless ?debug=1 is present.
+if(location.search.indexOf('debug=1')!==-1){
+  (function(){
+    var hud=document.createElement('div');
+    hud.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(220,20,20,.92);color:#fff;font:11px/1.4 monospace;padding:6px 8px;pointer-events:none;white-space:pre-line';
+    document.addEventListener('DOMContentLoaded',function(){ document.body.appendChild(hud); });
+    if(document.body) document.body.appendChild(hud);
+    var touchmoveCount=0, touchstartCount=0, lastTarget='(none)', lastPreventedMove=false;
+    document.addEventListener('touchstart',function(e){
+      touchstartCount++;
+      var t=e.target;
+      lastTarget=(t.tagName||'?')+(t.className?('.'+String(t.className).split(' ').join('.')):'');
+    },{capture:true,passive:true});
+    document.addEventListener('touchmove',function(e){
+      touchmoveCount++;
+      lastPreventedMove=e.defaultPrevented;
+    },{capture:true,passive:true});
+    function upd(){
+      var mo=document.getElementById('modalOverlay');
+      var moOpen = mo ? mo.classList.contains('open') : false;
+      hud.textContent =
+        'DEBUG HUD (remove after diagnosis)\n'+
+        'modalOverlay.open='+moOpen+'  scrollTop='+(mo?mo.scrollTop:'n/a')+'  scrollHeight='+(mo?mo.scrollHeight:'n/a')+'  clientHeight='+(mo?mo.clientHeight:'n/a')+'\n'+
+        'window.scrollY='+window.scrollY+'  body.position='+(document.body.style.position||'(none)')+'  body.top='+(document.body.style.top||'(none)')+'\n'+
+        'touchstarts='+touchstartCount+'  touchmoves='+touchmoveCount+'  lastMovePrevented='+lastPreventedMove+'\n'+
+        'lastTouchTarget='+lastTarget;
+      requestAnimationFrame(upd);
+    }
+    upd();
+  })();
+}
+</script>
 </body>
 </html>
