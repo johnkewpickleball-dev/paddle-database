@@ -270,11 +270,20 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .material-pill svg{flex-shrink:0}
 .mat-info-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);background:none;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;line-height:1;vertical-align:middle}
 .mat-info-btn:hover{border-color:var(--green);color:var(--green)}
-.materials-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.materials-table{width:100%;border-collapse:collapse;font-size:12.5px;table-layout:fixed}
 .materials-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
-.materials-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+.materials-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top;overflow-wrap:break-word;word-break:break-word}
 .materials-table tr:last-child td{border-bottom:none}
-.mat-name{display:flex;align-items:center;gap:6px;font-weight:500;white-space:nowrap}
+/* Fixed layout keeps column widths predictable so long material names or long notes wrap
+   within their own column instead of forcing the whole table wider than its container —
+   without this, nowrap material names plus auto layout could push the table (and the
+   Notes column especially) off the right edge on mobile, with the overflow forcing that
+   column's text into a very narrow strip and wrapping into dozens of lines, ballooning
+   every row's height and effectively pushing the rest of the modal's content out of reach. */
+.materials-table col.mc-material{width:38%}
+.materials-table col.mc-stiff{width:18%}
+.materials-table col.mc-notes{width:44%}
+.mat-name{display:flex;align-items:center;gap:6px;font-weight:500;white-space:normal}
 .mat-name svg{flex-shrink:0;color:var(--green)}
 .mat-notes{color:var(--muted);font-size:12px;line-height:1.45}
 .mat-nodata{color:var(--muted);font-style:italic}
@@ -732,7 +741,7 @@ function coreMaterialsTableHtml(p){
   }).join('');
   return `<div class="modal-section">
     <div class="modal-section-title">Inside the Core <button type="button" class="mat-info-btn" onclick="openMaterialsGlossary()" title="Materials glossary">?</button></div>
-    <table class="materials-table"><thead><tr><th>Material</th><th>Structural Stiffness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="materials-table"><colgroup><col class="mc-material"><col class="mc-stiff"><col class="mc-notes"></colgroup><thead><tr><th>Material</th><th>Structural Stiffness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
     ${note?`<div class="mat-construction-note">${note}</div>`:''}
     <div class="mat-handle-note">Note: honeycomb polypropylene used in the paddle <em>handle</em> isn’t counted above — only the core itself is included.</div>
   </div>`;
@@ -751,7 +760,7 @@ function buildMaterialsGlossary(){
     const m = CORE_MATERIAL_PROPS[k]||{name:k, noData:true, notes:''};
     return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${stiffnessCellHtml(m)}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
   }).join('');
-  body.innerHTML = `<table class="materials-table"><thead><tr><th>Material</th><th>Structural Stiffness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
+  body.innerHTML = `<table class="materials-table"><colgroup><col class="mc-material"><col class="mc-stiff"><col class="mc-notes"></colgroup><thead><tr><th>Material</th><th>Structural Stiffness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
   materialsGlossaryBuilt = true;
 }
 function openMaterialsGlossary(){
