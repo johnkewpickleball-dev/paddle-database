@@ -1588,7 +1588,18 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   var scale=1,tx=0,ty=0,MIN=1,MAX=6;
   function apply(){ img.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+scale.toFixed(3)+')'; }
   function zoomAt(px,py,ns){ ns=Math.max(MIN,Math.min(MAX,ns)); tx=px-(px-tx)*(ns/scale); ty=py-(py-ty)*(ns/scale); scale=ns; if(scale<=1){scale=1;tx=0;ty=0;} apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; apply(); ov.classList.add('open'); document.body.style.overflow='hidden'; };
+  // Mobile Safari's vh/dvh units aren't reliable the moment the address bar is animating
+  // in/out, which was letting the image render taller than what's actually visible and
+  // sink toward (or past) the bottom of the screen. Measuring the stage's own rendered
+  // box directly sidesteps that entirely — it's always the true on-screen pixel size.
+  function updatePzMaxSize(){
+    var r=stage.getBoundingClientRect();
+    img.style.maxWidth=(r.width*0.94)+'px';
+    img.style.maxHeight=(r.height*0.92)+'px';
+  }
+  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; updatePzMaxSize(); apply(); };
+  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) updatePzMaxSize(); });
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) updatePzMaxSize(); });
   function close(){ ov.classList.remove('open'); img.src=''; document.body.style.overflow=''; }
   document.getElementById('pzClose').addEventListener('click',close);
   ov.addEventListener('click',function(e){ if(e.target===ov||e.target===stage) close(); });
