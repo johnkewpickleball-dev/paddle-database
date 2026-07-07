@@ -224,6 +224,39 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .spec-item{background:var(--bg);border-radius:7px;padding:10px 12px}
 .spec-label{font-size:11px;color:var(--muted);margin-bottom:2px}
 .spec-value{font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+
+/* ── X-ray/photo stacked toggle (Radiology Lab's signature hero interaction) ── */
+.xray-stack-wrap{margin-bottom:20px}
+.xray-stack{position:relative;width:100%;max-width:460px;height:380px;margin:0 auto}
+.xray-stack-frame{position:absolute;border-radius:12px;overflow:hidden;background:#fff;border:1px solid var(--border);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;transition:top .5s cubic-bezier(.4,.15,.2,1),left .5s cubic-bezier(.4,.15,.2,1),width .5s cubic-bezier(.4,.15,.2,1),height .5s cubic-bezier(.4,.15,.2,1),transform .5s cubic-bezier(.4,.15,.2,1),opacity .4s ease,box-shadow .4s ease}
+.xray-stack-frame.front{top:0;left:0;width:100%;height:100%;z-index:2;transform:rotate(0deg);cursor:zoom-in;opacity:1}
+.xray-stack-frame.back{top:auto;bottom:0;left:auto;right:0;width:40%;height:44%;z-index:1;transform:rotate(-3deg);cursor:pointer;opacity:.88;animation:xrayStackPulse 2.6s ease-in-out infinite}
+.xray-stack-frame.back:hover{opacity:1;transform:rotate(-3deg) scale(1.05)}
+@keyframes xrayStackPulse{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 0 5px rgba(250,204,21,.25),var(--shadow)}}
+.xray-stack-img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.xray-stack-tag{position:absolute;bottom:7px;left:7px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:rgba(15,23,42,.78);color:#fff;letter-spacing:.3px;display:flex;align-items:center;gap:4px}
+.xray-stack-tag svg{width:11px;height:11px;flex-shrink:0}
+.xray-stack-frame.back .xray-stack-tag{font-size:9px;padding:2px 6px}
+.xray-stack-hint{text-align:center;font-size:11px;color:var(--muted);margin-top:8px}
+
+/* ── Core materials table + pills + glossary ── */
+.material-pill{display:inline-flex;align-items:center;gap:4px;background:#ecfdf5;color:#065f46;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500}
+[data-theme="dark"] .material-pill{background:#123528;color:#6ee7b7}
+.material-pill svg{flex-shrink:0}
+.mat-info-btn{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);background:none;color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;margin-left:6px;line-height:1;vertical-align:middle}
+.mat-info-btn:hover{border-color:var(--green);color:var(--green)}
+.materials-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.materials-table th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:600;padding:6px 8px;border-bottom:1px solid var(--border)}
+.materials-table td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+.materials-table tr:last-child td{border-bottom:none}
+.mat-name{display:flex;align-items:center;gap:6px;font-weight:500;white-space:nowrap}
+.mat-name svg{flex-shrink:0;color:var(--green)}
+.mat-notes{color:var(--muted);font-size:12px;line-height:1.45}
+.mat-nodata{color:var(--muted);font-style:italic}
+.mat-construction-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
+.mat-handle-note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
+.mat-glossary-box{max-width:640px}
+.mat-glossary-box .materials-table{margin-top:10px}
 .perf-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .perf-card{background:var(--bg);border-radius:8px;padding:12px;text-align:center}
 .perf-num{font-size:20px;font-weight:600;color:var(--text)}
@@ -419,6 +452,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       <div class="filter-chip-group" id="sortChips">
         <div class="chip active" data-sort="popularity-desc">Popular</div>
         <div class="chip" data-sort="date-desc">Latest</div>
+        <div class="chip" data-sort="core-firmness-asc">Soft → Firm</div>
         <div class="chip" data-sort="name-asc">A–Z</div>
       </div>
     </div>
@@ -449,6 +483,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
           <option value="power-desc">Power: Highest</option>
           <option value="pop-desc">Pop: Highest</option>
           <option value="firepower-desc">Firepower: Highest</option>
+          <option value="core-firmness-asc">Core Firmness: Soft → Firm</option>
           <option value="name-asc">Name A–Z</option>
         </select>
       </div>
@@ -478,6 +513,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   </div>
 </div>
 
+<div class="dur-info-overlay" id="materialsGlossaryOverlay" onclick="if(event.target===this)closeMaterialsGlossary()">
+  <div class="dur-info-box mat-glossary-box">
+    <h3>Core Materials Glossary<button class="dur-info-close" onclick="closeMaterialsGlossary()" aria-label="Close">&times;</button></h3>
+    <p style="margin-top:-6px">Reference data behind the "Inside the Core" table on each paddle. Hardness figures are Shore C unless noted otherwise.</p>
+    <div id="materialsGlossaryBody"></div>
+    <p class="mat-handle-note" style="margin-top:12px">Note: honeycomb polypropylene used in the paddle <em>handle</em> is never counted as a core material — only the core itself is included anywhere on this page.</p>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modalOverlay">
   <div class="modal" id="modalContent"></div>
 </div>
@@ -492,6 +536,202 @@ function keepOnlyXray(arr){ for(let i=arr.length-1;i>=0;i--){ if(!XRAY_SLUGS.has
 keepOnlyXray(PADDLES);
 document.getElementById('totalCount').textContent = PADDLES.length;
 document.querySelectorAll('.hstat-num')[1].textContent = new Set(PADDLES.map(p=>p.company)).size;
+
+// ── Core material reference data (from John's "Core Material Types" property doc) ──
+// Each entry: display name, approx. hardness (nominal number, same-scale-only used for
+// sorting — carbon fiber is Shore D and is excluded from hardness display for that reason),
+// a firmnessRank (1=softest…10=most rigid, used for the Core Firmness sort), relative
+// firmness label, a short note, an icon category, and flags for materials whose hardness
+// is intentionally N/A (structural, e.g. honeycomb) vs. genuinely undocumented (noData).
+const CORE_MATERIAL_PROPS = {
+  epp:      { name:'EPP (Expanded Polypropylene)', hardness:40, hardnessUnit:'Shore C', firmnessRank:5, firmness:'Medium-firm', icon:'foam',
+              notes:'Bead foam; excellent resilience and recovery. Lightweight, slightly springy, impact-absorbent.' },
+  mpp:      { name:'MPP (Modified Polypropylene)', hardness:45, hardnessUnit:'Shore C', firmnessRank:6, firmness:'Medium-firm → firm', icon:'foam',
+              notes:'Higher modulus than EPP; denser cell walls, improved energy return and heat tolerance.' },
+  nitrex:   { name:'Nitrex', hardness:50, hardnessUnit:'Shore C', firmnessRank:7, firmness:'Firm', icon:'foam',
+              notes:'Nitrile blend foam used in sports protection; oil and fuel resistant, excellent damping.' },
+  xpe:      { name:'XPE (Cross-linked Polyethylene)', hardness:55, hardnessUnit:'Shore C', firmnessRank:7, firmness:'Firm', icon:'foam',
+              notes:'Fine closed-cell; good surface finish, stiff under compression, low rebound.' },
+  pebax:    { name:'Pebax', hardness:60, hardnessUnit:'Shore C', firmnessRank:8, firmness:'Firm → semi-rigid', icon:'elastomer',
+              notes:'Extremely elastic and energy-returning; used in performance footwear and paddle cores for spring.' },
+  tpu:      { name:'TPU (Thermoplastic Polyurethane)', hardness:65, hardnessUnit:'Shore C', firmnessRank:9, firmness:'Firm-elastic', icon:'elastomer',
+              notes:'High rebound, tough, and flexible. Very consistent hardness across densities.' },
+  silicone: { name:'Silicone Foam', hardness:30, hardnessUnit:'Shore C', firmnessRank:2, firmness:'Soft', icon:'foam',
+              notes:'Excellent thermal stability and compression set; very compliant and damped.' },
+  eva:      { name:'EVA (Ethylene-Vinyl Acetate)', hardness:45, hardnessUnit:'Shore C', firmnessRank:4, firmness:'Medium', icon:'foam',
+              notes:'Softer underfoot feel; resilient but lower heat resistance than TPU.' },
+  epe:      { name:'EPE (Expanded Polyethylene)', hardness:35, hardnessUnit:'Shore C', firmnessRank:3, firmness:'Soft-medium', icon:'foam',
+              notes:'Non-crosslinked bead foam; lightweight and cushioned, lower recovery than EPP.' },
+  polyimide:{ name:'Polyimide Foam', hardness:20, hardnessUnit:'Shore C', firmnessRank:1, firmness:'Very soft', icon:'foam',
+              notes:'Ultralight, open/closed-cell hybrid; outstanding heat and flame resistance, low structural stiffness.' },
+  tpeFoam:  { name:'TPE Foam (Thermoplastic Elastomer)', hardness:52, hardnessUnit:'Shore C', firmnessRank:6, firmness:'Medium → firm-elastic', icon:'elastomer',
+              notes:'Broad class of elastomeric foams (e.g. SEBS-based); rubber-like feel, tunable hardness, good fatigue resistance.' },
+  honeycombPP: { name:'Honeycomb Polypropylene', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+              notes:'Thin-walled polypropylene honeycomb core. Very high stiffness-to-weight ratio in-plane, excellent fatigue resistance, low intrinsic damping, response varies with cell size and wall thickness.' },
+  kevlarHoneycomb: { name:'Kevlar Honeycomb', hardness:null, structural:true, firmnessRank:7, firmness:'Firm', icon:'honeycomb',
+              notes:'Aramid paper honeycomb impregnated with resin. Extremely stiff and lightweight with excellent impact tolerance and vibration damping.' },
+  carbonFiber: { name:'Carbon Fiber', hardness:null, hardnessDisplay:'≈80–90 (Shore D equiv.)', firmnessRank:10, firmness:'Very rigid', icon:'fiber',
+              notes:'Continuous fibers aligned in one direction. Extremely high stiffness and tensile strength along the fiber axis, highly anisotropic, little inherent damping. (Reference data is for unidirectional layup; Shore D scale, not directly comparable to the Shore C values above.)' },
+  scf:      { name:'SCF Foam (Structural Carbon Foam)', hardness:55, hardnessUnit:'Shore C', firmnessRank:7, firmness:'Firm', icon:'fiber',
+              notes:'Closed-cell structural foam reinforced with short carbon fibers. Higher compressive modulus and dimensional stability than conventional polymer foams.' },
+  // Cell-size variants of honeycomb polypropylene — same base material, size affects density/
+  // stiffness somewhat but the reference doc doesn't quantify the exact deviation.
+  honeycombPPWide:   { name:'Honeycomb Polypropylene (Wide Cell)', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+              notes:'Wide-cell variant of honeycomb polypropylene — same base material; larger cells trade some stiffness for lighter weight.' },
+  honeycombPPNarrow: { name:'Honeycomb Polypropylene (Narrow Cell)', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+              notes:'Narrow-cell variant of honeycomb polypropylene — same base material; smaller cells trade some weight for added stiffness.' },
+  honeycombPPLarge:  { name:'Honeycomb Polypropylene (Large Cell)', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+              notes:'Large-cell variant of honeycomb polypropylene — same base material; larger cells trade some stiffness for lighter weight.' },
+  // Materials seen in the sheet that aren't in the reference property doc — shown honestly
+  // as having no sourced hardness/firmness data rather than guessing.
+  aluminumHoneycomb: { name:'Aluminum Honeycomb', hardness:null, noData:true, icon:'metal',
+              notes:'Metal honeycomb core. Not in the reference property doc — no sourced hardness/firmness data.' },
+  wood:     { name:'Wood', hardness:null, noData:true, icon:'wood',
+              notes:'Solid wood core/face. Not in the reference property doc — no sourced hardness/firmness data.' },
+  pu:       { name:'PU (Polyurethane)', hardness:null, noData:true, icon:'elastomer',
+              notes:'Related to the TPU family above, but a distinct formulation — not in the reference property doc, so no sourced hardness/firmness data.' },
+  microcellular: { name:'Microcellular Foam', hardness:null, noData:true, icon:'foam',
+              notes:'Proprietary microcellular structure; specific formulation not disclosed, so no sourced hardness/firmness data.' },
+  expandingFoam: { name:'Expanding Foam', hardness:null, noData:true, icon:'foam',
+              notes:'General void-fill foam injected around the core structure (often PU-based); exact formulation varies by manufacturer, so no sourced hardness/firmness data.' },
+  unknownMaterial: { name:'Unspecified', hardness:null, noData:true, icon:'unknown',
+              notes:'Material not specified in the source data.' },
+};
+
+const MATERIAL_ICONS = {
+  honeycomb:'<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 14 4.5v7L8 15 2 11.5v-7Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+  foam:'<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="5" cy="6.2" r="2.3" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="10.6" cy="9.6" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+  fiber:'<svg viewBox="0 0 16 16" width="13" height="13"><path d="M2 14 8 2M6 14 12 2M10 14 15 4" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>',
+  wood:'<svg viewBox="0 0 16 16" width="13" height="13"><path d="M1 4.5h14M1 8h14M1 11.5h14" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="8" cy="8" r="1.5" fill="currentColor"/></svg>',
+  metal:'<svg viewBox="0 0 16 16" width="13" height="13"><path d="M8 1 15 8 8 15 1 8Z" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+  elastomer:'<svg viewBox="0 0 16 16" width="13" height="13"><path d="M1 8c1.5-4 3-4 4 0s2.5 4 4 0 3-4 4 0" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>',
+  unknown:'<svg viewBox="0 0 16 16" width="13" height="13"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>',
+};
+function materialIcon(key){ const m=CORE_MATERIAL_PROPS[key]; return m?(MATERIAL_ICONS[m.icon]||''):''; }
+
+// Exact-string lookup for every distinct "Core Type" value currently in the sheet, mapped
+// to its constituent material keys (+ an optional construction note for compound builds
+// that don't reduce cleanly to a material list, e.g. "edge foam" or "inserts"). Falls back
+// to a generic +/& splitter for any future value not yet in this table, so new paddles never
+// break — they just won't have curated notes until this table is extended.
+const CORE_TYPE_MATERIAL_MAP = {
+  'honeycomb polypropylene': { materials:['honeycombPP'] },
+  'honeycomb polypropylene + expanding foam': { materials:['honeycombPP','expandingFoam'] },
+  'honeycomb polypropylene + eva + expanding foam': { materials:['honeycombPP','eva','expandingFoam'] },
+  'wide cell polypropylene + eva + expanding foam': { materials:['honeycombPPWide','eva','expandingFoam'] },
+  'wide cell honeycomb polypropylene': { materials:['honeycombPPWide'] },
+  'wide cell honeycomb polypropylene + eva + expanding foam': { materials:['honeycombPPWide','eva','expandingFoam'] },
+  'narrow cell polypropylene + expanding foam': { materials:['honeycombPPNarrow','expandingFoam'] },
+  'large cell polypropylene + expanding foam': { materials:['honeycombPPLarge','expandingFoam'] },
+  'carbon fiber + eva + expanding foam': { materials:['carbonFiber','eva','expandingFoam'] },
+  'kevlar honeycomb + expanding foam': { materials:['kevlarHoneycomb','expandingFoam'] },
+  'kevlar honeycomb': { materials:['kevlarHoneycomb'] },
+  'aluminum honeycomb': { materials:['aluminumHoneycomb'] },
+  'wood': { materials:['wood'] },
+  'eva foam': { materials:['eva'] },
+  'tpu + unknown': { materials:['tpu','unknownMaterial'] },
+  'tri-layer foam & aramid honeycomb': { materials:['kevlarHoneycomb'], note:'Multi-layer foam-and-honeycomb sandwich construction; individual foam layers aren’t separately specified in the source data.' },
+  'full-foam (epp with edge foam)': { materials:['epp'], note:'Also includes edge-foam reinforcement around the perimeter.' },
+  'full foam (epp)': { materials:['epp'] },
+  'full foam (epp + expanding foam)': { materials:['epp','expandingFoam'] },
+  'full foam (epp + eva)': { materials:['epp','eva'] },
+  'full foam (epp + eva + expanding foam)': { materials:['epp','eva','expandingFoam'] },
+  'full foam (epp +eva+expanding foam': { materials:['epp','eva','expandingFoam'] }, // source row has a typo (missing space + closing paren)
+  'full foam (epp + eva + tpe + expanding foam)': { materials:['epp','eva','tpeFoam','expandingFoam'] },
+  'full foam (epp + eva + tpu + tpe + expanding foam)': { materials:['epp','eva','tpu','tpeFoam','expandingFoam'] },
+  'full foam (epp + pu + expanding foam)': { materials:['epp','pu','expandingFoam'] },
+  'full foam (epp + scf + expanding foam)': { materials:['epp','scf','expandingFoam'] },
+  'full foam (epp + tpe + expanding foam)': { materials:['epp','tpeFoam','expandingFoam'] },
+  'full foam (mpp + eva + expanding foam)': { materials:['mpp','eva','expandingFoam'] },
+  'full foam (mpp + tpe + expanding foam)': { materials:['mpp','tpeFoam','expandingFoam'] },
+  'full foam (mpp center with eva inserts)': { materials:['mpp','eva'], note:'MPP forms the center block; EVA fills insert regions rather than being blended throughout.' },
+  'full foam (microcellular + eva)': { materials:['microcellular','eva'] },
+};
+const CORE_MATERIALS_CACHE = new Map();
+// Generic fallback parser for any Core Type string not yet in the exact-match table above —
+// strips a "Full Foam (...)"/"Full-Foam (...)" wrapper, splits on +/&, and title-cases
+// whatever's left so unrecognized future values still render (just without curated notes).
+function parseCoreMaterialsGeneric(raw){
+  let s = raw.trim();
+  const paren = s.match(/\(([^)]*)\)/);
+  if(paren) s = paren[1];
+  s = s.replace(/^full[- ]foam\s*/i,'');
+  const tokens = s.split(/[+&]/).map(t=>t.trim()).filter(Boolean);
+  const ALIAS = { epp:'epp', mpp:'mpp', eva:'eva', tpu:'tpu', tpe:'tpeFoam', scf:'scf', pu:'pu',
+    'expanding foam':'expandingFoam', 'edge foam':'expandingFoam', unknown:'unknownMaterial',
+    'honeycomb polypropylene':'honeycombPP', 'carbon fiber':'carbonFiber', 'kevlar honeycomb':'kevlarHoneycomb',
+    'aluminum honeycomb':'aluminumHoneycomb', wood:'wood', microcellular:'microcellular' };
+  return tokens.map(t=>{
+    const low=t.toLowerCase();
+    if(ALIAS[low]) return ALIAS[low];
+    // Unrecognized token — surface it as its own ad-hoc entry rather than dropping it silently.
+    const key='adhoc:'+low;
+    if(!CORE_MATERIAL_PROPS[key]) CORE_MATERIAL_PROPS[key] = { name:t.replace(/\b\w/g,c=>c.toUpperCase()), hardness:null, noData:true, icon:'unknown', notes:'Not in the reference property doc — no sourced hardness/firmness data.' };
+    return key;
+  });
+}
+function coreMaterialsOf(p){
+  const raw = (p.coreType||'').trim();
+  if(!raw) return { materials:[], note:null };
+  if(CORE_MATERIALS_CACHE.has(raw)) return CORE_MATERIALS_CACHE.get(raw);
+  const hit = CORE_TYPE_MATERIAL_MAP[raw.toLowerCase()];
+  const result = hit ? { materials:hit.materials, note:hit.note||null } : { materials:parseCoreMaterialsGeneric(raw), note:null };
+  CORE_MATERIALS_CACHE.set(raw, result);
+  return result;
+}
+// Average firmness rank across a paddle's materials that have one (structural + noData
+// materials are excluded from the average, not treated as zero); null if none qualify.
+function coreFirmnessScore(p){
+  const { materials } = coreMaterialsOf(p);
+  const ranks = materials.map(k=>CORE_MATERIAL_PROPS[k]&&CORE_MATERIAL_PROPS[k].firmnessRank).filter(r=>r!=null);
+  if(!ranks.length) return null;
+  return ranks.reduce((a,b)=>a+b,0)/ranks.length;
+}
+function materialPill(key){
+  const m = CORE_MATERIAL_PROPS[key]; if(!m) return '';
+  return `<span class="material-pill">${materialIcon(key)}${m.name}</span>`;
+}
+function coreMaterialsTableHtml(p){
+  const { materials, note } = coreMaterialsOf(p);
+  if(!materials.length) return '';
+  const rows = materials.map(k=>{
+    const m = CORE_MATERIAL_PROPS[k] || { name:k, noData:true, notes:'' };
+    const hardnessCell = m.structural ? `<span class="mat-nodata" title="Structural material — hardness doesn't apply the way it does to a foam">N/A (structural)</span>`
+      : m.noData ? `<span class="mat-nodata" title="Not in the reference property doc">No data</span>`
+      : m.hardnessDisplay ? m.hardnessDisplay
+      : (m.hardness!=null ? `≈ ${m.hardness} (${m.hardnessUnit})` : '—');
+    return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${hardnessCell}</td><td>${m.firmness||'—'}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
+  }).join('');
+  return `<div class="modal-section">
+    <div class="modal-section-title">Inside the Core <button type="button" class="mat-info-btn" onclick="openMaterialsGlossary()" title="Materials glossary">?</button></div>
+    <table class="materials-table"><thead><tr><th>Material</th><th>Approx. Hardness</th><th>Relative Firmness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
+    ${note?`<div class="mat-construction-note">${note}</div>`:''}
+    <div class="mat-handle-note">Note: honeycomb polypropylene used in the paddle <em>handle</em> isn’t counted above — only the core itself is included.</div>
+  </div>`;
+}
+let materialsGlossaryBuilt = false;
+function buildMaterialsGlossary(){
+  const body = document.getElementById('materialsGlossaryBody');
+  if(!body) return;
+  // Only list materials actually in play among the current x-ray paddles (skips reference
+  // rows like Nitrex/Pebax/Silicone Foam/EPE/Polyimide that the docx covers but that haven't
+  // shown up in any x-ray paddle's Core Type yet), so the glossary matches what's filterable.
+  const seen = new Set();
+  PADDLES.forEach(p=>coreMaterialsOf(p).materials.forEach(k=>seen.add(k)));
+  const keys = [...seen].sort((a,b)=>(CORE_MATERIAL_PROPS[a]||{name:a}).name.localeCompare((CORE_MATERIAL_PROPS[b]||{name:b}).name));
+  const rows = keys.map(k=>{
+    const m = CORE_MATERIAL_PROPS[k]||{name:k};
+    const hardnessCell = m.structural ? 'N/A (structural)' : m.noData ? 'No data' : m.hardnessDisplay ? m.hardnessDisplay : (m.hardness!=null?`≈ ${m.hardness} (${m.hardnessUnit})`:'—');
+    return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${hardnessCell}</td><td>${m.firmness||'—'}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
+  }).join('');
+  body.innerHTML = `<table class="materials-table"><thead><tr><th>Material</th><th>Approx. Hardness</th><th>Relative Firmness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
+  materialsGlossaryBuilt = true;
+}
+function openMaterialsGlossary(){
+  if(!materialsGlossaryBuilt) buildMaterialsGlossary();
+  document.getElementById('materialsGlossaryOverlay').classList.add('open');
+}
+function closeMaterialsGlossary(){ document.getElementById('materialsGlossaryOverlay').classList.remove('open'); }
 
 // Permanent affiliate link map — survives Google Sheets refresh
 const EMBEDDED_LINKS = {};
@@ -531,10 +771,14 @@ function populateDynamicChips(id, values){
 // searchable multi-select dropdown instead: a button showing the current selection, a
 // text filter, and a checkbox list. Rebuilt from scratch on every (re)population, same
 // as the dynamic chip groups, so a live-data refresh never leaves stale listeners behind.
+// values here are {key,name} pairs for canonical core materials (not raw compound Core Type
+// strings) — see coreMaterialsOf()/CORE_MATERIAL_PROPS above. A paddle can have several
+// materials, so this is a true multi-select: checking "EVA" matches any paddle whose parsed
+// materials include EVA, regardless of what else is in its core.
 function populateCoreTypeDropdown(values){
   const list = document.getElementById('coreTypeList');
   list.innerHTML = values.length
-    ? values.map(v=>`<label class="chip-select-opt"><input type="checkbox" value="${escAttr(v)}">${v}</label>`).join('')
+    ? values.map(v=>`<label class="chip-select-opt"><input type="checkbox" value="${escAttr(v.key)}">${materialIcon(v.key)}${v.name}</label>`).join('')
     : `<div class="chip-select-empty">No values found</div>`;
   list.querySelectorAll('input[type=checkbox]').forEach(cb=>{
     cb.addEventListener('change', ()=>{ updateCoreTypeLabel(); applyFilters(); });
@@ -544,7 +788,7 @@ function populateCoreTypeDropdown(values){
 function updateCoreTypeLabel(){
   const checked = coreTypeVals();
   const label = document.getElementById('coreTypeLabel');
-  label.textContent = !checked.length ? 'All' : checked.length===1 ? checked[0] : checked.length+' selected';
+  label.textContent = !checked.length ? 'All' : checked.length===1 ? (CORE_MATERIAL_PROPS[checked[0]]?CORE_MATERIAL_PROPS[checked[0]].name:checked[0]) : checked.length+' selected';
 }
 function coreTypeVals(){
   return [...document.querySelectorAll('#coreTypeList input:checked')].map(cb=>cb.value);
@@ -570,7 +814,11 @@ function coreTypeVals(){
 
 function refreshDynamicChips(){
   populateDynamicChips('processFilter', [...new Set(PADDLES.map(p=>p.process).filter(Boolean))].sort());
-  populateCoreTypeDropdown([...new Set(PADDLES.map(p=>p.coreType).filter(Boolean))].sort());
+  const matKeys = new Set();
+  PADDLES.forEach(p=>coreMaterialsOf(p).materials.forEach(k=>matKeys.add(k)));
+  const matValues = [...matKeys].map(k=>({key:k, name:(CORE_MATERIAL_PROPS[k]||{name:k}).name})).sort((a,b)=>a.name.localeCompare(b.name));
+  populateCoreTypeDropdown(matValues);
+  materialsGlossaryBuilt = false; // rebuild glossary next time it's opened, in case PADDLES changed
 }
 
 // Collect every active chip value for a multi-select group (ignores the "All" chip).
@@ -628,7 +876,7 @@ function applyFilters(forcedSort){
     if(f.shape.length && !f.shape.includes(p.shape)) return false;
     if(f.build.length && !f.build.includes(p.build)) return false;
     if(f.process.length && !f.process.includes(p.process)) return false;
-    if(f.coreType.length && !f.coreType.includes(p.coreType)) return false;
+    if(f.coreType.length){ const pmats=coreMaterialsOf(p).materials; if(!f.coreType.some(k=>pmats.includes(k))) return false; }
     if(f.firepowerTier.length && !f.firepowerTier.includes(firepowerTier(p.firepower))) return false;
     if(f.kewcorTier.length && !f.kewcorTier.includes(kewcorTier(p.kewcor))) return false;
     return true;
@@ -660,6 +908,17 @@ function applyFilters(forcedSort){
   else if(sort==='power-desc') filtered.sort((a,b)=>(b.powerScore||0)-(a.powerScore||0));
   else if(sort==='pop-desc') filtered.sort((a,b)=>(b.popScore||0)-(a.popScore||0));
   else if(sort==='firepower-desc') filtered.sort((a,b)=>(b.firepower||0)-(a.firepower||0));
+  else if(sort==='core-firmness-asc') {
+    // Paddles with no ranked materials (noData-only cores) sort to the end rather than
+    // being treated as "softest" — a missing rank isn't the same as a soft rank.
+    filtered.sort((a,b)=>{
+      const ra=coreFirmnessScore(a), rb=coreFirmnessScore(b);
+      if(ra==null&&rb==null) return (a.company+a.paddle).localeCompare(b.company+b.paddle);
+      if(ra==null) return 1;
+      if(rb==null) return -1;
+      return ra-rb;
+    });
+  }
   else if(sort==='name-asc') filtered.sort((a,b)=>(a.company+a.paddle).localeCompare(b.company+b.paddle));
 
   document.getElementById('resultCount').textContent = filtered.length;
@@ -922,6 +1181,47 @@ function dbPhotoScaled(p){
     </div>
   </div>`;
 }
+
+// ── Radiology Lab hero: x-ray shown large/prominent by default, the plain paddle photo
+// smaller and stacked behind it. Clicking the small "peeking" photo swaps which one is
+// prominent — animated with a CSS transition on the same two DOM nodes, no re-render needed.
+// Clicking the prominent (front) photo opens the full-screen zoom instead. Both the swap and
+// the zoom count as a view, matching the site-wide rule that any x-ray interaction is a view.
+function xrayStackClick(el){
+  if(el.classList.contains('back')){ swapXrayStack(); return; }
+  const img = el.querySelector('img');
+  if(img && img.src) openPaddleZoom(img.src);
+  if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE);
+}
+function swapXrayStack(){
+  const stack = document.getElementById('xrayStack');
+  if(!stack) return;
+  const front = stack.querySelector('.xray-stack-frame.front');
+  const back = stack.querySelector('.xray-stack-frame.back');
+  if(!front || !back) return;
+  front.classList.remove('front'); front.classList.add('back');
+  back.classList.remove('back'); back.classList.add('front');
+  if(CURRENT_MODAL_PADDLE) recordView(CURRENT_MODAL_PADDLE);
+}
+function rlPhotoStack(p){
+  const k=p.company+'||'+p.paddle, override=PHOTO_URLS[k], base=PHOTO_BASE+photoSlug(p);
+  const photoSrc = override || (base+'.png');
+  const photoFb = override ? [] : [base+'.jpg'];
+  const xraySrc = PHOTO_BASE+photoSlug(p)+'-x-ray.png';
+  return `<div class="xray-stack-wrap">
+    <div class="xray-stack" id="xrayStack">
+      <div class="xray-stack-frame back" onclick="xrayStackClick(this)">
+        <img class="xray-stack-img" src="${photoSrc}" data-fb='${JSON.stringify(photoFb)}' alt="" onerror="dbImgErr(this)">
+        <div class="xray-stack-tag">Paddle Photo</div>
+      </div>
+      <div class="xray-stack-frame front" onclick="xrayStackClick(this)">
+        <img class="xray-stack-img" src="${xraySrc}" alt="" onerror="this.closest('.xray-stack-frame').style.display='none'">
+        <div class="xray-stack-tag xray-stack-tag-xray">${XRAY_ICON_SVG}X-Ray</div>
+      </div>
+    </div>
+    <div class="xray-stack-hint">Tap the smaller photo to bring it forward — tap the large one to zoom in</div>
+  </div>`;
+}
 function renderGrid(page){
   const start=(page-1)*PAGE_SIZE, end=start+PAGE_SIZE;
   const slice=filtered.slice(start,end);
@@ -939,7 +1239,7 @@ function renderGrid(page){
       <div class="card-badges">
         ${p.shape?`<span class="badge badge-shape" title="Shape">${p.shape}</span>`:''}
         ${p.build?`<span class="badge badge-build" title="Build">${p.build}</span>`:''}
-        ${p.coreType?`<span class="badge badge-proc" title="Core Type">${p.coreType}</span>`:''}
+        ${(()=>{const mats=coreMaterialsOf(p).materials; if(!mats.length) return ''; const first=materialPill(mats[0]); const extra=mats.length>1?` +${mats.length-1}`:''; return `<span class="badge badge-proc" title="Core: ${mats.map(k=>(CORE_MATERIAL_PROPS[k]||{name:k}).name).join(' + ')}">${materialIcon(mats[0])}${CORE_MATERIAL_PROPS[mats[0]]?CORE_MATERIAL_PROPS[mats[0]].name:mats[0]}${extra}</span>`;})()}
       </div>
       <div class="card-footer">
         <div class="price-block">
@@ -1045,14 +1345,14 @@ function openModal(idx){
       <div class="modal-badges">
         ${p.shape?`<span class="badge badge-shape" title="Shape">${p.shape}</span>`:''}
         ${p.build?`<span class="badge badge-build" title="Build">${p.build}</span>`:''}
-        ${p.coreType?`<span class="badge badge-proc" title="Core Type">${p.coreType}</span>`:''}
+        ${coreMaterialsOf(p).materials.map(materialPill).join('')}
         ${firepowerBadge(p)}
         ${kewcorBadge(p)}
       </div>
       ${feedbackRow(p, idx)}
     </div>
     <div class="modal-body">
-      ${dbPhotoScaled(p)}
+      ${rlPhotoStack(p)}
 
       <div class="modal-section">
         <div class="spec-grid" style="grid-template-columns:repeat(3,1fr)">
@@ -1061,6 +1361,8 @@ function openModal(idx){
           <div class="spec-item"><div class="spec-label">Core Type</div><div class="spec-value">${p.coreType||'—'}</div></div>
         </div>
       </div>
+
+      ${coreMaterialsTableHtml(p)}
 
       <div class="modal-section">
         <div class="modal-section-title">Specifications</div>
