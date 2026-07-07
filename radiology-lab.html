@@ -13,7 +13,10 @@
   --bg:#f8faf9;--white:#fff;--yellow:#fbbf24;--red:#ef4444;
   --text:#1a2535;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* min-height:100vh removed deliberately — see the vh-feedback-loop comment above
+   .modal-overlay for why any vh-based sizing on this page fights the auto-resizing
+   iframe embed. */
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
 
 /* HEADER */
 header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
@@ -33,7 +36,7 @@ header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;
 .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;opacity:.4}
 
 /* LAYOUT */
-.app{display:flex;min-height:calc(100vh - 62px)}
+.app{display:flex} /* min-height:100vh-based sizing removed — see vh-feedback-loop comment above .modal-overlay */
 .sidebar{width:264px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:20px 16px;overflow-y:auto;max-height:calc(100vh - 62px);position:sticky;top:62px}
 .main{flex:1;padding:20px 24px;min-width:0}
 .mobile-filters-toggle{display:none}
@@ -192,8 +195,10 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
 .dur-i:hover{opacity:.65}
 /* position:absolute + JS-positioned-at-scroll-offset — see the long comment above
-   .modal-overlay for why this replaced position:fixed (iOS Safari + iframe embedding). */
-.dur-info-overlay{display:none;position:absolute;top:0;left:0;right:0;min-height:100vh;background:rgba(0,0,0,.5);z-index:300;padding:20px}
+   .modal-overlay for why this replaced position:fixed (iOS Safari + iframe embedding).
+   min-height comes from a one-time JS snapshot of window.innerHeight at open time
+   (snapshotOverlayHeight), never a live vh unit — see the vh-feedback-loop comment there. */
+.dur-info-overlay{display:none;position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.5);z-index:300;padding:20px}
 .dur-info-overlay.open{display:block}
 .dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
 .dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -251,8 +256,16 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
        the user's current scroll offset via JS (positionOverlayAtScroll, called from
        openModal/openTierInfo/openMaterialsGlossary) when it opens — so it still visually
        covers the screen like a fixed overlay, but scrolls with the page natively instead of
-       needing a scroll container of its own. */
-.modal-overlay{display:none;position:absolute;top:0;left:0;right:0;min-height:100vh;background:rgba(0,0,0,.45);z-index:200;padding:20px}
+       needing a scroll container of its own.
+   VH-FEEDBACK-LOOP (found 2026-07 while testing index.html, ported here 2026-07-07): a
+   live `min-height:100vh` on an overlay in this auto-resizing-iframe setup is circular —
+   the overlay grows the page's scrollHeight, which grows the iframe (postMessage below),
+   which grows this page's own 100vh, which grows the overlay again, forever. Fixed by
+   giving the overlay its height from a ONE-TIME JS snapshot of window.innerHeight taken
+   only at open time (snapshotOverlayHeight, called alongside positionOverlayAtScroll) —
+   never a live vh/dvh unit, and never re-derived on resize (resize only repositions
+   `top`). Same fix applied to body/.app above and the zoom lightbox (.pz-overlay) below. */
+.modal-overlay{display:none;position:absolute;top:0;left:0;right:0;background:rgba(0,0,0,.45);z-index:200;padding:20px}
 .modal-overlay.open{display:block}
 .modal{background:white;border-radius:14px;max-width:680px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-header{padding:24px 24px 0;border-bottom:1px solid var(--border);margin-bottom:0}
@@ -385,19 +398,29 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .page-btn.active{background:var(--green);border-color:var(--green);color:white}
 .page-btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* paddle photo zoom lightbox */
-.pz-overlay{position:fixed;inset:0;background:rgba(8,12,18,.93);z-index:9999;display:none;align-items:center;justify-content:center;touch-action:none}
+/* paddle photo zoom lightbox
+   Was position:fixed;inset:0, sized/positioned live off window.visualViewport — same
+   vh-feedback-loop family of bug as .modal-overlay (see comment there), plus this overlay
+   is embedded in an iframe that never scrolls internally, so a `fixed` overlay only ever
+   renders at the top of the whole (very tall) document, not the user's actual scroll
+   position. Fixed the same way as the modal: position:absolute, top set via JS to the
+   current scroll offset when it opens (positionOverlayAtScroll), height set via a
+   one-time window.innerHeight snapshot at open time (not a live vh unit, not re-derived
+   on resize). Its children (.pz-close/.pz-ctrls/.pz-hint) were position:fixed too, which
+   had the identical problem — switched to position:absolute so they stay correctly placed
+   within the now-correctly-positioned overlay box. */
+.pz-overlay{position:absolute;top:0;left:0;right:0;background:rgba(8,12,18,.93);z-index:9999;display:none;align-items:center;justify-content:center;touch-action:none}
 .pz-overlay.open{display:flex}
 .pz-stage{position:relative;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .pz-img{max-width:94vw;max-height:92vh;max-height:92dvh;transform-origin:center center;will-change:transform;cursor:grab;user-select:none;-webkit-user-drag:none}
 .pz-img.grabbing{cursor:grabbing}
-.pz-close{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;display:flex;align-items:center;gap:6px;height:44px;padding:0 18px;border-radius:22px;border:1.5px solid rgba(255,255,255,.55);background:rgba(15,23,42,.8);color:#fff;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;z-index:10001;-webkit-tap-highlight-color:transparent}
+.pz-close{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:14px;display:flex;align-items:center;gap:6px;height:44px;padding:0 18px;border-radius:22px;border:1.5px solid rgba(255,255,255,.55);background:rgba(15,23,42,.8);color:#fff;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;z-index:10001;-webkit-tap-highlight-color:transparent}
 .pz-close span{font-size:21px;line-height:1}
 .pz-close:hover{background:rgba(15,23,42,.95)}
-.pz-ctrls{position:fixed;bottom:42px;left:0;right:0;display:flex;gap:10px;justify-content:center;z-index:10001}
+.pz-ctrls{position:absolute;bottom:42px;left:0;right:0;display:flex;gap:10px;justify-content:center;z-index:10001}
 .pz-ctrls button{width:40px;height:40px;border-radius:9px;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:19px;cursor:pointer;font-family:inherit}
 .pz-ctrls button:hover{background:rgba(255,255,255,.28)}
-.pz-hint{position:fixed;bottom:14px;left:0;right:0;text-align:center;color:rgba(255,255,255,.66);font-size:12px;pointer-events:none;font-family:inherit}
+.pz-hint{position:absolute;bottom:14px;left:0;right:0;text-align:center;color:rgba(255,255,255,.66);font-size:12px;pointer-events:none;font-family:inherit}
 
 /* ===== DARK MODE ===== */
 .theme-toggle{margin-left:16px;flex-shrink:0;width:38px;height:38px;border-radius:9px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.06);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s}
@@ -833,6 +856,7 @@ function openMaterialsGlossary(){
   if(!materialsGlossaryBuilt) buildMaterialsGlossary();
   const el=document.getElementById('materialsGlossaryOverlay');
   positionOverlayAtScroll(el);
+  snapshotOverlayHeight(el);
   el.classList.add('open');
 }
 function closeMaterialsGlossary(){ document.getElementById('materialsGlossaryOverlay').classList.remove('open'); }
@@ -1053,7 +1077,7 @@ function durTierBadge(p){
   const label = m ? ('Spin T'+m[0]) : t;
   return `<span class="badge badge-tier ${cls}" title="Spin Durability Tier">${label}<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openDurInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>`;
 }
-function openTierInfo(){ const el=document.getElementById('tierInfoOverlay'); positionOverlayAtScroll(el); el.classList.add('open'); }
+function openTierInfo(){ const el=document.getElementById('tierInfoOverlay'); positionOverlayAtScroll(el); snapshotOverlayHeight(el); el.classList.add('open'); }
 function closeTierInfo(){ document.getElementById('tierInfoOverlay').classList.remove('open'); }
 
 // Paddle Feel Map quadrant (populated from the feel-map sheet at load).
@@ -1491,7 +1515,15 @@ function positionOverlayAtScroll(el){
   const scrollEl = document.scrollingElement || document.documentElement;
   el.style.top = (scrollEl.scrollTop||0) + 'px';
 }
+// One-time JS snapshot of the real viewport height, used instead of a live vh/dvh CSS unit
+// (see the vh-feedback-loop comment above .modal-overlay). Call ONLY when an overlay opens —
+// never on resize, or the snapshot-grows-page-grows-snapshot loop comes right back.
+function snapshotOverlayHeight(el){
+  if(!el) return;
+  el.style.minHeight = window.innerHeight + 'px';
+}
 window.addEventListener('resize', ()=>{
+  // Resize only repositions `top` — it must never re-snapshot height (see above).
   ['modalOverlay','tierInfoOverlay','materialsGlossaryOverlay'].forEach(id=>{
     const el=document.getElementById(id);
     if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
@@ -1570,6 +1602,7 @@ function openModal(idx){
   `;
   const modalOverlayEl = document.getElementById('modalOverlay');
   positionOverlayAtScroll(modalOverlayEl);
+  snapshotOverlayHeight(modalOverlayEl);
   modalOverlayEl.classList.add('open');
   recordView(p);
   if(window.reportPaddleDbHeight) window.reportPaddleDbHeight();
@@ -1903,36 +1936,58 @@ applyPaddleDeepLink();
   var baseTx=0,baseTy=0; // the tx/ty that actually renders centered on the real visible screen
   function apply(){ img.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+scale.toFixed(3)+')'; }
   function zoomAt(px,py,ns){ ns=Math.max(MIN,Math.min(MAX,ns)); tx=px-(px-tx)*(ns/scale); ty=py-(py-ty)*(ns/scale); scale=ns; if(scale<=1){scale=1;tx=baseTx;ty=baseTy;} apply(); }
-  // Sizing the overlay to match window.visualViewport (below) didn't fully solve mobile
-  // centering — this page is embedded in a Squarespace iframe, and getBoundingClientRect()
-  // vs. visualViewport can still disagree about where "center" actually is in that context.
-  // Rather than trust either measurement to be exactly right, measure the real gap between
-  // the stage's rendered center and the true visible-viewport center, and bake that gap
-  // directly into the rest position (baseTx/baseTy) — so "centered" always means centered on
-  // the real screen, whatever is causing the mismatch.
-  function syncViewport(){
-    if(!window.visualViewport) return;
-    var vv=window.visualViewport;
-    ov.style.left=vv.offsetLeft+'px';
-    ov.style.top=vv.offsetTop+'px';
-    ov.style.width=vv.width+'px';
-    ov.style.height=vv.height+'px';
+  // Overlay position/size now comes from the same fix as .modal-overlay: `top` is a
+  // one-time read of the real scroll offset, `height` a one-time snapshot of
+  // window.innerHeight — both taken only when the lightbox opens, never re-derived from a
+  // live vh unit or window.visualViewport (that was the old approach and it's what caused
+  // the vh-feedback-loop / wrong-position bugs; see the CSS comment above .pz-overlay).
+  // Because the overlay's box now exactly matches the real visible viewport, the stage
+  // fills it exactly too, so "centered" is simply baseTx=0, baseTy=0 — no more measuring a
+  // gap between getBoundingClientRect() and visualViewport to paper over a mismatch.
+  //
+  // FOUND VIA LIVE TESTING 2026-07-07: this overlay ALSO calls lockBodyScroll() (unlike the
+  // modal, which doesn't lock scroll at all), and lockBodyScroll freezes <body> via
+  // position:fixed — which resets document.scrollingElement.scrollTop to 0 as a side effect.
+  // If the overlay reads "current scroll offset" from a live query AFTER locking (or on any
+  // later settle/resize pass while still open), it reads 0 instead of the real pre-lock
+  // offset, so the overlay renders far off-screen (confirmed: opening the zoom from 2000px
+  // scrolled placed the overlay's top at -2000px). Fix: capture the real scroll offset ONCE,
+  // before lockBodyScroll runs, into openScrollY, and use that captured value for every
+  // reposition for the rest of this open/close cycle — never re-query live scroll while
+  // open, since body-scroll-lock means there's no real scrolling happening anyway.
+  var openScrollY = 0;
+  function positionPz(){
+    ov.style.top = openScrollY + 'px';
   }
   function updatePzMaxSize(){
     var r=stage.getBoundingClientRect();
     img.style.maxWidth=(r.width*0.94)+'px';
     img.style.maxHeight=(r.height*0.92)+'px';
   }
-  function updateBaseOffset(){
-    if(!window.visualViewport){ baseTx=0; baseTy=0; return; }
-    var vv=window.visualViewport, r=stage.getBoundingClientRect();
-    var stageCenterX=r.left+r.width/2, stageCenterY=r.top+r.height/2;
-    var trueCenterX=vv.offsetLeft+vv.width/2, trueCenterY=vv.offsetTop+vv.height/2;
-    baseTx=trueCenterX-stageCenterX; baseTy=trueCenterY-stageCenterY;
+  // Called at open time and by the settle retries just after — repositions/resizes using the
+  // captured openScrollY, never a fresh scroll read (see comment above).
+  function refreshPzLayoutOnOpen(){
+    positionPz();
+    ov.style.height = window.innerHeight + 'px';
+    updatePzMaxSize();
+    baseTx=0; baseTy=0;
   }
-  function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); updateBaseOffset(); }
-  function settleAtBase(){ refreshPzLayout(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
+  // Called on window resize while open — repositions `top` (from the captured openScrollY,
+  // still never a live re-read) and never re-snapshots height (re-snapshotting on resize is
+  // what reintroduces the feedback loop).
+  function refreshPzLayoutOnResize(){
+    positionPz();
+    updatePzMaxSize();
+  }
+  function settleAtBase(){ refreshPzLayoutOnOpen(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
+  window.openPaddleZoom=function(src){ if(!src)return;
+    // Capture the real scroll offset BEFORE lockBodyScroll can zero it out.
+    var scrollEl = document.scrollingElement || document.documentElement;
+    openScrollY = scrollEl.scrollTop || window.scrollY || window.pageYOffset || 0;
+    img.src=src; ov.classList.add('open');
+    refreshPzLayoutOnOpen();
+    if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden';
+    scale=1; tx=baseTx; ty=baseTy; apply();
     // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
     // tick the overlay becomes visible, so re-measure a few times just after opening — this
     // is what previously required a manual drag to "fix"; now it settles on its own.
@@ -1940,11 +1995,7 @@ applyPaddleDeepLink();
     setTimeout(settleAtBase,120);
     setTimeout(settleAtBase,350);
   };
-  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
-    window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) settleAtBase(); });
-  }
+  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayoutOnResize(); });
   function close(){ ov.classList.remove('open'); img.src=''; if(window.unlockBodyScroll) window.unlockBodyScroll(); else document.body.style.overflow=''; }
   document.getElementById('pzClose').addEventListener('click',close);
   ov.addEventListener('click',function(e){ if(e.target===ov||e.target===stage) close(); });
@@ -1988,9 +2039,12 @@ applyPaddleDeepLink();
 // Pairs with a Squarespace Code Block that listens for this message and resizes its <iframe>
 // (see the snippet provided alongside this fix).
 (function(){
+  var lastReported = null;
   function reportHeight(){
     if(window.self === window.top) return; // not embedded — nothing to report
     var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    if(h === lastReported) return; // defensive: skip redundant posts (cheap insurance against any resize-loop regression)
+    lastReported = h;
     try{ window.parent.postMessage({ source:'radiology-lab', type:'paddleDbResize', height:h }, '*'); }catch(e){}
   }
   window.reportPaddleDbHeight = reportHeight;
