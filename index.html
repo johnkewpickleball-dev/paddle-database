@@ -1583,16 +1583,16 @@ applyPaddleDeepLink();
   var ov=document.getElementById('pzOverlay'),img=document.getElementById('pzImg'),stage=document.getElementById('pzStage');
   if(!ov) return;
   var scale=1,tx=0,ty=0,MIN=1,MAX=6;
+  var baseTx=0,baseTy=0; // the tx/ty that actually renders centered on the real visible screen
   function apply(){ img.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+scale.toFixed(3)+')'; }
-  function zoomAt(px,py,ns){ ns=Math.max(MIN,Math.min(MAX,ns)); tx=px-(px-tx)*(ns/scale); ty=py-(py-ty)*(ns/scale); scale=ns; if(scale<=1){scale=1;tx=0;ty=0;} apply(); }
-  // The real bug: `position:fixed;inset:0` sizes the overlay against the LAYOUT viewport,
-  // which iOS Safari keeps taller than what's actually on screen while the address bar is
-  // present/animating. So the overlay itself (not just the image) extends below the visible
-  // area, and flex-centering "correctly" centers the image within that oversized box —
-  // landing it visibly low. That's why dragging it up worked (real pixels, real screen) but
-  // it snapped back the moment scale returned to 1 and tx/ty reset to the (wrong) center.
-  // Fix: explicitly size + position the overlay to match window.visualViewport, which is
-  // the API built specifically to expose the true visible area.
+  function zoomAt(px,py,ns){ ns=Math.max(MIN,Math.min(MAX,ns)); tx=px-(px-tx)*(ns/scale); ty=py-(py-ty)*(ns/scale); scale=ns; if(scale<=1){scale=1;tx=baseTx;ty=baseTy;} apply(); }
+  // Sizing the overlay to match window.visualViewport (below) didn't fully solve mobile
+  // centering — this page is embedded in a Squarespace iframe, and getBoundingClientRect()
+  // vs. visualViewport can still disagree about where "center" actually is in that context.
+  // Rather than trust either measurement to be exactly right, measure the real gap between
+  // the stage's rendered center and the true visible-viewport center, and bake that gap
+  // directly into the rest position (baseTx/baseTy) — so "centered" always means centered on
+  // the real screen, whatever is causing the mismatch.
   function syncViewport(){
     if(!window.visualViewport) return;
     var vv=window.visualViewport;
@@ -1606,22 +1606,27 @@ applyPaddleDeepLink();
     img.style.maxWidth=(r.width*0.94)+'px';
     img.style.maxHeight=(r.height*0.92)+'px';
   }
-  function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); }
-  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); apply();
-    // iOS Safari can report stale/incorrect visualViewport metrics in the same tick the
-    // overlay becomes visible — the layout hasn't settled yet, so the initial sync can land
-    // short of the true visible area (this is why a manual drag "fixed" it: the overlay's
-    // real bug was the mis-sized box, not anything about the drag itself). Re-run the sync
-    // a few times just after opening so it settles into the correct, fully-centered position
-    // on its own, with no interaction required.
-    requestAnimationFrame(function(){ refreshPzLayout(); apply(); });
-    setTimeout(function(){ refreshPzLayout(); apply(); },120);
-    setTimeout(function(){ refreshPzLayout(); apply(); },350);
+  function updateBaseOffset(){
+    if(!window.visualViewport){ baseTx=0; baseTy=0; return; }
+    var vv=window.visualViewport, r=stage.getBoundingClientRect();
+    var stageCenterX=r.left+r.width/2, stageCenterY=r.top+r.height/2;
+    var trueCenterX=vv.offsetLeft+vv.width/2, trueCenterY=vv.offsetTop+vv.height/2;
+    baseTx=trueCenterX-stageCenterX; baseTy=trueCenterY-stageCenterY;
+  }
+  function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); updateBaseOffset(); }
+  function settleAtBase(){ refreshPzLayout(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
+  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
+    // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
+    // tick the overlay becomes visible, so re-measure a few times just after opening — this
+    // is what previously required a manual drag to "fix"; now it settles on its own.
+    requestAnimationFrame(settleAtBase);
+    setTimeout(settleAtBase,120);
+    setTimeout(settleAtBase,350);
   };
-  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
+  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
   if(window.visualViewport){
-    window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
-    window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
+    window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
+    window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) settleAtBase(); });
   }
   function close(){ ov.classList.remove('open'); img.src=''; document.body.style.overflow=''; }
   document.getElementById('pzClose').addEventListener('click',close);
@@ -1653,7 +1658,7 @@ applyPaddleDeepLink();
   // "reset zoom" control or when a new image is opened (both already set tx=0,ty=0 elsewhere).
   stage.addEventListener('touchend',function(e){ if(e.touches.length===0){ up(); pinch=null; } });
   document.querySelectorAll('.pz-ctrls button').forEach(function(b){ b.addEventListener('click',function(){ var z=b.getAttribute('data-z');
-    if(z==='reset'){scale=1;tx=0;ty=0;apply();} else zoomAt(0,0, z==='in'?scale*1.4:scale/1.4); }); });
+    if(z==='reset'){scale=1;tx=baseTx;ty=baseTy;apply();} else zoomAt(0,0, z==='in'?scale*1.4:scale/1.4); }); });
 })();
 </script>
 </body>
