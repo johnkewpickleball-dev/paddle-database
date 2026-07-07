@@ -1634,7 +1634,14 @@ applyPaddleDeepLink();
     if(e.touches.length===1&&drag){ move(e.touches[0].clientX,e.touches[0].clientY); }
     else if(e.touches.length===2&&pinch){ var p=pinfo(e),r=stage.getBoundingClientRect(),ns=Math.max(MIN,Math.min(MAX,pinch.s*(p.d/pinch.d)));
       var px=p.cx-r.left-r.width/2,py=p.cy-r.top-r.height/2; tx=px-(px-pinch.tx)*(ns/pinch.s); ty=py-(py-pinch.ty)*(ns/pinch.s); scale=ns; apply(); } },{passive:false});
-  stage.addEventListener('touchend',function(e){ if(e.touches.length===0){ up(); pinch=null; if(scale<=1.02){scale=1;tx=0;ty=0;apply();} } });
+  // FOUND IT: this used to force tx=0,ty=0 (recenter) on every touch release whenever
+  // scale<=1.02 — which is true after ANY plain single-finger drag, since a drag never
+  // touches scale at all (only pinch does). So every drag-only pan was being undone the
+  // instant you lifted your finger; the only way to keep a panned position was to also
+  // pinch-zoom past 1.02x first, which is exactly the workaround that was reported.
+  // A drag should just pan, full stop — recentering only makes sense from the explicit
+  // "reset zoom" control or when a new image is opened (both already set tx=0,ty=0 elsewhere).
+  stage.addEventListener('touchend',function(e){ if(e.touches.length===0){ up(); pinch=null; } });
   document.querySelectorAll('.pz-ctrls button').forEach(function(b){ b.addEventListener('click',function(){ var z=b.getAttribute('data-z');
     if(z==='reset'){scale=1;tx=0;ty=0;apply();} else zoomAt(0,0, z==='in'?scale*1.4:scale/1.4); }); });
 })();
