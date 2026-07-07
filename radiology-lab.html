@@ -278,6 +278,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .mat-name svg{flex-shrink:0;color:var(--green)}
 .mat-notes{color:var(--muted);font-size:12px;line-height:1.45}
 .mat-nodata{color:var(--muted);font-style:italic}
+.mat-stiffness-scale{color:var(--muted);font-size:11px;margin-left:1px}
 .mat-construction-note{font-size:12px;color:var(--muted);font-style:italic;margin-top:8px}
 .mat-handle-note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.5}
 .mat-glossary-box{max-width:640px}
@@ -513,7 +514,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
           <option value="power-desc">Power: Highest</option>
           <option value="pop-desc">Pop: Highest</option>
           <option value="firepower-desc">Firepower: Highest</option>
-          <option value="core-firmness-asc">Core Firmness: Soft → Firm</option>
+          <option value="core-firmness-asc">Structural Stiffness: Soft → Firm</option>
           <option value="name-asc">Name A–Z</option>
         </select>
       </div>
@@ -546,7 +547,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <div class="dur-info-overlay" id="materialsGlossaryOverlay" onclick="if(event.target===this)closeMaterialsGlossary()">
   <div class="dur-info-box mat-glossary-box">
     <h3>Core Materials Glossary<button class="dur-info-close" onclick="closeMaterialsGlossary()" aria-label="Close">&times;</button></h3>
-    <p style="margin-top:-6px">Reference data behind the "Inside the Core" table on each paddle. Hardness figures are Shore C unless noted otherwise.</p>
+    <p style="margin-top:-6px">Reference data behind the "Inside the Core" table on each paddle. Structural Stiffness is rated 1 (softest) to 10 (firmest).</p>
     <div id="materialsGlossaryBody"></div>
     <p class="mat-handle-note" style="margin-top:12px">Note: honeycomb polypropylene used in the paddle <em>handle</em> is never counted as a core material — only the core itself is included anywhere on this page.</p>
   </div>
@@ -568,63 +569,59 @@ document.getElementById('totalCount').textContent = PADDLES.length;
 document.querySelectorAll('.hstat-num')[1].textContent = new Set(PADDLES.map(p=>p.company)).size;
 
 // ── Core material reference data (from John's "Core Material Types" property doc) ──
-// Each entry: display name, approx. hardness (nominal number, same-scale-only used for
-// sorting — carbon fiber is Shore D and is excluded from hardness display for that reason),
-// a firmnessRank (1=softest…10=most rigid, used for the Core Firmness sort), relative
-// firmness label, a short note, an icon category, and flags for materials whose hardness
-// is intentionally N/A (structural, e.g. honeycomb) vs. genuinely undocumented (noData).
+// Each entry: display name, Structural Stiffness (1 = softest, 10 = firmest — the doc's own
+// combined rating, replacing the old separate Shore-C-hardness + Relative-Firmness columns),
+// a short note, an icon category, and noData for materials the doc doesn't cover at all.
 const CORE_MATERIAL_PROPS = {
-  epp:      { name:'EPP (Expanded Polypropylene)', hardness:40, hardnessUnit:'Shore C', firmnessRank:5, firmness:'Medium-firm', icon:'foam',
-              notes:'Bead foam; excellent resilience and recovery. Lightweight, slightly springy, impact-absorbent.' },
-  mpp:      { name:'MPP (Microcellular Polypropylene)', hardness:45, hardnessUnit:'Shore C', firmnessRank:6, firmness:'Medium-firm → firm', icon:'foam',
-              notes:'Microcellular polypropylene foam with a very fine cell structure. Offers improved stiffness-to-weight ratio, dimensional consistency, and energy return compared with conventional EPP while remaining lightweight.' },
-  nitrex:   { name:'Nitrex', hardness:50, hardnessUnit:'Shore C', firmnessRank:7, firmness:'Firm', icon:'foam',
-              notes:'Nitrile blend foam used in sports protection; oil and fuel resistant, excellent damping.' },
-  xpe:      { name:'XPE (Cross-linked Polyethylene)', hardness:55, hardnessUnit:'Shore C', firmnessRank:7, firmness:'Firm', icon:'foam',
-              notes:'Fine closed-cell; good surface finish, stiff under compression, low rebound.' },
-  pebax:    { name:'Pebax', hardness:60, hardnessUnit:'Shore C', firmnessRank:8, firmness:'Firm → semi-rigid', icon:'elastomer',
-              notes:'Extremely elastic and energy-returning; used in performance footwear and paddle cores for spring.' },
-  tpu:      { name:'TPU (Thermoplastic Polyurethane)', hardness:65, hardnessUnit:'Shore C', firmnessRank:9, firmness:'Firm-elastic', icon:'elastomer',
-              notes:'High rebound, tough, and flexible. Very consistent hardness across densities.' },
-  silicone: { name:'Silicone Foam', hardness:30, hardnessUnit:'Shore C', firmnessRank:2, firmness:'Soft', icon:'foam',
-              notes:'Excellent thermal stability and compression set; very compliant and damped.' },
-  eva:      { name:'EVA (Ethylene-Vinyl Acetate)', hardness:45, hardnessUnit:'Shore C', firmnessRank:4, firmness:'Medium', icon:'foam',
-              notes:'Softer underfoot feel; resilient but lower heat resistance than TPU.' },
-  epe:      { name:'EPE (Expanded Polyethylene)', hardness:35, hardnessUnit:'Shore C', firmnessRank:3, firmness:'Soft-medium', icon:'foam',
-              notes:'Non-crosslinked bead foam; lightweight and cushioned, lower recovery than EPP.' },
-  polyimide:{ name:'Polyimide Foam', hardness:20, hardnessUnit:'Shore C', firmnessRank:1, firmness:'Very soft', icon:'foam',
-              notes:'Ultralight, open/closed-cell hybrid; outstanding heat and flame resistance, low structural stiffness.' },
-  tpeFoam:  { name:'TPE Foam (Thermoplastic Elastomer)', hardness:52, hardnessUnit:'Shore C', firmnessRank:6, firmness:'Medium → firm-elastic', icon:'elastomer',
-              notes:'Broad class of elastomeric foams (e.g. SEBS-based); rubber-like feel, tunable hardness, good fatigue resistance.' },
-  honeycombPP: { name:'Honeycomb Polypropylene', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
-              notes:'Thin-walled polypropylene honeycomb core. Very high stiffness-to-weight ratio in-plane, excellent fatigue resistance, low intrinsic damping, response varies with cell size and wall thickness.' },
-  kevlarHoneycomb: { name:'Kevlar Honeycomb', hardness:null, structural:true, firmnessRank:7, firmness:'Firm', icon:'honeycomb',
-              notes:'Aramid paper honeycomb impregnated with resin. Extremely stiff and lightweight with excellent impact tolerance and vibration damping.' },
-  carbonFiber: { name:'Carbon Fiber', hardness:null, hardnessDisplay:'≈80–90 (Shore D equiv.)', firmnessRank:10, firmness:'Very rigid', icon:'fiber',
-              notes:'Continuous fibers aligned in one direction. Extremely high stiffness and tensile strength along the fiber axis, highly anisotropic, little inherent damping. (Reference data is for unidirectional layup; Shore D scale, not directly comparable to the Shore C values above.)' },
-  scf:      { name:'SCF (Supercritical Foam)', hardness:null, hardnessDisplay:'≈ 45–60 (Shore C)', firmnessRank:6, firmness:'Medium-firm → firm', icon:'foam',
-              notes:'Advanced microcellular polymer foam produced by infusing polymers with supercritical CO₂ or N₂. Creates an extremely fine, uniform cell structure that reduces weight while improving stiffness-to-weight ratio, consistency, and energy return compared with conventional foams.' },
-  // Cell-size variants of honeycomb polypropylene — same base material, size affects density/
-  // stiffness somewhat but the reference doc doesn't quantify the exact deviation.
-  honeycombPPWide:   { name:'Honeycomb Polypropylene (Wide Cell)', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+  polyimide:{ name:'Polyimide Foam', stiffness:1, icon:'foam',
+              notes:'Extremely compliant; primarily used for thermal insulation rather than structural support.' },
+  eva:      { name:'EVA (Ethylene-Vinyl Acetate)', stiffness:2, icon:'foam',
+              notes:'Soft, highly damped foam with excellent vibration absorption.' },
+  epe:      { name:'EPE (Expanded Polyethylene)', stiffness:3, icon:'foam',
+              notes:'Soft bead foam with lower recovery and lower compressive stiffness than EPP.' },
+  epp:      { name:'EPP (Expanded Polypropylene)', stiffness:5, icon:'foam',
+              notes:'Excellent balance of resilience, recovery, and structural support.' },
+  mpp:      { name:'MPP (Microcellular Polypropylene)', stiffness:6, icon:'foam',
+              notes:'Fine microcellular structure provides higher stiffness-to-weight ratio and consistency than EPP.' },
+  tpeFoam:  { name:'TPE Foam (Thermoplastic Elastomer)', stiffness:6, icon:'elastomer',
+              notes:'Tunable elastomeric foam with moderate stiffness and excellent elasticity.' },
+  scf:      { name:'SCF (Supercritical Foam)', stiffness:6.5, stiffnessDisplay:'6–7', icon:'foam',
+              notes:'Microcellular foam produced using supercritical gas expansion. Typical PP-based versions provide stiffness similar to or slightly greater than MPP.' },
+  tpu:      { name:'TPU (Thermoplastic Polyurethane)', stiffness:7, icon:'elastomer',
+              notes:'High rebound, durable foam with strong compressive support.' },
+  xpe:      { name:'XPE (Cross-linked Polyethylene)', stiffness:7.5, icon:'foam',
+              notes:'Cross-linked closed-cell foam providing firm structural support with relatively low rebound.' },
+  pebax:    { name:'Pebax', stiffness:8, icon:'elastomer',
+              notes:'Very high resilience with excellent stiffness-to-weight ratio and energy return.' },
+  nitrex:   { name:'Nitrex (NBR/PVC)', stiffness:8.5, icon:'foam',
+              notes:'Dense protective foam with high compressive stiffness and excellent damping.' },
+  honeycombPP: { name:'Honeycomb Polypropylene', stiffness:9, icon:'honeycomb',
+              notes:'Thin-walled honeycomb structure offering exceptional stiffness-to-weight ratio.' },
+  kevlarHoneycomb: { name:'Kevlar Honeycomb', stiffness:9.5, icon:'honeycomb',
+              notes:'Aramid honeycomb with outstanding impact resistance and structural rigidity.' },
+  carbonFiber: { name:'Carbon Fiber', stiffness:10, icon:'fiber',
+              notes:'Highest structural stiffness of the group, along the fiber direction. (Reference data is for unidirectional layup.)' },
+  // Cell-size variants of honeycomb polypropylene — same base material; the reference doc
+  // doesn't split these out, so they inherit Honeycomb Polypropylene's stiffness rating.
+  honeycombPPWide:   { name:'Honeycomb Polypropylene (Wide Cell)', stiffness:9, icon:'honeycomb',
               notes:'Wide-cell variant of honeycomb polypropylene — same base material; larger cells trade some stiffness for lighter weight.' },
-  honeycombPPNarrow: { name:'Honeycomb Polypropylene (Narrow Cell)', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+  honeycombPPNarrow: { name:'Honeycomb Polypropylene (Narrow Cell)', stiffness:9, icon:'honeycomb',
               notes:'Narrow-cell variant of honeycomb polypropylene — same base material; smaller cells trade some weight for added stiffness.' },
-  honeycombPPLarge:  { name:'Honeycomb Polypropylene (Large Cell)', hardness:null, structural:true, firmnessRank:5, firmness:'Medium-firm', icon:'honeycomb',
+  honeycombPPLarge:  { name:'Honeycomb Polypropylene (Large Cell)', stiffness:9, icon:'honeycomb',
               notes:'Large-cell variant of honeycomb polypropylene — same base material; larger cells trade some stiffness for lighter weight.' },
   // Materials seen in the sheet that aren't in the reference property doc — shown honestly
-  // as having no sourced hardness/firmness data rather than guessing.
-  aluminumHoneycomb: { name:'Aluminum Honeycomb', hardness:null, noData:true, icon:'metal',
-              notes:'Metal honeycomb core. Not in the reference property doc — no sourced hardness/firmness data.' },
-  wood:     { name:'Wood', hardness:null, noData:true, icon:'wood',
-              notes:'Solid wood core/face. Not in the reference property doc — no sourced hardness/firmness data.' },
-  pu:       { name:'PU (Polyurethane)', hardness:null, noData:true, icon:'elastomer',
-              notes:'Related to the TPU family above, but a distinct formulation — not in the reference property doc, so no sourced hardness/firmness data.' },
-  microcellular: { name:'Microcellular Foam', hardness:null, noData:true, icon:'foam',
-              notes:'Proprietary microcellular structure; specific formulation not disclosed, so no sourced hardness/firmness data.' },
-  expandingFoam: { name:'Expanding Foam', hardness:null, noData:true, icon:'foam',
-              notes:'General void-fill foam injected around the core structure (often PU-based); exact formulation varies by manufacturer, so no sourced hardness/firmness data.' },
-  unknownMaterial: { name:'Unspecified', hardness:null, noData:true, icon:'unknown',
+  // as having no sourced stiffness rating rather than guessing.
+  aluminumHoneycomb: { name:'Aluminum Honeycomb', noData:true, icon:'metal',
+              notes:'Metal honeycomb core. Not in the reference property doc — no sourced stiffness rating.' },
+  wood:     { name:'Wood', noData:true, icon:'wood',
+              notes:'Solid wood core/face. Not in the reference property doc — no sourced stiffness rating.' },
+  pu:       { name:'PU (Polyurethane)', noData:true, icon:'elastomer',
+              notes:'Related to the TPU family above, but a distinct formulation — not in the reference property doc, so no sourced stiffness rating.' },
+  microcellular: { name:'Microcellular Foam', noData:true, icon:'foam',
+              notes:'Proprietary microcellular structure; specific formulation not disclosed, so no sourced stiffness rating.' },
+  expandingFoam: { name:'Expanding Foam', noData:true, icon:'foam',
+              notes:'General void-fill foam injected around the core structure (often PU-based); exact formulation varies by manufacturer, so no sourced stiffness rating.' },
+  unknownMaterial: { name:'Unspecified', noData:true, icon:'unknown',
               notes:'Material not specified in the source data.' },
 };
 
@@ -709,32 +706,33 @@ function coreMaterialsOf(p){
   CORE_MATERIALS_CACHE.set(raw, result);
   return result;
 }
-// Average firmness rank across a paddle's materials that have one (structural + noData
+// Average Structural Stiffness (1-10) across a paddle's materials that have one (noData
 // materials are excluded from the average, not treated as zero); null if none qualify.
 function coreFirmnessScore(p){
   const { materials } = coreMaterialsOf(p);
-  const ranks = materials.map(k=>CORE_MATERIAL_PROPS[k]&&CORE_MATERIAL_PROPS[k].firmnessRank).filter(r=>r!=null);
-  if(!ranks.length) return null;
-  return ranks.reduce((a,b)=>a+b,0)/ranks.length;
+  const vals = materials.map(k=>CORE_MATERIAL_PROPS[k]&&CORE_MATERIAL_PROPS[k].stiffness).filter(v=>v!=null);
+  if(!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0)/vals.length;
 }
 function materialPill(key){
   const m = CORE_MATERIAL_PROPS[key]; if(!m) return '';
   return `<span class="material-pill">${materialIcon(key)}${m.name}</span>`;
+}
+function stiffnessCellHtml(m){
+  if(m.noData) return `<span class="mat-nodata" title="Not in the reference property doc">No data</span>`;
+  const label = m.stiffnessDisplay || (m.stiffness!=null ? String(m.stiffness) : '—');
+  return `${label}<span class="mat-stiffness-scale">/10</span>`;
 }
 function coreMaterialsTableHtml(p){
   const { materials, note } = coreMaterialsOf(p);
   if(!materials.length) return '';
   const rows = materials.map(k=>{
     const m = CORE_MATERIAL_PROPS[k] || { name:k, noData:true, notes:'' };
-    const hardnessCell = m.structural ? `<span class="mat-nodata" title="Structural material — hardness doesn't apply the way it does to a foam">N/A (structural)</span>`
-      : m.noData ? `<span class="mat-nodata" title="Not in the reference property doc">No data</span>`
-      : m.hardnessDisplay ? m.hardnessDisplay
-      : (m.hardness!=null ? `≈ ${m.hardness} (${m.hardnessUnit})` : '—');
-    return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${hardnessCell}</td><td>${m.firmness||'—'}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
+    return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${stiffnessCellHtml(m)}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
   }).join('');
   return `<div class="modal-section">
     <div class="modal-section-title">Inside the Core <button type="button" class="mat-info-btn" onclick="openMaterialsGlossary()" title="Materials glossary">?</button></div>
-    <table class="materials-table"><thead><tr><th>Material</th><th>Approx. Hardness</th><th>Relative Firmness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
+    <table class="materials-table"><thead><tr><th>Material</th><th>Structural Stiffness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>
     ${note?`<div class="mat-construction-note">${note}</div>`:''}
     <div class="mat-handle-note">Note: honeycomb polypropylene used in the paddle <em>handle</em> isn’t counted above — only the core itself is included.</div>
   </div>`;
@@ -744,17 +742,16 @@ function buildMaterialsGlossary(){
   const body = document.getElementById('materialsGlossaryBody');
   if(!body) return;
   // Only list materials actually in play among the current x-ray paddles (skips reference
-  // rows like Nitrex/Pebax/Silicone Foam/EPE/Polyimide that the docx covers but that haven't
-  // shown up in any x-ray paddle's Core Type yet), so the glossary matches what's filterable.
+  // rows like Nitrex/Pebax/EPE/Polyimide that the docx covers but that haven't shown up in
+  // any x-ray paddle's Core Type yet), so the glossary matches what's filterable.
   const seen = new Set();
   PADDLES.forEach(p=>coreMaterialsOf(p).materials.forEach(k=>seen.add(k)));
   const keys = [...seen].sort((a,b)=>(CORE_MATERIAL_PROPS[a]||{name:a}).name.localeCompare((CORE_MATERIAL_PROPS[b]||{name:b}).name));
   const rows = keys.map(k=>{
-    const m = CORE_MATERIAL_PROPS[k]||{name:k};
-    const hardnessCell = m.structural ? 'N/A (structural)' : m.noData ? 'No data' : m.hardnessDisplay ? m.hardnessDisplay : (m.hardness!=null?`≈ ${m.hardness} (${m.hardnessUnit})`:'—');
-    return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${hardnessCell}</td><td>${m.firmness||'—'}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
+    const m = CORE_MATERIAL_PROPS[k]||{name:k, noData:true, notes:''};
+    return `<tr><td><span class="mat-name">${materialIcon(k)}${m.name}</span></td><td>${stiffnessCellHtml(m)}</td><td class="mat-notes">${m.notes||''}</td></tr>`;
   }).join('');
-  body.innerHTML = `<table class="materials-table"><thead><tr><th>Material</th><th>Approx. Hardness</th><th>Relative Firmness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
+  body.innerHTML = `<table class="materials-table"><thead><tr><th>Material</th><th>Structural Stiffness</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table>`;
   materialsGlossaryBuilt = true;
 }
 function openMaterialsGlossary(){
