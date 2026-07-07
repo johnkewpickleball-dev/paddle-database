@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Iframe embed test harness (throwaway — not linked from anywhere)</title></head>
+<body style="margin:0;font-family:sans-serif">
+<div id="heightLog" style="position:fixed;top:0;right:0;background:#000;color:#0f0;font-size:11px;padding:6px;z-index:99999;max-width:280px;white-space:pre-wrap"></div>
+<iframe
+  id="paddleDbFrame"
+  style="width:100%; height:600px; border:none; display:block;"
+  title="Paddle Database test"
+  src="test-scrollfix-draft.html">
+</iframe>
+<script>
+(function(){
+  var ifr = document.getElementById('paddleDbFrame');
+  var log = document.getElementById('heightLog');
+  var history = [];
+  window.addEventListener('message', function(e){
+    if(!e.data || e.data.source !== 'paddle-database' || e.data.type !== 'paddleDbResize') return;
+    var h = e.data.height;
+    if(h && h > 0){
+      ifr.style.height = (h + 20) + 'px';
+      history.push(h);
+      window.__heightHistory = history;
+      log.textContent = 'reports: ' + history.length + '\nlatest heights: ' + history.slice(-8).join(', ');
+    }
+  });
+})();
+</script>
+</body>
+</html>
