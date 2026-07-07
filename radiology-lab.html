@@ -1506,21 +1506,65 @@ function unlockBodyScroll(){
 }
 window.lockBodyScroll=lockBodyScroll;
 window.unlockBodyScroll=unlockBodyScroll;
+// BIDIRECTIONAL SCROLL SYNC (added 2026-07-07, found via true iframe-embed testing — direct
+// GitHub Pages navigation had hidden this): when this page is embedded via the auto-resizing
+// iframe (the whole point of which is that the iframe's OWN box is sized to match this page's
+// full content height exactly), this document never has any internal overflow of its own —
+// so document.scrollingElement.scrollTop and window.innerHeight, read from INSIDE this page,
+// are architecturally meaningless: scrollTop is always 0 (there's nothing to scroll
+// internally) and innerHeight equals the full auto-resized iframe height (often 15,000px+),
+// not the user's real visible screen. Confirmed via a real iframe-embed test: scrolling the
+// OUTER Squarespace page to 3000px still read childScrollY===0 from inside this page, so any
+// overlay positioned via a plain "top = my own scrollTop" was rendering at the true top of
+// the whole document — invisible unless the user scrolled all the way back up.
+// Fix: the OUTER Squarespace Code Block (see the iframe snippet) computes, on every scroll/
+// resize, how far the iframe has been scrolled INTO from the top of the real browser
+// viewport (via the iframe element's own getBoundingClientRect().top, which the parent CAN
+// see) and posts that down as `childVisibleTop`, along with the real `viewportHeight`. This
+// page stores the latest values and uses them everywhere it used to read its own scrollTop/
+// innerHeight for overlay positioning. Falls back to genuine live DOM reads when NOT embedded
+// (window.self===window.top), so direct GitHub Pages testing still works unaided.
+let PARENT_VISIBLE_TOP = null, PARENT_VIEWPORT_HEIGHT = null;
+window.addEventListener('message', (e)=>{
+  if(!e.data || e.data.source !== 'paddle-db-parent' || e.data.type !== 'scrollSync') return;
+  PARENT_VISIBLE_TOP = e.data.childVisibleTop;
+  PARENT_VIEWPORT_HEIGHT = e.data.viewportHeight;
+  // The modal (unlike the zoom lightbox) doesn't lock outer scroll, so the outer page can
+  // keep scrolling while it's open — reposition `top` (never height, same reason as resize)
+  // to track it, using the same three overlay ids the resize handler covers below.
+  ['modalOverlay','tierInfoOverlay','materialsGlossaryOverlay'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
+  });
+});
+function currentVisibleTop(){
+  if(window.self === window.top){
+    const scrollEl = document.scrollingElement || document.documentElement;
+    return scrollEl.scrollTop || 0;
+  }
+  return PARENT_VISIBLE_TOP != null ? PARENT_VISIBLE_TOP : 0; // 0 until the first sync message arrives (correct for initial load anyway)
+}
+function currentViewportHeight(){
+  if(window.self === window.top) return window.innerHeight;
+  return PARENT_VIEWPORT_HEIGHT != null ? PARENT_VIEWPORT_HEIGHT : window.innerHeight;
+}
+window.currentVisibleTop = currentVisibleTop;
+window.currentViewportHeight = currentViewportHeight;
 // Positions an absolute-positioned overlay (.modal-overlay / .dur-info-overlay) so it starts
-// exactly at the user's current scroll offset — the replacement for position:fixed, which is
-// what let this overlay visually "cover the screen" before. See the CSS comment above
-// .modal-overlay for the full explanation of why position:fixed had to go.
+// exactly at the user's current visible position — the replacement for position:fixed, which
+// is what let this overlay visually "cover the screen" before. See the CSS comment above
+// .modal-overlay for the full explanation of why position:fixed had to go, and the comment
+// above for why this reads currentVisibleTop() instead of this page's own scrollTop.
 function positionOverlayAtScroll(el){
   if(!el) return;
-  const scrollEl = document.scrollingElement || document.documentElement;
-  el.style.top = (scrollEl.scrollTop||0) + 'px';
+  el.style.top = currentVisibleTop() + 'px';
 }
-// One-time JS snapshot of the real viewport height, used instead of a live vh/dvh CSS unit
-// (see the vh-feedback-loop comment above .modal-overlay). Call ONLY when an overlay opens —
-// never on resize, or the snapshot-grows-page-grows-snapshot loop comes right back.
+// One-time snapshot of the real visible viewport height, used instead of a live vh/dvh CSS
+// unit (see the vh-feedback-loop comment above .modal-overlay). Call ONLY when an overlay
+// opens — never on resize, or the snapshot-grows-page-grows-snapshot loop comes right back.
 function snapshotOverlayHeight(el){
   if(!el) return;
-  el.style.minHeight = window.innerHeight + 'px';
+  el.style.minHeight = currentViewportHeight() + 'px';
 }
 window.addEventListener('resize', ()=>{
   // Resize only repositions `top` — it must never re-snapshot height (see above).
@@ -1951,10 +1995,16 @@ applyPaddleDeepLink();
   // If the overlay reads "current scroll offset" from a live query AFTER locking (or on any
   // later settle/resize pass while still open), it reads 0 instead of the real pre-lock
   // offset, so the overlay renders far off-screen (confirmed: opening the zoom from 2000px
-  // scrolled placed the overlay's top at -2000px). Fix: capture the real scroll offset ONCE,
+  // scrolled placed the overlay's top at -2000px). Fix: capture the real visible-top ONCE,
   // before lockBodyScroll runs, into openScrollY, and use that captured value for every
   // reposition for the rest of this open/close cycle — never re-query live scroll while
   // open, since body-scroll-lock means there's no real scrolling happening anyway.
+  //
+  // ALSO FOUND VIA TRUE IFRAME-EMBED TESTING 2026-07-07: window.scrollY/innerHeight, read
+  // from inside this page, are meaningless when actually embedded (see the big comment above
+  // window.currentVisibleTop near positionOverlayAtScroll) — so the capture below uses
+  // currentVisibleTop()/currentViewportHeight(), which resolve to the real outer-page values
+  // when embedded (via the bidirectional postMessage sync) or genuine live reads otherwise.
   var openScrollY = 0;
   function positionPz(){
     ov.style.top = openScrollY + 'px';
@@ -1968,7 +2018,7 @@ applyPaddleDeepLink();
   // captured openScrollY, never a fresh scroll read (see comment above).
   function refreshPzLayoutOnOpen(){
     positionPz();
-    ov.style.height = window.innerHeight + 'px';
+    ov.style.height = (window.currentViewportHeight ? window.currentViewportHeight() : window.innerHeight) + 'px';
     updatePzMaxSize();
     baseTx=0; baseTy=0;
   }
@@ -1981,9 +2031,8 @@ applyPaddleDeepLink();
   }
   function settleAtBase(){ refreshPzLayoutOnOpen(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
   window.openPaddleZoom=function(src){ if(!src)return;
-    // Capture the real scroll offset BEFORE lockBodyScroll can zero it out.
-    var scrollEl = document.scrollingElement || document.documentElement;
-    openScrollY = scrollEl.scrollTop || window.scrollY || window.pageYOffset || 0;
+    // Capture the real visible-top BEFORE lockBodyScroll can zero it out.
+    openScrollY = window.currentVisibleTop ? window.currentVisibleTop() : (document.scrollingElement||document.documentElement).scrollTop || window.scrollY || 0;
     img.src=src; ov.classList.add('open');
     refreshPzLayoutOnOpen();
     if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden';

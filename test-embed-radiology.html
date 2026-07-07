@@ -29,6 +29,30 @@
   window.__getChildScrollY = function(){
     try { return ifr.contentWindow.scrollY; } catch(e){ return 'ERR:'+e.message; }
   };
+
+  // Mirrors the real radiology-lab-iframe-snippet.html sender logic, so this harness can
+  // verify the bidirectional scroll-sync fix before it touches the live Squarespace snippet.
+  var syncPending = false;
+  function sendScrollSync(){
+    syncPending = false;
+    var r = ifr.getBoundingClientRect();
+    var childVisibleTop = Math.max(0, -r.top);
+    try{
+      ifr.contentWindow.postMessage({ source:'paddle-db-parent', type:'scrollSync', childVisibleTop:childVisibleTop, viewportHeight:window.innerHeight }, '*');
+    }catch(e){}
+    window.__lastSync = {childVisibleTop:childVisibleTop, viewportHeight:window.innerHeight};
+  }
+  function requestScrollSync(){
+    if(syncPending) return;
+    syncPending = true;
+    requestAnimationFrame(sendScrollSync);
+  }
+  window.addEventListener('scroll', requestScrollSync, {passive:true});
+  window.addEventListener('resize', requestScrollSync);
+  ifr.addEventListener('load', requestScrollSync);
+  setTimeout(requestScrollSync, 300);
+  setTimeout(requestScrollSync, 1000);
+  setTimeout(requestScrollSync, 2000);
 })();
 </script>
 </body>
