@@ -1585,18 +1585,34 @@ applyPaddleDeepLink();
   var scale=1,tx=0,ty=0,MIN=1,MAX=6;
   function apply(){ img.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+scale.toFixed(3)+')'; }
   function zoomAt(px,py,ns){ ns=Math.max(MIN,Math.min(MAX,ns)); tx=px-(px-tx)*(ns/scale); ty=py-(py-ty)*(ns/scale); scale=ns; if(scale<=1){scale=1;tx=0;ty=0;} apply(); }
-  // Mobile Safari's vh/dvh units aren't reliable the moment the address bar is animating
-  // in/out, which was letting the image render taller than what's actually visible and
-  // sink toward (or past) the bottom of the screen. Measuring the stage's own rendered
-  // box directly sidesteps that entirely — it's always the true on-screen pixel size.
+  // The real bug: `position:fixed;inset:0` sizes the overlay against the LAYOUT viewport,
+  // which iOS Safari keeps taller than what's actually on screen while the address bar is
+  // present/animating. So the overlay itself (not just the image) extends below the visible
+  // area, and flex-centering "correctly" centers the image within that oversized box —
+  // landing it visibly low. That's why dragging it up worked (real pixels, real screen) but
+  // it snapped back the moment scale returned to 1 and tx/ty reset to the (wrong) center.
+  // Fix: explicitly size + position the overlay to match window.visualViewport, which is
+  // the API built specifically to expose the true visible area.
+  function syncViewport(){
+    if(!window.visualViewport) return;
+    var vv=window.visualViewport;
+    ov.style.left=vv.offsetLeft+'px';
+    ov.style.top=vv.offsetTop+'px';
+    ov.style.width=vv.width+'px';
+    ov.style.height=vv.height+'px';
+  }
   function updatePzMaxSize(){
     var r=stage.getBoundingClientRect();
     img.style.maxWidth=(r.width*0.94)+'px';
     img.style.maxHeight=(r.height*0.92)+'px';
   }
-  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; updatePzMaxSize(); apply(); };
-  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) updatePzMaxSize(); });
-  if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) updatePzMaxSize(); });
+  function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); }
+  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); apply(); };
+  window.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
+    window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
+  }
   function close(){ ov.classList.remove('open'); img.src=''; document.body.style.overflow=''; }
   document.getElementById('pzClose').addEventListener('click',close);
   ov.addEventListener('click',function(e){ if(e.target===ov||e.target===stage) close(); });
