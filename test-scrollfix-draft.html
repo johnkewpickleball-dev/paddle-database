@@ -281,8 +281,19 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .page-btn.active{background:var(--green);border-color:var(--green);color:white}
 .page-btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* paddle photo zoom lightbox */
-.pz-overlay{position:fixed;inset:0;background:rgba(8,12,18,.93);z-index:9999;display:none;align-items:center;justify-content:center;touch-action:none}
+/* paddle photo zoom lightbox
+   BUG FIXED HERE: this was position:fixed;inset:0, synced via JS to window.visualViewport on
+   open/resize/scroll — that was correct back when the embedding iframe scrolled internally
+   (visualViewport ≈ the actually-visible slice in that case). Now that the iframe auto-resizes
+   to match full document height and never scrolls internally (see .modal-overlay comment),
+   visualViewport for this page equals the ENTIRE page height, not what's actually visible in
+   the outer Squarespace window — so "centering in visualViewport" centered the image in the
+   middle of the whole (very tall) document instead of the user's current scroll position,
+   making it appear as if no image showed up at all. Fixed the same way as .modal-overlay:
+   position:absolute, top = scroll offset, height = a one-time snapshot of window.innerHeight
+   taken when the lightbox opens (see openPaddleZoom below) instead of a live visualViewport
+   sync. */
+.pz-overlay{position:absolute;top:0;left:0;right:0;background:rgba(8,12,18,.93);z-index:9999;display:none;align-items:center;justify-content:center;touch-action:none}
 .pz-overlay.open{display:flex}
 .pz-stage{position:relative;width:100%;height:100%;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .pz-img{max-width:94vw;max-height:92vh;max-height:92dvh;transform-origin:center center;will-change:transform;cursor:grab;user-select:none;-webkit-user-drag:none}
@@ -1691,36 +1702,40 @@ applyPaddleDeepLink();
   var baseTx=0,baseTy=0; // the tx/ty that actually renders centered on the real visible screen
   function apply(){ img.style.transform='translate('+tx.toFixed(1)+'px,'+ty.toFixed(1)+'px) scale('+scale.toFixed(3)+')'; }
   function zoomAt(px,py,ns){ ns=Math.max(MIN,Math.min(MAX,ns)); tx=px-(px-tx)*(ns/scale); ty=py-(py-ty)*(ns/scale); scale=ns; if(scale<=1){scale=1;tx=baseTx;ty=baseTy;} apply(); }
-  // Sizing the overlay to match window.visualViewport (below) didn't fully solve mobile
-  // centering — this page is embedded in a Squarespace iframe, and getBoundingClientRect()
-  // vs. visualViewport can still disagree about where "center" actually is in that context.
-  // Rather than trust either measurement to be exactly right, measure the real gap between
-  // the stage's rendered center and the true visible-viewport center, and bake that gap
-  // directly into the rest position (baseTx/baseTy) — so "centered" always means centered on
-  // the real screen, whatever is causing the mismatch.
-  function syncViewport(){
-    if(!window.visualViewport) return;
-    var vv=window.visualViewport;
-    ov.style.left=vv.offsetLeft+'px';
-    ov.style.top=vv.offsetTop+'px';
-    ov.style.width=vv.width+'px';
-    ov.style.height=vv.height+'px';
-  }
+  // Position/size the overlay the same way as .modal-overlay: top = current scroll offset
+  // (positionOverlayAtScroll), height = a one-time pixel snapshot of window.innerHeight
+  // (snapshotOverlayHeight) taken only when the lightbox opens — NOT a live visualViewport
+  // sync, which now equals the entire (very tall) auto-resized page rather than the visible
+  // slice. See the .pz-overlay CSS comment for the full explanation.
   function updatePzMaxSize(){
     var r=stage.getBoundingClientRect();
     img.style.maxWidth=(r.width*0.94)+'px';
     img.style.maxHeight=(r.height*0.92)+'px';
   }
   function updateBaseOffset(){
-    if(!window.visualViewport){ baseTx=0; baseTy=0; return; }
-    var vv=window.visualViewport, r=stage.getBoundingClientRect();
-    var stageCenterX=r.left+r.width/2, stageCenterY=r.top+r.height/2;
-    var trueCenterX=vv.offsetLeft+vv.width/2, trueCenterY=vv.offsetTop+vv.height/2;
-    baseTx=trueCenterX-stageCenterX; baseTy=trueCenterY-stageCenterY;
+    // The stage now fills the (correctly positioned/sized) overlay exactly, so its own
+    // rendered center IS the true center — no separate visualViewport reference needed,
+    // and no offset to correct for.
+    baseTx=0; baseTy=0;
   }
-  function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); updateBaseOffset(); }
-  function settleAtBase(){ refreshPzLayout(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
+  function refreshPzLayoutOnOpen(){
+    if(typeof positionOverlayAtScroll==='function') positionOverlayAtScroll(ov);
+    // Explicit height (not min-height): .pz-stage uses height:100%, which needs a definite
+    // parent height to resolve against — min-height alone wouldn't work here the way it does
+    // for .modal-overlay (whose child sizes to its own content, not a percentage).
+    ov.style.height = window.innerHeight + 'px';
+    updatePzMaxSize(); updateBaseOffset();
+  }
+  function refreshPzLayoutOnResize(){
+    // Reposition top to track scroll, but deliberately do NOT re-snapshot height here — that
+    // would reintroduce the same iframe-resize feedback loop described in the .modal-overlay
+    // CSS comment (a resize triggered by our own postMessage auto-resize would re-derive a
+    // taller height, triggering another resize, forever).
+    if(typeof positionOverlayAtScroll==='function') positionOverlayAtScroll(ov);
+    updatePzMaxSize(); updateBaseOffset();
+  }
+  function settleAtBase(){ refreshPzLayoutOnResize(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
+  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayoutOnOpen(); scale=1; tx=baseTx; ty=baseTy; apply();
     // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
     // tick the overlay becomes visible, so re-measure a few times just after opening — this
     // is what previously required a manual drag to "fix"; now it settles on its own.
@@ -1729,10 +1744,6 @@ applyPaddleDeepLink();
     setTimeout(settleAtBase,350);
   };
   window.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
-  if(window.visualViewport){
-    window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) settleAtBase(); });
-    window.visualViewport.addEventListener('scroll',function(){ if(ov.classList.contains('open')) settleAtBase(); });
-  }
   function close(){ ov.classList.remove('open'); img.src=''; if(window.unlockBodyScroll) window.unlockBodyScroll(); else document.body.style.overflow=''; }
   document.getElementById('pzClose').addEventListener('click',close);
   ov.addEventListener('click',function(e){ if(e.target===ov||e.target===stage) close(); });
