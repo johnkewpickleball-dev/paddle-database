@@ -13,7 +13,12 @@
   --bg:#f8faf9;--white:#fff;--yellow:#fbbf24;--red:#ef4444;
   --text:#1a2535;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
 }
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+/* NOTE: min-height:100vh removed here — see the .modal-overlay CSS comment for why any
+   live vh unit on the body/app shell is unsafe on a page whose embedding iframe auto-resizes
+   to match document.scrollHeight (confirmed live: page height climbed a steady +33px per
+   report even with no modal open, purely from body/.app's own min-height:100vh feeding the
+   loop). With hundreds of paddle cards this min-height was never doing real work anyway. */
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text)}
 
 /* HEADER */
 header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3)}
@@ -33,7 +38,7 @@ header{background:var(--navy);padding:18px 24px;display:flex;align-items:center;
 .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;opacity:.4}
 
 /* LAYOUT */
-.app{display:flex;min-height:calc(100vh - 62px)}
+.app{display:flex}
 .sidebar{width:264px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);padding:20px 16px;overflow-y:auto;max-height:calc(100vh - 62px);position:sticky;top:62px}
 .main{flex:1;padding:20px 24px;min-width:0}
 .mobile-filters-toggle{display:none}
