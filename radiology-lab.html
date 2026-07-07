@@ -231,7 +231,14 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 /* MODAL */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.open{display:flex}
-.modal{background:white;border-radius:14px;max-width:680px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+/* min-height:0 is required here: .modal is a flex item of .modal-overlay (display:flex), and
+   flex items default to min-height:auto, which sizes them to fit ALL their content and only
+   THEN applies max-height — in practice this meant overflow-y:auto never actually engaged once
+   the "Inside the Core" table + full spec grid made the content taller than 90vh, so the modal
+   just rendered past the bottom of the screen with nothing to scroll. Since the modal is a
+   position:fixed ancestor, page scroll can't reveal that overflow either — dragging on it just
+   scrolled the page underneath instead, which is exactly what looked like "getting stuck". */
+.modal{background:white;border-radius:14px;max-width:680px;width:100%;max-height:90vh;min-height:0;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-header{padding:24px 24px 0;border-bottom:1px solid var(--border);margin-bottom:0}
 .modal-brand{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--green);margin-bottom:4px}
 .modal-name{font-size:22px;font-weight:600;margin-bottom:12px}
@@ -1445,11 +1452,13 @@ function openModal(idx){
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
   recordView(p);
 }
 
 function closeModal(){
   document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
   CURRENT_MODAL_PADDLE = null;
 }
 
