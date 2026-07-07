@@ -2091,7 +2091,21 @@ applyPaddleDeepLink();
   var lastReported = null;
   function reportHeight(){
     if(window.self === window.top) return; // not embedded — nothing to report
-    var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    // FOUND VIA LIVE TESTING 2026-07-07: document.documentElement.scrollHeight is, by spec,
+    // never smaller than its own rendered box (viewport) height — it's the "at least as tall
+    // as my own viewport" scrolling-root measurement. But that "viewport" IS the iframe's own
+    // CSS height, which THIS EXACT postMessage loop sets from the last report. Once anything
+    // temporarily grows the page (e.g. opening the modal, which is much taller than the list
+    // alone) and then shrinks back (closing it), documentElement.scrollHeight can never
+    // report smaller than the iframe's still-inflated box size from the taller moment — so
+    // every report keeps re-confirming (and, via the outer snippet's own "+20 buffer" logic,
+    // slowly re-growing) a height the real content no longer needs, forever. Confirmed via a
+    // real embed test: height climbed indefinitely, long after the modal was closed and every
+    // image had finished loading, even though no element in the whole document actually
+    // extended past ~5155px. document.body.scrollHeight doesn't have this floor (body isn't
+    // the standards-mode scrolling root — document.scrollingElement is), so it always
+    // reflects genuine content height. Using body's measurement alone fixes it.
+    var h = document.body.scrollHeight;
     if(h === lastReported) return; // defensive: skip redundant posts (cheap insurance against any resize-loop regression)
     lastReported = h;
     try{ window.parent.postMessage({ source:'radiology-lab', type:'paddleDbResize', height:h }, '*'); }catch(e){}
