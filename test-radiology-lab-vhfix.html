@@ -1944,30 +1944,50 @@ applyPaddleDeepLink();
   // Because the overlay's box now exactly matches the real visible viewport, the stage
   // fills it exactly too, so "centered" is simply baseTx=0, baseTy=0 — no more measuring a
   // gap between getBoundingClientRect() and visualViewport to paper over a mismatch.
+  //
+  // FOUND VIA LIVE TESTING 2026-07-07: this overlay ALSO calls lockBodyScroll() (unlike the
+  // modal, which doesn't lock scroll at all), and lockBodyScroll freezes <body> via
+  // position:fixed — which resets document.scrollingElement.scrollTop to 0 as a side effect.
+  // If the overlay reads "current scroll offset" from a live query AFTER locking (or on any
+  // later settle/resize pass while still open), it reads 0 instead of the real pre-lock
+  // offset, so the overlay renders far off-screen (confirmed: opening the zoom from 2000px
+  // scrolled placed the overlay's top at -2000px). Fix: capture the real scroll offset ONCE,
+  // before lockBodyScroll runs, into openScrollY, and use that captured value for every
+  // reposition for the rest of this open/close cycle — never re-query live scroll while
+  // open, since body-scroll-lock means there's no real scrolling happening anyway.
+  var openScrollY = 0;
   function positionPz(){
-    if(window.positionOverlayAtScroll){ window.positionOverlayAtScroll(ov); }
-    else { var scrollEl=document.scrollingElement||document.documentElement; ov.style.top=(scrollEl.scrollTop||0)+'px'; }
+    ov.style.top = openScrollY + 'px';
   }
   function updatePzMaxSize(){
     var r=stage.getBoundingClientRect();
     img.style.maxWidth=(r.width*0.94)+'px';
     img.style.maxHeight=(r.height*0.92)+'px';
   }
-  // Called only at open time (and settle retries just after) — snapshots height once.
+  // Called at open time and by the settle retries just after — repositions/resizes using the
+  // captured openScrollY, never a fresh scroll read (see comment above).
   function refreshPzLayoutOnOpen(){
     positionPz();
     ov.style.height = window.innerHeight + 'px';
     updatePzMaxSize();
     baseTx=0; baseTy=0;
   }
-  // Called on window resize while open — repositions `top` only, never re-snapshots height
-  // (re-snapshotting on resize is what reintroduces the feedback loop).
+  // Called on window resize while open — repositions `top` (from the captured openScrollY,
+  // still never a live re-read) and never re-snapshots height (re-snapshotting on resize is
+  // what reintroduces the feedback loop).
   function refreshPzLayoutOnResize(){
     positionPz();
     updatePzMaxSize();
   }
   function settleAtBase(){ refreshPzLayoutOnOpen(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayoutOnOpen(); scale=1; tx=baseTx; ty=baseTy; apply();
+  window.openPaddleZoom=function(src){ if(!src)return;
+    // Capture the real scroll offset BEFORE lockBodyScroll can zero it out.
+    var scrollEl = document.scrollingElement || document.documentElement;
+    openScrollY = scrollEl.scrollTop || window.scrollY || window.pageYOffset || 0;
+    img.src=src; ov.classList.add('open');
+    refreshPzLayoutOnOpen();
+    if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden';
+    scale=1; tx=baseTx; ty=baseTy; apply();
     // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
     // tick the overlay becomes visible, so re-measure a few times just after opening — this
     // is what previously required a manual drag to "fix"; now it settles on its own.
