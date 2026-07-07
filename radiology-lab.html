@@ -1506,55 +1506,37 @@ function unlockBodyScroll(){
 }
 window.lockBodyScroll=lockBodyScroll;
 window.unlockBodyScroll=unlockBodyScroll;
-// BIDIRECTIONAL SCROLL SYNC (added 2026-07-07, found via true iframe-embed testing — direct
-// GitHub Pages navigation had hidden this): when this page is embedded via the auto-resizing
-// iframe (the whole point of which is that the iframe's OWN box is sized to match this page's
-// full content height exactly), this document never has any internal overflow of its own —
-// so document.scrollingElement.scrollTop and window.innerHeight, read from INSIDE this page,
-// are architecturally meaningless: scrollTop is always 0 (there's nothing to scroll
-// internally) and innerHeight equals the full auto-resized iframe height (often 15,000px+),
-// not the user's real visible screen. Confirmed via a real iframe-embed test: scrolling the
-// OUTER Squarespace page to 3000px still read childScrollY===0 from inside this page, so any
-// overlay positioned via a plain "top = my own scrollTop" was rendering at the true top of
-// the whole document — invisible unless the user scrolled all the way back up.
-// Fix: the OUTER Squarespace Code Block (see the iframe snippet) computes, on every scroll/
-// resize, how far the iframe has been scrolled INTO from the top of the real browser
-// viewport (via the iframe element's own getBoundingClientRect().top, which the parent CAN
-// see) and posts that down as `childVisibleTop`, along with the real `viewportHeight`. This
-// page stores the latest values and uses them everywhere it used to read its own scrollTop/
-// innerHeight for overlay positioning. Falls back to genuine live DOM reads when NOT embedded
-// (window.self===window.top), so direct GitHub Pages testing still works unaided.
-let PARENT_VISIBLE_TOP = null, PARENT_VIEWPORT_HEIGHT = null;
-window.addEventListener('message', (e)=>{
-  if(!e.data || e.data.source !== 'paddle-db-parent' || e.data.type !== 'scrollSync') return;
-  PARENT_VISIBLE_TOP = e.data.childVisibleTop;
-  PARENT_VIEWPORT_HEIGHT = e.data.viewportHeight;
-  // The modal (unlike the zoom lightbox) doesn't lock outer scroll, so the outer page can
-  // keep scrolling while it's open — reposition `top` (never height, same reason as resize)
-  // to track it, using the same three overlay ids the resize handler covers below.
-  ['modalOverlay','tierInfoOverlay','materialsGlossaryOverlay'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
-  });
-});
+// SCROLL-POSITION HELPERS: this page is embedded in a BOUNDED-height iframe (see the
+// Squarespace Code Block snippet) and scrolls internally, same as any normal page, so its own
+// scrollTop/innerHeight are always meaningful whether embedded or not.
+//
+// REVERTED 2026-07-07: this page briefly used a full-page-auto-resizing iframe (the outer
+// iframe grown via postMessage to match this page's exact content height, eliminating its own
+// internal scrollbar so the OUTER Squarespace page did all the scrolling instead) plus a
+// bidirectional postMessage scroll-sync, to work around an iOS Safari bug where
+// position:fixed misbehaves inside a document that itself needs internal scrolling (see git
+// history around afd7bbe/eb7bd0e/29f5323). That worked, but live testing on the real
+// Squarespace embed then surfaced a worse problem: once the iframe got very tall (5000px+),
+// Chrome's cross-origin-iframe compositor would fail to paint large regions of it while
+// scrolling — a flat, solid-color blank screen at various scroll depths, non-deterministic,
+// reproducible on both mobile and desktop, and NOT reproducible via direct (non-embedded)
+// navigation. Reverted back to a bounded-height, internally-scrolling iframe. The
+// position:absolute + JS top-tracking overlay positioning below is what actually avoids the
+// iOS position:fixed bug — the full-page auto-resize was a separate, unnecessary addition
+// that traded one rare bug for a more visible one.
 function currentVisibleTop(){
-  if(window.self === window.top){
-    const scrollEl = document.scrollingElement || document.documentElement;
-    return scrollEl.scrollTop || 0;
-  }
-  return PARENT_VISIBLE_TOP != null ? PARENT_VISIBLE_TOP : 0; // 0 until the first sync message arrives (correct for initial load anyway)
+  const scrollEl = document.scrollingElement || document.documentElement;
+  return scrollEl.scrollTop || window.scrollY || 0;
 }
 function currentViewportHeight(){
-  if(window.self === window.top) return window.innerHeight;
-  return PARENT_VIEWPORT_HEIGHT != null ? PARENT_VIEWPORT_HEIGHT : window.innerHeight;
+  return window.innerHeight;
 }
 window.currentVisibleTop = currentVisibleTop;
 window.currentViewportHeight = currentViewportHeight;
 // Positions an absolute-positioned overlay (.modal-overlay / .dur-info-overlay) so it starts
 // exactly at the user's current visible position — the replacement for position:fixed, which
 // is what let this overlay visually "cover the screen" before. See the CSS comment above
-// .modal-overlay for the full explanation of why position:fixed had to go, and the comment
-// above for why this reads currentVisibleTop() instead of this page's own scrollTop.
+// .modal-overlay for the full explanation of why position:fixed had to go.
 function positionOverlayAtScroll(el){
   if(!el) return;
   el.style.top = currentVisibleTop() + 'px';
@@ -1573,6 +1555,15 @@ window.addEventListener('resize', ()=>{
     if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
   });
 });
+window.addEventListener('scroll', ()=>{
+  // The modal (unlike the zoom lightbox) doesn't lock scroll, so the user can keep scrolling
+  // this page while it's open — reposition `top` (never height) to track it live. Needed now
+  // that this page scrolls internally again (see comment block above).
+  ['modalOverlay','tierInfoOverlay','materialsGlossaryOverlay'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
+  });
+}, {passive:true});
 function openModal(idx){
   const p=PADDLES[idx];
   CURRENT_MODAL_PADDLE = p;
@@ -1649,13 +1640,11 @@ function openModal(idx){
   snapshotOverlayHeight(modalOverlayEl);
   modalOverlayEl.classList.add('open');
   recordView(p);
-  if(window.reportPaddleDbHeight) window.reportPaddleDbHeight();
 }
 
 function closeModal(){
   document.getElementById('modalOverlay').classList.remove('open');
   CURRENT_MODAL_PADDLE = null;
-  if(window.reportPaddleDbHeight) window.reportPaddleDbHeight();
 }
 
 // ── "Compare This Paddle…" → open the Paddle Comparison Lab with this paddle pre-filled.
@@ -2078,48 +2067,6 @@ applyPaddleDeepLink();
     if(z==='reset'){scale=1;tx=baseTx;ty=baseTy;apply();} else zoomAt(0,0, z==='in'?scale*1.4:scale/1.4); }); });
 })();
 </script>
-<script>
-// Reports this page's rendered height to the parent Squarespace page so the embedding
-// <iframe> can grow to fit content exactly, instead of being a fixed height that forces the
-// iframe's own document to scroll internally. That internal iframe scroll is what caused the
-// modal's "stuck scroll" bug on iOS Safari (see the CSS comment above .modal-overlay for the
-// full explanation) — with no internal iframe scroll, the outer Squarespace page does all the
-// scrolling, which is the one scroll context iOS handles reliably.
-// Pairs with a Squarespace Code Block that listens for this message and resizes its <iframe>
-// (see the snippet provided alongside this fix).
-(function(){
-  var lastReported = null;
-  function reportHeight(){
-    if(window.self === window.top) return; // not embedded — nothing to report
-    // FOUND VIA LIVE TESTING 2026-07-07: document.documentElement.scrollHeight is, by spec,
-    // never smaller than its own rendered box (viewport) height — it's the "at least as tall
-    // as my own viewport" scrolling-root measurement. But that "viewport" IS the iframe's own
-    // CSS height, which THIS EXACT postMessage loop sets from the last report. Once anything
-    // temporarily grows the page (e.g. opening the modal, which is much taller than the list
-    // alone) and then shrinks back (closing it), documentElement.scrollHeight can never
-    // report smaller than the iframe's still-inflated box size from the taller moment — so
-    // every report keeps re-confirming (and, via the outer snippet's own "+20 buffer" logic,
-    // slowly re-growing) a height the real content no longer needs, forever. Confirmed via a
-    // real embed test: height climbed indefinitely, long after the modal was closed and every
-    // image had finished loading, even though no element in the whole document actually
-    // extended past ~5155px. document.body.scrollHeight doesn't have this floor (body isn't
-    // the standards-mode scrolling root — document.scrollingElement is), so it always
-    // reflects genuine content height. Using body's measurement alone fixes it.
-    var h = document.body.scrollHeight;
-    if(h === lastReported) return; // defensive: skip redundant posts (cheap insurance against any resize-loop regression)
-    lastReported = h;
-    try{ window.parent.postMessage({ source:'radiology-lab', type:'paddleDbResize', height:h }, '*'); }catch(e){}
-  }
-  window.reportPaddleDbHeight = reportHeight;
-  window.addEventListener('load', reportHeight);
-  window.addEventListener('resize', reportHeight);
-  if(window.ResizeObserver){
-    new ResizeObserver(reportHeight).observe(document.documentElement);
-  } else {
-    setInterval(reportHeight, 500);
-  }
-  reportHeight();
-})();
-</script>
+
 </body>
 </html>
