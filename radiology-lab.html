@@ -1787,7 +1787,17 @@ applyPaddleDeepLink();
     img.style.maxHeight=(r.height*0.92)+'px';
   }
   function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); }
-  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); apply(); };
+  window.openPaddleZoom=function(src){ if(!src)return; scale=1;tx=0;ty=0; img.src=src; ov.classList.add('open'); document.body.style.overflow='hidden'; refreshPzLayout(); apply();
+    // iOS Safari can report stale/incorrect visualViewport metrics in the same tick the
+    // overlay becomes visible — the layout hasn't settled yet, so the initial sync can land
+    // short of the true visible area (this is why a manual drag "fixed" it: the overlay's
+    // real bug was the mis-sized box, not anything about the drag itself). Re-run the sync
+    // a few times just after opening so it settles into the correct, fully-centered position
+    // on its own, with no interaction required.
+    requestAnimationFrame(function(){ refreshPzLayout(); apply(); });
+    setTimeout(function(){ refreshPzLayout(); apply(); },120);
+    setTimeout(function(){ refreshPzLayout(); apply(); },350);
+  };
   window.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',function(){ if(ov.classList.contains('open')) refreshPzLayout(); });
