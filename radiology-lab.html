@@ -191,10 +191,9 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .badge-tier-4{background:#fdeaea;color:#c0392b}
 .dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
 .dur-i:hover{opacity:.65}
-/* The overlay itself scrolls (not a nested flex-centered box) — see the longer explanation
-   above .modal-overlay for why centered-flex-item + internal overflow-y:auto is unreliable
-   on iOS Safari for tall content. */
-.dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+/* position:absolute + JS-positioned-at-scroll-offset — see the long comment above
+   .modal-overlay for why this replaced position:fixed (iOS Safari + iframe embedding). */
+.dur-info-overlay{display:none;position:absolute;top:0;left:0;right:0;min-height:100vh;background:rgba(0,0,0,.5);z-index:300;padding:20px}
 .dur-info-overlay.open{display:block}
 .dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
 .dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -232,18 +231,28 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .list-header{display:grid;grid-template-columns:2fr 1.2fr 1fr 1fr 1fr 1fr 80px;gap:12px;padding:6px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
 
 /* MODAL
-   This used to be a centered flexbox (.modal-overlay {display:flex; align-items:center})
-   holding an internally-scrolling box (.modal {max-height:90vh; overflow-y:auto}). That
-   nested-scroll-inside-a-centered-flex-item pattern has a cluster of known iOS Safari
-   reliability problems (min-height:auto silently defeating max-height, centered overflow
-   content not always being reachable by scroll, scroll-gesture arbitration between the two
-   nested containers behaving inconsistently depending on exactly where a touch starts) — a
-   screen recording confirmed the modal would scroll for a few swipes, then stop responding
-   to swipes starting on the card, while a swipe starting just off the card's edge could
-   continue it. Rather than keep patching that combination, the overlay itself is now the
-   only scroll container; .modal is a plain block with no scroll/height constraints of its
-   own, avoiding nested scrolling entirely. */
-.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+   ROOT CAUSE (confirmed via testing the direct GitHub Pages URL vs. the Squarespace-embedded
+   version — the "stuck scroll" bug only happens embedded): this page is loaded inside a
+   fixed-height Squarespace <iframe>. Because this page's own content is taller than that
+   iframe box, the *iframe's own document* needs an internal scrollbar — and iOS Safari has
+   a long-standing bug where position:fixed (viewport-relative) elements inside a document
+   that itself needs internal scrolling become unreliable: they scroll fine for a few
+   swipes, then "detach" and stop tracking touch input, while the content behind them keeps
+   scrolling — exactly what a screen recording showed here. (An earlier round of fixes
+   — min-height:auto on flex children, then a position:fixed body-scroll-lock, then merging
+   two nested scroll containers into one — were all real, valid improvements, but none of
+   them touch this iframe-level bug, which is why the symptom kept coming back.)
+   The actual fix has two parts:
+   (1) This page now reports its own rendered height to the parent Squarespace page via
+       postMessage (see the script near the end of the file), so the embedding <iframe> can
+       resize to fit content exactly and never needs its own internal scrollbar — all
+       scrolling then happens on the one true top-level page, which iOS handles correctly.
+   (2) The modal overlay switched from position:fixed to position:absolute, positioned at
+       the user's current scroll offset via JS (positionOverlayAtScroll, called from
+       openModal/openTierInfo/openMaterialsGlossary) when it opens — so it still visually
+       covers the screen like a fixed overlay, but scrolls with the page natively instead of
+       needing a scroll container of its own. */
+.modal-overlay{display:none;position:absolute;top:0;left:0;right:0;min-height:100vh;background:rgba(0,0,0,.45);z-index:200;padding:20px}
 .modal-overlay.open{display:block}
 .modal{background:white;border-radius:14px;max-width:680px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .modal-header{padding:24px 24px 0;border-bottom:1px solid var(--border);margin-bottom:0}
@@ -779,7 +788,9 @@ function buildMaterialsGlossary(){
 }
 function openMaterialsGlossary(){
   if(!materialsGlossaryBuilt) buildMaterialsGlossary();
-  document.getElementById('materialsGlossaryOverlay').classList.add('open');
+  const el=document.getElementById('materialsGlossaryOverlay');
+  positionOverlayAtScroll(el);
+  el.classList.add('open');
 }
 function closeMaterialsGlossary(){ document.getElementById('materialsGlossaryOverlay').classList.remove('open'); }
 
@@ -999,7 +1010,7 @@ function durTierBadge(p){
   const label = m ? ('Spin T'+m[0]) : t;
   return `<span class="badge badge-tier ${cls}" title="Spin Durability Tier">${label}<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openDurInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>`;
 }
-function openTierInfo(){ document.getElementById('tierInfoOverlay').classList.add('open'); }
+function openTierInfo(){ const el=document.getElementById('tierInfoOverlay'); positionOverlayAtScroll(el); el.classList.add('open'); }
 function closeTierInfo(){ document.getElementById('tierInfoOverlay').classList.remove('open'); }
 
 // Paddle Feel Map quadrant (populated from the feel-map sheet at load).
@@ -1421,6 +1432,21 @@ function unlockBodyScroll(){
 }
 window.lockBodyScroll=lockBodyScroll;
 window.unlockBodyScroll=unlockBodyScroll;
+// Positions an absolute-positioned overlay (.modal-overlay / .dur-info-overlay) so it starts
+// exactly at the user's current scroll offset — the replacement for position:fixed, which is
+// what let this overlay visually "cover the screen" before. See the CSS comment above
+// .modal-overlay for the full explanation of why position:fixed had to go.
+function positionOverlayAtScroll(el){
+  if(!el) return;
+  const scrollEl = document.scrollingElement || document.documentElement;
+  el.style.top = (scrollEl.scrollTop||0) + 'px';
+}
+window.addEventListener('resize', ()=>{
+  ['modalOverlay','tierInfoOverlay','materialsGlossaryOverlay'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
+  });
+});
 function openModal(idx){
   const p=PADDLES[idx];
   CURRENT_MODAL_PADDLE = p;
@@ -1493,16 +1519,16 @@ function openModal(idx){
     </div>
   `;
   const modalOverlayEl = document.getElementById('modalOverlay');
+  positionOverlayAtScroll(modalOverlayEl);
   modalOverlayEl.classList.add('open');
-  modalOverlayEl.scrollTop = 0;
-  lockBodyScroll();
   recordView(p);
+  if(window.reportPaddleDbHeight) window.reportPaddleDbHeight();
 }
 
 function closeModal(){
   document.getElementById('modalOverlay').classList.remove('open');
-  unlockBodyScroll();
   CURRENT_MODAL_PADDLE = null;
+  if(window.reportPaddleDbHeight) window.reportPaddleDbHeight();
 }
 
 // ── "Compare This Paddle…" → open the Paddle Comparison Lab with this paddle pre-filled.
@@ -1903,40 +1929,30 @@ applyPaddleDeepLink();
 })();
 </script>
 <script>
-// TEMPORARY DIAGNOSTIC HUD — activate by adding ?debug=1 to the URL. Shows live touch/scroll
-// state on screen so we can see exactly what's happening during the "scroll gets stuck" bug
-// without needing a remote debugger. Safe to remove once the root cause is found; does
-// nothing unless ?debug=1 is present.
-if(location.search.indexOf('debug=1')!==-1){
-  (function(){
-    var hud=document.createElement('div');
-    hud.style.cssText='position:fixed;top:0;left:0;right:0;z-index:999999;background:rgba(220,20,20,.92);color:#fff;font:11px/1.4 monospace;padding:6px 8px;pointer-events:none;white-space:pre-line';
-    document.addEventListener('DOMContentLoaded',function(){ document.body.appendChild(hud); });
-    if(document.body) document.body.appendChild(hud);
-    var touchmoveCount=0, touchstartCount=0, lastTarget='(none)', lastPreventedMove=false;
-    document.addEventListener('touchstart',function(e){
-      touchstartCount++;
-      var t=e.target;
-      lastTarget=(t.tagName||'?')+(t.className?('.'+String(t.className).split(' ').join('.')):'');
-    },{capture:true,passive:true});
-    document.addEventListener('touchmove',function(e){
-      touchmoveCount++;
-      lastPreventedMove=e.defaultPrevented;
-    },{capture:true,passive:true});
-    function upd(){
-      var mo=document.getElementById('modalOverlay');
-      var moOpen = mo ? mo.classList.contains('open') : false;
-      hud.textContent =
-        'DEBUG HUD (remove after diagnosis)\n'+
-        'modalOverlay.open='+moOpen+'  scrollTop='+(mo?mo.scrollTop:'n/a')+'  scrollHeight='+(mo?mo.scrollHeight:'n/a')+'  clientHeight='+(mo?mo.clientHeight:'n/a')+'\n'+
-        'window.scrollY='+window.scrollY+'  body.position='+(document.body.style.position||'(none)')+'  body.top='+(document.body.style.top||'(none)')+'\n'+
-        'touchstarts='+touchstartCount+'  touchmoves='+touchmoveCount+'  lastMovePrevented='+lastPreventedMove+'\n'+
-        'lastTouchTarget='+lastTarget;
-      requestAnimationFrame(upd);
-    }
-    upd();
-  })();
-}
+// Reports this page's rendered height to the parent Squarespace page so the embedding
+// <iframe> can grow to fit content exactly, instead of being a fixed height that forces the
+// iframe's own document to scroll internally. That internal iframe scroll is what caused the
+// modal's "stuck scroll" bug on iOS Safari (see the CSS comment above .modal-overlay for the
+// full explanation) — with no internal iframe scroll, the outer Squarespace page does all the
+// scrolling, which is the one scroll context iOS handles reliably.
+// Pairs with a Squarespace Code Block that listens for this message and resizes its <iframe>
+// (see the snippet provided alongside this fix).
+(function(){
+  function reportHeight(){
+    if(window.self === window.top) return; // not embedded — nothing to report
+    var h = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+    try{ window.parent.postMessage({ source:'radiology-lab', type:'paddleDbResize', height:h }, '*'); }catch(e){}
+  }
+  window.reportPaddleDbHeight = reportHeight;
+  window.addEventListener('load', reportHeight);
+  window.addEventListener('resize', reportHeight);
+  if(window.ResizeObserver){
+    new ResizeObserver(reportHeight).observe(document.documentElement);
+  } else {
+    setInterval(reportHeight, 500);
+  }
+  reportHeight();
+})();
 </script>
 </body>
 </html>
