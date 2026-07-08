@@ -341,7 +341,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
   /* X-ray/photo hero: side-by-side on desktop (see rule above), stacked vertically on
      mobile — x-ray always on top, paddle photo always on bottom (order set via the role
      class), each one independently tappable to open the zoom lightbox.
-     FIXED 2026-07-08: this used to drop `aspect-ratio` entirely (`aspect-ratio:auto;
+     FIXED 2026-07-08, part 1: this used to drop `aspect-ratio` entirely (`aspect-ratio:auto;
      height:auto`), leaving the frame's height derived purely from the <img>'s own
      `height:auto` — which requires the browser to already know the image's natural
      dimensions to compute anything. On real mobile Safari this reliably collapsed both
@@ -349,9 +349,20 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
      nothing between the material badges and the view count — not a load failure, a layout
      one). Desktop never had this bug because it keeps an explicit `aspect-ratio` on the
      frame regardless of image load state. Mobile now does the same instead of relying on
-     the image to define its own container's size. */
+     the image to define its own container's size.
+     FIXED 2026-07-08, part 2: adding aspect-ratio alone wasn't enough — .xray-stack-frame
+     still inherited `flex:1 1 0` from the desktop rule below. In a column-direction flex
+     container (this media query sets .xray-stack to flex-direction:column) with no explicit
+     height of its own, `flex-basis:0` forces each item's main-size (height, since the main
+     axis is vertical here) to start at literally 0, and with no defined free space to grow
+     into (the container's height is itself derived from its children), the items stayed at
+     that 0 basis — aspect-ratio never got a chance to apply. Confirmed directly: computed
+     height was 2px with aspect-ratio correctly showing "1 / 1.15"; forcing flex to
+     `0 0 auto` (don't grow, don't shrink, size from content) immediately fixed it to the
+     expected ~457px. Desktop never hit this because it's a row, not a column, so flex-basis
+     applies to WIDTH there, not height. */
   .xray-stack{flex-direction:column;gap:12px;max-width:100%}
-  .xray-stack-frame{aspect-ratio:1/1.15;width:100%;height:auto}
+  .xray-stack-frame{aspect-ratio:1/1.15;width:100%;height:auto;flex:0 0 auto}
   .xray-stack-frame.xray-role{order:1}
   .xray-stack-frame.photo-role{order:2}
   .xray-stack-frame .xray-stack-img{width:100%;height:100%;max-height:none;object-fit:contain}
