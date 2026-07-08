@@ -1534,15 +1534,23 @@ window.addEventListener('resize', ()=>{
     if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
   });
 });
-window.addEventListener('scroll', ()=>{
-  // The modal (unlike the zoom lightbox) doesn't lock scroll, so the user can keep scrolling
-  // this page while it's open — reposition `top` (never height) to track it live. Needed now
-  // that this page scrolls internally again (see comment block above).
-  ['modalOverlay','tierInfoOverlay','materialsGlossaryOverlay'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el && el.classList.contains('open')) positionOverlayAtScroll(el);
-  });
-}, {passive:true});
+// REMOVED 2026-07-08: a 'scroll' listener briefly lived here, re-running
+// positionOverlayAtScroll() on every native scroll event to keep the modal "tracking" the
+// user's scroll position live. That was backwards and broke scrolling entirely: this overlay
+// has no internal overflow of its own (see the comment above .modal-overlay) — it's a plain,
+// often-taller-than-one-screen block sitting at a fixed absolute position, and the ORIGINAL
+// design (see the big MODAL comment above) relies on that position being set ONCE at open
+// time so normal page/iframe scrolling can reveal the rest of it, exactly like any other tall
+// block of content. Continuously re-pinning `top` to the current scroll offset on every
+// scroll event instead made the overlay chase the scroll position — visually staying glued to
+// the top of the viewport forever, which meant there was never anything left to scroll past
+// to reach the modal's own lower content. That's the literal "modal won't scroll down at all"
+// bug reported after the previous fix went live, plus visible stutter/glitching from the
+// constant reposition-on-every-scroll-tick fighting real (especially momentum/inertial)
+// scrolling. Confirmed via live testing on the real Squarespace embed in both Chrome and
+// Safari. Fix: removed the listener entirely — position is set once via positionOverlayAtScroll
+// at open time (openModal/openTierInfo/openMaterialsGlossary) and never touched again until
+// the next resize (which only matters for orientation changes, not routine scrolling).
 function openModal(idx){
   const p=PADDLES[idx];
   CURRENT_MODAL_PADDLE = p;
