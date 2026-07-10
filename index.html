@@ -808,7 +808,7 @@ function feelQuadBadge(p){
 
 /* ===== Engagement: views (card opens + lab adds) and thumbs up/down ===== */
 const STATS_SHEET_ID = '1OUARTyxhMzNwb_enXfyqJEv0ds5rLG9KvsoX9oz_B0E';   // Stats Google Sheet ID
-const STATS_API      = 'https://script.google.com/macros/s/AKfycbzP7HamLa0yOpVqKiFVUqfL08AlL0pY2q-e8JND7brbhStwCIwVmPXE6V78mYBnYHLg/exec';   // engagement Apps Script /exec URL
+const STATS_API      = 'https://bot-defense-1.johnkewpickleball.workers.dev/';   // Cloudflare Worker proxy in front of the engagement Apps Script (adds real-IP capture + bot blocking)
 let STATS_MAP = {};          // "company||paddle"(lower) -> {views,labAdds,up,down}
 let CLIENT_IP = null;
 let CURRENT_MODAL_PADDLE = null;
@@ -829,7 +829,19 @@ function thumbDownSvg(){ return '<svg viewBox="0 0 24 24" fill="none" stroke="cu
 function viewsBadge(p){ return `<div class="card-views" title="Total views (database + comparison lab + radiology lab)">${eyeSvg()}<span class="cv-num" data-vk="${escAttr(statsKey(p))}">${cumViews(p)}</span></div>`; }
 function refreshStatViews(){ document.querySelectorAll('.cv-num').forEach(el=>{ const k=el.getAttribute('data-vk'); const s=STATS_MAP[k]; const raw=s?((s.views||0)+(s.labAdds||0)):0; el.textContent = raw+(LEGACY_BOOST[k]||0); }); }
 function statsPost(payload){ if(!STATS_API) return; try{ fetch(STATS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); }catch(e){} }
+// Bot/dup guard: only count one view (or lab-add) per paddle per browser session every 30 min.
+// Client-side only, so it's not a hard defense — just stops naive repeat-open bots and double counts.
+function recentlyRecorded_(kind, p){
+  try{
+    const k = 'eng_'+kind+'_'+statsKey(p);
+    const t = sessionStorage.getItem(k);
+    if(t && (Date.now()-Number(t)) < 30*60*1000) return true;
+    sessionStorage.setItem(k, String(Date.now()));
+    return false;
+  }catch(e){ return false; }
+}
 function recordView(p){
+  if(recentlyRecorded_('view', p)) return;
   // Cumulative: every card open counts (only votes are capped, per IP).
   ensureStat(p).views++; refreshStatViews();
   const el=document.querySelector('#modalContent .mf-views b'); if(el) el.textContent=cumViews(p);

@@ -621,7 +621,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 
   /* ---- engagement (views / comparison adds / thumbs up-down) ---- */
   var STATS_SHEET_ID='1OUARTyxhMzNwb_enXfyqJEv0ds5rLG9KvsoX9oz_B0E';   // Stats Google Sheet ID
-  var STATS_API='https://script.google.com/macros/s/AKfycbzP7HamLa0yOpVqKiFVUqfL08AlL0pY2q-e8JND7brbhStwCIwVmPXE6V78mYBnYHLg/exec';        // engagement Apps Script /exec URL
+  var STATS_API='https://bot-defense-1.johnkewpickleball.workers.dev/';        // Cloudflare Worker proxy in front of the engagement Apps Script (adds real-IP capture + bot blocking)
   var STATS_MAP={}, CLIENT_IP=null;
   function statsKey(p){ return (p.company+'||'+p.paddle).toLowerCase().trim(); }
   function statOf(p){ return STATS_MAP[statsKey(p)]||{views:0,labAdds:0,up:0,down:0}; }
@@ -635,14 +635,27 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function cumViews(p){ var s=statOf(p); return (s.views||0)+(s.labAdds||0)+(LEGACY_BOOST[statsKey(p)]||0); }
   function popularity(p){ var s=statOf(p); return (s.views||0)+(s.labAdds||0)+(LEGACY_BOOST[statsKey(p)]||0) + 10*(s.up||0) - 10*(s.down||0); }
   function statsPost(payload){ if(!STATS_API) return; try{ fetch(STATS_API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); }catch(e){} }
+  // Bot/dup guard: only count one view (or lab-add) per paddle per browser session every 30 min.
+  // Client-side only, so it's not a hard defense — just stops naive repeat-open bots and double counts.
+  function recentlyRecorded_(kind, p){
+    try{
+      var k = 'eng_'+kind+'_'+statsKey(p);
+      var t = sessionStorage.getItem(k);
+      if(t && (Date.now()-Number(t)) < 30*60*1000) return true;
+      sessionStorage.setItem(k, String(Date.now()));
+      return false;
+    }catch(e){ return false; }
+  }
   function recordLabAdd(p){
     if(!p) return;
+    if(recentlyRecorded_('labadd', p)) return;
     // Cumulative: every add counts, including repeat adds by the same user.
     ensureStat(p).labAdds++;
     statsPost({action:'labadd',company:p.company,paddle:p.paddle});
   }
   function recordView(p){
     if(!p) return;
+    if(recentlyRecorded_('view', p)) return;
     // Cumulative: every image-expand click, x-ray flip, and chart-layout switch counts (1x, unboosted).
     ensureStat(p).views++;
     refreshStatViews();
