@@ -1100,6 +1100,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   var SURFACE_PROXY='https://corsproxy.io/?'+encodeURIComponent(SURFACE_CSV);
   // Force a specific link when auto-matching is wrong:  "Company||Paddle":"exact sheet column name"
   var SURFACE_OVERRIDE={};
+  // Paddles whose name is too similar to a tested sibling (e.g. "Power Bloom" vs "Pro Bloom") for the
+  // fuzzy matcher below to tell apart. List them here so they always show "No data" instead of borrowing
+  // another paddle's curve.  "Company||Paddle": true
+  var SURFACE_EXCLUDE={'Vatic Pro||V-Sol Pro Bloom':1};
   var S_ALI={addias:'adidas',aiero:'aireo',babalot:'babolat',falcolos:'facolos',packle:'pakle',franlkin:'franklin'};
   var S_SYN={wb:'widebody',el:'elongated',elong:'elongated',hyb:'hybrid',std:'standard',blak:'black',paris:'pariss'};
   var S_GEN={pro:1,power:1,'new':1,solid:1,foam:1,full:1,paddle:1,co:1,company:1,pickleball:1,the:1,of:1,and:1,b:1,w:1,c:1,t:1,s:1,v:1,x:1,e:1,'16':1,'14':1,'13':1,'15':1,'18':1,'19':1,'10':1};
@@ -1119,6 +1123,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var surfP=curves.map(function(cu){ var st={}; sToks(cu.name).forEach(function(w){st[w]=1;}); return {set:st,th:sTh(cu.name),pts:cu.pts}; });
     var map={};
     PADDLES.forEach(function(p){
+      if(SURFACE_EXCLUDE[p.key]) return;
       var ov=SURFACE_OVERRIDE[p.key]; if(ov && byName[ov]){ map[p.key]=byName[ov]; return; }
       var b=sBrand(p.company), dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
       var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
