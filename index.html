@@ -1467,6 +1467,11 @@ applyPaddleDeepLink();
     s.onerror = function() {}; // fail silently
     document.head.appendChild(s);
   }
+  // Fetched via the Cloudflare Worker proxy first (keeps the raw Sheet URL out of page source
+  // and off any independent subscription; also edge-cached). Falls back to a direct fetch of
+  // the published CSV — which Google serves with permissive CORS on its own — if the Worker
+  // is ever unreachable, so the site never goes fully dark on this data.
+  const WORKER_BASE = 'https://bot-defense-1.johnkewpickleball.workers.dev';
   const CSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
   const PROXY_URL = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
 
@@ -1609,6 +1614,7 @@ applyPaddleDeepLink();
   // Paddle Feel Map positions (for the modal "Feel Quad" pill).
   const FEEL_CSV   = 'https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
   const FEEL_PROXY = 'https://corsproxy.io/?' + encodeURIComponent(FEEL_CSV);
+  const WORKER_FEEL_CSV = WORKER_BASE + '/csv/feel';
   function loadFeelMap(url, fb){
     Papa.parse(url, { download:true, skipEmptyLines:true, complete:function(res){
       const rows = res.data || [];
@@ -1646,7 +1652,7 @@ applyPaddleDeepLink();
   // Wait for page to render first, then load PapaParse + fetch in background
   window.addEventListener('load', function() {
     setTimeout(function() {
-      loadPapaParse(function() { tryFetch(CSV_URL, PROXY_URL); var fc=FEEL_CSV+'&cb='+Date.now(); loadFeelMap(fc, 'https://corsproxy.io/?'+encodeURIComponent(fc)); loadStats(); });
+      loadPapaParse(function() { tryFetch(WORKER_BASE+'/csv/paddles', CSV_URL); var fc=WORKER_FEEL_CSV+'?cb='+Date.now(); loadFeelMap(fc, FEEL_CSV+'&cb='+Date.now()); loadStats(); });
     }, 100);
   });
 })();

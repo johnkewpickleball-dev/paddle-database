@@ -1808,6 +1808,11 @@ applyPaddleDeepLink();
     s.onerror = function() {}; // fail silently
     document.head.appendChild(s);
   }
+  // Fetched via the Cloudflare Worker proxy first (keeps the raw Sheet URL out of page source
+  // and off any independent subscription; also edge-cached). Falls back to a direct fetch of
+  // the published CSV — which Google serves with permissive CORS on its own — if the Worker
+  // is ever unreachable, so the site never goes fully dark on this data.
+  const WORKER_BASE = 'https://bot-defense-1.johnkewpickleball.workers.dev';
   const CSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
   const PROXY_URL = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
 
@@ -1984,7 +1989,7 @@ applyPaddleDeepLink();
   // Wait for page to render first, then load PapaParse + fetch in background
   window.addEventListener('load', function() {
     setTimeout(function() {
-      loadPapaParse(function() { tryFetch(CSV_URL, PROXY_URL); loadStats(); });
+      loadPapaParse(function() { tryFetch(WORKER_BASE+'/csv/paddles', CSV_URL); loadStats(); });
     }, 100);
   });
 })();
