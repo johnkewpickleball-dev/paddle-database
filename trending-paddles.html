@@ -207,6 +207,11 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <script>
 (function(){
   "use strict";
+  // Fetched via the Cloudflare Worker proxy first (keeps the raw Sheet URL out of page source
+  // and off any independent subscription; also edge-cached). Falls back to a direct fetch of
+  // the published CSV — which Google serves with permissive CORS on its own — if the Worker
+  // is ever unreachable, so the widget never goes fully dark on this data.
+  var WORKER_BASE = 'https://bot-defense-1.johnkewpickleball.workers.dev';
   var CSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
   var PROXY     = 'https://corsproxy.io/?' + encodeURIComponent(CSV_URL);
   var STATS_SHEET_ID = '1OUARTyxhMzNwb_enXfyqJEv0ds5rLG9KvsoX9oz_B0E';
@@ -437,7 +442,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
 
   function init(){
-    load(CSV_URL, PROXY, ingestPaddles);
+    load(WORKER_BASE+'/csv/paddles', CSV_URL, ingestPaddles);
     var votesCsv='https://docs.google.com/spreadsheets/d/'+STATS_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet=Votes&cb='+Date.now();
     load(votesCsv, 'https://corsproxy.io/?'+encodeURIComponent(votesCsv), ingestVotes);
     var logCsv='https://docs.google.com/spreadsheets/d/'+STATS_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet=ViewsLog&cb='+Date.now();
