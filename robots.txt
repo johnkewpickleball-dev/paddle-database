@@ -1,0 +1,52 @@
+# Defense-in-depth only: per the robots.txt spec, crawlers look for this file at the true
+# origin root (https://johnkewpickleball-dev.github.io/robots.txt), which 404s because no
+# user/org "johnkewpickleball-dev.github.io" repo exists — GitHub Pages project sites like
+# this one can't serve a root-level robots.txt. Spec-compliant bots won't see this file here.
+# The reliable mechanism is the per-page <meta name="{BotName}" content="noindex,nofollow">
+# tags already in index.html, radiology-lab.html, paddle-comparison-lab.html and
+# trending-paddles.html. This file is kept anyway for the minority of simpler bots that do
+# check a subpath robots.txt, and as a visible statement of intent.
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: Applebot-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Amazonbot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: cohere-ai
+Disallow: /
+
+User-agent: omgili
+Disallow: /
+
+# Regular search engines (Googlebot, Bingbot, etc.) are intentionally left unrestricted —
+# this site wants normal search visibility, just not AI-training scraping.
+User-agent: *
+Allow: /
