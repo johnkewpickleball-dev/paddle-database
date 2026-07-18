@@ -544,6 +544,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
           <option value="power-desc">Power: Highest</option>
           <option value="pop-desc">Pop: Highest</option>
           <option value="firepower-desc">Firepower: Highest</option>
+          <option value="facearea-desc">Face Area: Largest</option>
+          <option value="facearea-asc">Face Area: Smallest</option>
           <option value="name-asc">Name A–Z</option>
         </select>
       </div>
@@ -756,6 +758,8 @@ function applyFilters(forcedSort){
   else if(sort==='power-desc') filtered.sort((a,b)=>(b.powerScore||0)-(a.powerScore||0));
   else if(sort==='pop-desc') filtered.sort((a,b)=>(b.popScore||0)-(a.popScore||0));
   else if(sort==='firepower-desc') filtered.sort((a,b)=>(b.firepower||0)-(a.firepower||0));
+  else if(sort==='facearea-desc') filtered.sort((a,b)=>{const av=getFaceArea(a),bv=getFaceArea(b); if(av==null&&bv==null)return 0; if(av==null)return 1; if(bv==null)return -1; return bv-av;});
+  else if(sort==='facearea-asc') filtered.sort((a,b)=>{const av=getFaceArea(a),bv=getFaceArea(b); if(av==null&&bv==null)return 0; if(av==null)return 1; if(bv==null)return -1; return av-bv;});
   else if(sort==='name-asc') filtered.sort((a,b)=>(a.company+a.paddle).localeCompare(b.company+b.paddle));
 
   document.getElementById('resultCount').textContent = filtered.length;
@@ -826,6 +830,32 @@ function feelQuadBadge(p){
 const STATS_SHEET_ID = '1OUARTyxhMzNwb_enXfyqJEv0ds5rLG9KvsoX9oz_B0E';   // Stats Google Sheet ID
 const STATS_API      = 'https://bot-defense-1.johnkewpickleball.workers.dev/';   // Cloudflare Worker proxy in front of the engagement Apps Script (adds real-IP capture + bot blocking)
 let STATS_MAP = {};          // "company||paddle"(lower) -> {views,labAdds,up,down}
+
+/* ===== Face Surface Area (computed, photo-based pixel measurement) =====
+   Lives in a "Face Area (Computed)" tab in the main paddle DB spreadsheet, kept in sync via
+   an Apps Script function (syncFaceAreaSheet) that I re-run whenever new measurements are
+   added -- it's a separate tab so the paste-and-replace workflow on the main paddle tab never
+   touches it. See face-area-data.json in the repo for the underlying dataset + methodology. */
+const PADDLE_DB_SHEET_ID = '1ukZFKMasomu1NKcILe6VqQrDLciQj_BhMfWshSy8MaI';
+let FACE_AREA_MAP = {};      // "company||paddle"(lower) -> sq in
+function faceAreaKey(p){ return (p.company+'||'+p.paddle).toLowerCase().trim(); }
+function getFaceArea(p){ return FACE_AREA_MAP[faceAreaKey(p)] || null; }
+function loadFaceArea(){
+  if(!PADDLE_DB_SHEET_ID) return;
+  var url='https://docs.google.com/spreadsheets/d/'+PADDLE_DB_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('Face Area (Computed)')+'&cb='+Date.now();
+  Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
+    var rows=res.data||[]; if(rows.length<2) return;
+    var head=rows[0].map(function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');});
+    var ci={company:head.indexOf('company'),paddle:head.indexOf('paddle'),area:head.indexOf('facesurfaceareasqin')};
+    if(ci.company<0||ci.paddle<0||ci.area<0) return;
+    var m={};
+    for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue; var c=r[ci.company],pd=r[ci.paddle]; if(!c||!pd) continue;
+      var a=parseFloat(r[ci.area]); if(isNaN(a)) continue;
+      m[(String(c)+'||'+String(pd)).toLowerCase().trim()]=a; }
+    FACE_AREA_MAP=m;
+    if(typeof applyFilters==='function') applyFilters();
+  },error:function(){}});
+}
 let CLIENT_IP = null;
 let CURRENT_MODAL_PADDLE = null;
 function statsKey(p){ return (p.company+'||'+p.paddle).toLowerCase().trim(); }
@@ -1249,6 +1279,7 @@ function openModal(idx){
           <div class="spec-item"><div class="spec-label">Length</div><div class="spec-value">${p.length?fmt(p.length)+'"':'—'}</div></div>
           <div class="spec-item"><div class="spec-label">Width</div><div class="spec-value">${p.width?fmt(p.width)+'"':'—'}</div></div>
           <div class="spec-item"><div class="spec-label">Handle Length</div><div class="spec-value">${p.handleLength?fmt(p.handleLength)+'"':'—'}</div></div>
+          <div class="spec-item"><div class="spec-label">Face Surface Area</div><div class="spec-value" title="Hitting area above the handle, measured from the paddle's own photo">${getFaceArea(p)?fmt(getFaceArea(p))+' in²':'—'}</div></div>
           <div class="spec-item"><div class="spec-label">Static Weight</div><div class="spec-value">${p.weight?fmt(p.weight)+' oz':'—'}</div></div>
           <div class="spec-item"><div class="spec-label">Swing Weight</div><div class="spec-value">${p.swingWeight?fmt(p.swingWeight):'—'}</div></div>
           <div class="spec-item"><div class="spec-label">Twist Weight</div><div class="spec-value">${p.twistWeight?fmt(p.twistWeight):'—'}</div></div>
@@ -1652,7 +1683,7 @@ applyPaddleDeepLink();
   // Wait for page to render first, then load PapaParse + fetch in background
   window.addEventListener('load', function() {
     setTimeout(function() {
-      loadPapaParse(function() { tryFetch(WORKER_BASE+'/csv/paddles', CSV_URL); var fc=WORKER_FEEL_CSV+'?cb='+Date.now(); loadFeelMap(fc, FEEL_CSV+'&cb='+Date.now()); loadStats(); });
+      loadPapaParse(function() { tryFetch(WORKER_BASE+'/csv/paddles', CSV_URL); var fc=WORKER_FEEL_CSV+'?cb='+Date.now(); loadFeelMap(fc, FEEL_CSV+'&cb='+Date.now()); loadStats(); loadFaceArea(); });
     }, 100);
   });
 })();
