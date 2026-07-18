@@ -1,0 +1,955 @@
+{
+  "_meta": {
+    "description": "Computed paddle face (hitting surface) area, measured from product photos.",
+    "method": "Pixel silhouette above the Handle Length line in each paddle's tightly-cropped transparent-PNG photo, calibrated to real inches using the paddle's own Length spec (image height in px / Length in = px-per-inch). Only paddles with a real product photo are included -- x-ray images were tested as a fallback and excluded after validation showed they systematically overcount (some values exceeded the paddle's own bounding-rectangle area, which is physically impossible).",
+    "generated": "2026-07-18",
+    "count": 189
+  },
+  "paddles": [
+    {
+      "company": "11SIX24",
+      "paddle": "Hurache-X Alpha Pro Power",
+      "faceAreaSqIn": 69.4
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Hurache-X Jelly Bean",
+      "faceAreaSqIn": 69.3
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Hurache-X Power 2",
+      "faceAreaSqIn": 67.2
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Pegasus All Court",
+      "faceAreaSqIn": 71.2
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Pegasus Alpha Pro Power",
+      "faceAreaSqIn": 70.3
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Pegasus Jelly Bean",
+      "faceAreaSqIn": 68.8
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Pegasus Power 2",
+      "faceAreaSqIn": 72.4
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Ultré Power 2",
+      "faceAreaSqIn": 71.0
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Vapor All Court",
+      "faceAreaSqIn": 71.4
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Vapor Alpha Pro Power",
+      "faceAreaSqIn": 72.2
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Vapor Jelly Bean",
+      "faceAreaSqIn": 72.3
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Vapor Power",
+      "faceAreaSqIn": 69.8
+    },
+    {
+      "company": "11SIX24",
+      "paddle": "Vapor Power 2",
+      "faceAreaSqIn": 70.6
+    },
+    {
+      "company": "Adidas",
+      "paddle": "AdiPower Pro-ATTK",
+      "faceAreaSqIn": 68.5
+    },
+    {
+      "company": "Adidas",
+      "paddle": "AdiPower Pro-CTRL",
+      "faceAreaSqIn": 69.9
+    },
+    {
+      "company": "Adidas",
+      "paddle": "Metalbone LP S (Red EVA)",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "Aireo",
+      "paddle": "Cyclone Elongated",
+      "faceAreaSqIn": 71.8
+    },
+    {
+      "company": "Aireo",
+      "paddle": "Cyclone Hybrid",
+      "faceAreaSqIn": 67.6
+    },
+    {
+      "company": "Avoura",
+      "paddle": "Rhapsody",
+      "faceAreaSqIn": 70.6
+    },
+    {
+      "company": "Avoura",
+      "paddle": "Rivelle",
+      "faceAreaSqIn": 68.5
+    },
+    {
+      "company": "Body Helix",
+      "paddle": "F1 TerraCore Elongated",
+      "faceAreaSqIn": 71.7
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Fat Boy",
+      "faceAreaSqIn": 71.2
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Filth Hybrid",
+      "faceAreaSqIn": 69.3
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Invader",
+      "faceAreaSqIn": 72.5
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Loco Elongated",
+      "faceAreaSqIn": 69.2
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Loco Hybrid",
+      "faceAreaSqIn": 72.0
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Loco Standard",
+      "faceAreaSqIn": 73.7
+    },
+    {
+      "company": "Bread & Butter",
+      "paddle": "Wild Thang",
+      "faceAreaSqIn": 70.3
+    },
+    {
+      "company": "Chorus",
+      "paddle": "CODA Harmony Grit S",
+      "faceAreaSqIn": 74.0
+    },
+    {
+      "company": "Chorus",
+      "paddle": "Phoenix HX",
+      "faceAreaSqIn": 71.5
+    },
+    {
+      "company": "Chorus",
+      "paddle": "Phoenix SX",
+      "faceAreaSqIn": 72.0
+    },
+    {
+      "company": "Chorus",
+      "paddle": "CODA Harmony Grit E",
+      "faceAreaSqIn": 73.1
+    },
+    {
+      "company": "Chorus",
+      "paddle": "CODA Harmony Grit H",
+      "faceAreaSqIn": 72.5
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Barrage 2",
+      "faceAreaSqIn": 73.9
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Barrage 4",
+      "faceAreaSqIn": 70.9
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Genesis 1",
+      "faceAreaSqIn": 67.0
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Genesis 2",
+      "faceAreaSqIn": 73.3
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Genesis 4",
+      "faceAreaSqIn": 71.9
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Waves 1",
+      "faceAreaSqIn": 66.1
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Waves 2",
+      "faceAreaSqIn": 70.1
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Waves 3",
+      "faceAreaSqIn": 71.0
+    },
+    {
+      "company": "CRBN",
+      "paddle": "TruFoam Waves 4",
+      "faceAreaSqIn": 68.0
+    },
+    {
+      "company": "Diadem",
+      "paddle": "Edge 18K",
+      "faceAreaSqIn": 74.0
+    },
+    {
+      "company": "Diadem",
+      "paddle": "Edge BluCore Hybrid",
+      "faceAreaSqIn": 71.3
+    },
+    {
+      "company": "Diadem",
+      "paddle": "Hush",
+      "faceAreaSqIn": 67.8
+    },
+    {
+      "company": "Diadem",
+      "paddle": "Warrior BluCore Pro 14mm",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "Element 6",
+      "paddle": "Zephyr",
+      "faceAreaSqIn": 69.5
+    },
+    {
+      "company": "Engage",
+      "paddle": "Alpha Pro Elongated",
+      "faceAreaSqIn": 69.8
+    },
+    {
+      "company": "Engage",
+      "paddle": "Profoam",
+      "faceAreaSqIn": 72.7
+    },
+    {
+      "company": "Engage",
+      "paddle": "X2 Elongated",
+      "faceAreaSqIn": 70.9
+    },
+    {
+      "company": "Enhance",
+      "paddle": "Duo Elongated",
+      "faceAreaSqIn": 72.4
+    },
+    {
+      "company": "Enhance",
+      "paddle": "EPP Turbo-Elongated",
+      "faceAreaSqIn": 69.9
+    },
+    {
+      "company": "Enhance",
+      "paddle": "EPP Turbo-Hybrid",
+      "faceAreaSqIn": 65.5
+    },
+    {
+      "company": "Enhance",
+      "paddle": "EPP Turbo-Widebody",
+      "faceAreaSqIn": 72.5
+    },
+    {
+      "company": "Enhance",
+      "paddle": "MPP Turbo",
+      "faceAreaSqIn": 69.8
+    },
+    {
+      "company": "Enhance",
+      "paddle": "MPP Turbo Hybrid",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "F+B",
+      "paddle": "Runout-E",
+      "faceAreaSqIn": 71.7
+    },
+    {
+      "company": "F+B",
+      "paddle": "Runout-H",
+      "faceAreaSqIn": 71.9
+    },
+    {
+      "company": "F+B",
+      "paddle": "Runout-S",
+      "faceAreaSqIn": 72.8
+    },
+    {
+      "company": "Facolos",
+      "paddle": "Elite X",
+      "faceAreaSqIn": 69.0
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Aurelius 12.7 mm",
+      "faceAreaSqIn": 68.7
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Aurelius 14 mm",
+      "faceAreaSqIn": 70.1
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Aurelius 16 mm",
+      "faceAreaSqIn": 69.5
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Dynasty 14mm",
+      "faceAreaSqIn": 68.4
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Dynasty 16mm",
+      "faceAreaSqIn": 73.0
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Pariss Todd",
+      "faceAreaSqIn": 68.2
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Tempo 14mm",
+      "faceAreaSqIn": 73.9
+    },
+    {
+      "company": "Franklin",
+      "paddle": "C45 Tempo 16mm",
+      "faceAreaSqIn": 73.7
+    },
+    {
+      "company": "Friday",
+      "paddle": "Aura Hybrid",
+      "faceAreaSqIn": 71.3
+    },
+    {
+      "company": "Friday",
+      "paddle": "Aura Pro Elongated",
+      "faceAreaSqIn": 69.6
+    },
+    {
+      "company": "Friday",
+      "paddle": "Aura Pro Hybrid",
+      "faceAreaSqIn": 70.4
+    },
+    {
+      "company": "Friday",
+      "paddle": "Aura Pro Widebody",
+      "faceAreaSqIn": 70.5
+    },
+    {
+      "company": "Friday",
+      "paddle": "Fever 101 Elongated",
+      "faceAreaSqIn": 70.9
+    },
+    {
+      "company": "Friday",
+      "paddle": "Fever 102 Elongated",
+      "faceAreaSqIn": 69.9
+    },
+    {
+      "company": "Friday",
+      "paddle": "Fever Widebody",
+      "faceAreaSqIn": 69.4
+    },
+    {
+      "company": "Gearbox",
+      "paddle": "GBX Power Elongated",
+      "faceAreaSqIn": 69.2
+    },
+    {
+      "company": "Gearbox",
+      "paddle": "GX2 Power Elongated",
+      "faceAreaSqIn": 72.1
+    },
+    {
+      "company": "Gearbox",
+      "paddle": "GX2 Power Hybrid",
+      "faceAreaSqIn": 68.3
+    },
+    {
+      "company": "Gherkin",
+      "paddle": "Draco Elongated",
+      "faceAreaSqIn": 70.8
+    },
+    {
+      "company": "Gherkin",
+      "paddle": "Draco Widebody",
+      "faceAreaSqIn": 69.8
+    },
+    {
+      "company": "Gherkin",
+      "paddle": "Wraith Hybrid",
+      "faceAreaSqIn": 69.2
+    },
+    {
+      "company": "Head",
+      "paddle": "Boom Pro EX15",
+      "faceAreaSqIn": 66.3
+    },
+    {
+      "company": "Holbrook",
+      "paddle": "Fuze Elongated",
+      "faceAreaSqIn": 70.0
+    },
+    {
+      "company": "Holbrook",
+      "paddle": "Fuze Hybrid",
+      "faceAreaSqIn": 69.0
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J2CR Long Handle Blue Grit",
+      "faceAreaSqIn": 68.3
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J2FC+",
+      "faceAreaSqIn": 68.3
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J2NF",
+      "faceAreaSqIn": 70.7
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J2NFK",
+      "faceAreaSqIn": 72.2
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J3NF",
+      "faceAreaSqIn": 70.5
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J6CR",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J6CR Blue Grit",
+      "faceAreaSqIn": 69.6
+    },
+    {
+      "company": "Honolulu Pickleball Co.",
+      "paddle": "J7NF",
+      "faceAreaSqIn": 68.8
+    },
+    {
+      "company": "JOOLA",
+      "paddle": "Hyperion CFS (Gen-1)",
+      "faceAreaSqIn": 69.7
+    },
+    {
+      "company": "JOOLA",
+      "paddle": "Kosmos Pro V",
+      "faceAreaSqIn": 71.2
+    },
+    {
+      "company": "JOOLA",
+      "paddle": "Perseus 3S",
+      "faceAreaSqIn": 70.4
+    },
+    {
+      "company": "JOOLA",
+      "paddle": "Perseus Pro IV 14mm",
+      "faceAreaSqIn": 70.3
+    },
+    {
+      "company": "JOOLA",
+      "paddle": "Perseus Pro IV 16mm",
+      "faceAreaSqIn": 70.1
+    },
+    {
+      "company": "JOOLA",
+      "paddle": "Scorpeus Pro IV",
+      "faceAreaSqIn": 72.4
+    },
+    {
+      "company": "Luzz",
+      "paddle": "Glider 2026",
+      "faceAreaSqIn": 71.2
+    },
+    {
+      "company": "Luzz",
+      "paddle": "Inferno Frozen",
+      "faceAreaSqIn": 69.4
+    },
+    {
+      "company": "Luzz",
+      "paddle": "Pro Cannon",
+      "faceAreaSqIn": 71.3
+    },
+    {
+      "company": "Luzz",
+      "paddle": "Pro-4 Inferno",
+      "faceAreaSqIn": 67.0
+    },
+    {
+      "company": "Luzz",
+      "paddle": "Pro-4 Tornazo",
+      "faceAreaSqIn": 69.0
+    },
+    {
+      "company": "Luzz",
+      "paddle": "Pro-Blade 2",
+      "faceAreaSqIn": 67.8
+    },
+    {
+      "company": "Mark",
+      "paddle": "unMARKed Alpha",
+      "faceAreaSqIn": 73.5
+    },
+    {
+      "company": "Maverix",
+      "paddle": "Havik 2",
+      "faceAreaSqIn": 70.0
+    },
+    {
+      "company": "Neonic",
+      "paddle": "Flare Prime X",
+      "faceAreaSqIn": 70.8
+    },
+    {
+      "company": "Neonic",
+      "paddle": "Frost FLX",
+      "faceAreaSqIn": 68.3
+    },
+    {
+      "company": "Neonic",
+      "paddle": "Swift FLX",
+      "faceAreaSqIn": 69.4
+    },
+    {
+      "company": "Nox",
+      "paddle": "X-Foam JC6",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "NOX",
+      "paddle": "X-Foam Tempus",
+      "faceAreaSqIn": 71.6
+    },
+    {
+      "company": "Owl",
+      "paddle": "Owl CXE",
+      "faceAreaSqIn": 71.8
+    },
+    {
+      "company": "PaddleTek",
+      "paddle": "Bantam ALW-C",
+      "faceAreaSqIn": 65.8
+    },
+    {
+      "company": "PaddleTek",
+      "paddle": "Bantam TKO-CX",
+      "faceAreaSqIn": 68.9
+    },
+    {
+      "company": "PaddleTek",
+      "paddle": "Reserve",
+      "faceAreaSqIn": 66.8
+    },
+    {
+      "company": "Pickle Poppers",
+      "paddle": "Pop N Pink",
+      "faceAreaSqIn": 67.2
+    },
+    {
+      "company": "Pickle Poppers",
+      "paddle": "Pop N Treasure",
+      "faceAreaSqIn": 66.8
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Charm S",
+      "faceAreaSqIn": 69.5
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Charm V",
+      "faceAreaSqIn": 72.7
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Harmony X",
+      "faceAreaSqIn": 71.1
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Pulse S",
+      "faceAreaSqIn": 67.0
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Pulse V",
+      "faceAreaSqIn": 72.9
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Joy S",
+      "faceAreaSqIn": 69.9
+    },
+    {
+      "company": "Pickleball Apes",
+      "paddle": "Joy S+",
+      "faceAreaSqIn": 68.2
+    },
+    {
+      "company": "PICKLN",
+      "paddle": "Alecto",
+      "faceAreaSqIn": 68.9
+    },
+    {
+      "company": "PIKKL",
+      "paddle": "Hurricane Pro",
+      "faceAreaSqIn": 69.8
+    },
+    {
+      "company": "PIKKL",
+      "paddle": "Vantage Pro",
+      "faceAreaSqIn": 69.9
+    },
+    {
+      "company": "Proton",
+      "paddle": "Series 3-Project Flamingo",
+      "faceAreaSqIn": 71.3
+    },
+    {
+      "company": "ProXR",
+      "paddle": "Jolt",
+      "faceAreaSqIn": 65.3
+    },
+    {
+      "company": "Reload",
+      "paddle": "RLD 1-14",
+      "faceAreaSqIn": 67.7
+    },
+    {
+      "company": "Reload",
+      "paddle": "RLD 1-16",
+      "faceAreaSqIn": 70.6
+    },
+    {
+      "company": "Ronbus",
+      "paddle": "Quanta R1.16",
+      "faceAreaSqIn": 66.8
+    },
+    {
+      "company": "Ronbus",
+      "paddle": "Quanta R2.16",
+      "faceAreaSqIn": 73.7
+    },
+    {
+      "company": "Ronbus",
+      "paddle": "Quanta R4.16",
+      "faceAreaSqIn": 69.4
+    },
+    {
+      "company": "Ronbus",
+      "paddle": "Tenon R1.16",
+      "faceAreaSqIn": 66.7
+    },
+    {
+      "company": "Ronbus",
+      "paddle": "Tenon R2.16",
+      "faceAreaSqIn": 69.6
+    },
+    {
+      "company": "RPM",
+      "paddle": "Friction Pro",
+      "faceAreaSqIn": 69.3
+    },
+    {
+      "company": "RPM",
+      "paddle": "Q2 Elongated 16",
+      "faceAreaSqIn": 70.8
+    },
+    {
+      "company": "RPM",
+      "paddle": "Q2 Widebody 14",
+      "faceAreaSqIn": 72.0
+    },
+    {
+      "company": "RPM",
+      "paddle": "Q2 Widebody 16",
+      "faceAreaSqIn": 74.8
+    },
+    {
+      "company": "Scoop",
+      "paddle": "Sidewinder F2E",
+      "faceAreaSqIn": 69.5
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "LABS 008 Invikta",
+      "faceAreaSqIn": 70.8
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "LABS Project Boomstik – Elongated",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "LABS Project Boomstik – Widebody",
+      "faceAreaSqIn": 70.4
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "Luxx Control Air Invikta",
+      "faceAreaSqIn": 69.7
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "Luxx II Control Air Invikta",
+      "faceAreaSqIn": 67.5
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "OMNI Elongated",
+      "faceAreaSqIn": 70.2
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "OMNI Widebody",
+      "faceAreaSqIn": 71.6
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "SLK ERA Elongated",
+      "faceAreaSqIn": 69.4
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "SLK ERA Widebody",
+      "faceAreaSqIn": 69.7
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "Dauntless Elongated",
+      "faceAreaSqIn": 68.5
+    },
+    {
+      "company": "Selkirk",
+      "paddle": "Dauntless Widebody",
+      "faceAreaSqIn": 68.9
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Black Opal",
+      "faceAreaSqIn": 68.1
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Coral Pro-Elongated",
+      "faceAreaSqIn": 64.9
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Coral Pro-Hybrid",
+      "faceAreaSqIn": 67.8
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Coral Pro-Widebody",
+      "faceAreaSqIn": 73.5
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Coral-Elongated",
+      "faceAreaSqIn": 65.7
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Coral-Hybrid",
+      "faceAreaSqIn": 71.3
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Coral-Widebody",
+      "faceAreaSqIn": 71.4
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Double Black Diamond",
+      "faceAreaSqIn": 71.7
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Quartz",
+      "faceAreaSqIn": 71.7
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Ruby",
+      "faceAreaSqIn": 70.1
+    },
+    {
+      "company": "Six Zero",
+      "paddle": "Ruby Pro",
+      "faceAreaSqIn": 70.2
+    },
+    {
+      "company": "Spartus",
+      "paddle": "P1 Hybrid",
+      "faceAreaSqIn": 69.6
+    },
+    {
+      "company": "Spartus",
+      "paddle": "P1 Standard",
+      "faceAreaSqIn": 70.1
+    },
+    {
+      "company": "Spartus",
+      "paddle": "Spitfire",
+      "faceAreaSqIn": 67.8
+    },
+    {
+      "company": "Speedup",
+      "paddle": "Tide 14H",
+      "faceAreaSqIn": 67.4
+    },
+    {
+      "company": "Speedup",
+      "paddle": "Tide 14L",
+      "faceAreaSqIn": 66.7
+    },
+    {
+      "company": "Speedup",
+      "paddle": "Tide 14S",
+      "faceAreaSqIn": 70.0
+    },
+    {
+      "company": "Tesla (and Selkirk)",
+      "paddle": "Tesla Plaid",
+      "faceAreaSqIn": 68.4
+    },
+    {
+      "company": "Thrive",
+      "paddle": "Fury",
+      "faceAreaSqIn": 70.2
+    },
+    {
+      "company": "Thrive",
+      "paddle": "Ignite",
+      "faceAreaSqIn": 72.4
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "Bloom Saga",
+      "faceAreaSqIn": 72.3
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "Prism Flash",
+      "faceAreaSqIn": 74.8
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "Saga Flash 14",
+      "faceAreaSqIn": 71.3
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "Saga Flash 16",
+      "faceAreaSqIn": 74.0
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Power Bloom",
+      "faceAreaSqIn": 72.9
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Power Flash",
+      "faceAreaSqIn": 74.4
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Power V7",
+      "faceAreaSqIn": 75.0
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Power V7-LH",
+      "faceAreaSqIn": 70.5
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Pro Bloom",
+      "faceAreaSqIn": 77.0
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Pro Flash",
+      "faceAreaSqIn": 71.1
+    },
+    {
+      "company": "Vatic Pro",
+      "paddle": "V-Sol Pro V7",
+      "faceAreaSqIn": 74.9
+    },
+    {
+      "company": "Volair",
+      "paddle": "Mach 1 Forza",
+      "faceAreaSqIn": 69.1
+    },
+    {
+      "company": "Volair",
+      "paddle": "Mach 2 Forza",
+      "faceAreaSqIn": 72.7
+    },
+    {
+      "company": "Volair",
+      "paddle": "Shift Elongated",
+      "faceAreaSqIn": 70.0
+    },
+    {
+      "company": "Volair",
+      "paddle": "Shift Hybrid",
+      "faceAreaSqIn": 67.4
+    },
+    {
+      "company": "Volair",
+      "paddle": "Shift Widebody",
+      "faceAreaSqIn": 71.0
+    },
+    {
+      "company": "Warping Point",
+      "paddle": "Sophon",
+      "faceAreaSqIn": 68.4
+    }
+  ]
+}
