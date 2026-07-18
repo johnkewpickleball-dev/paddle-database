@@ -347,6 +347,20 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .spec-item{background:var(--bg);border-radius:7px;padding:9px 11px}
   .spec-label{font-size:11px;color:var(--muted);margin-bottom:2px}
   .spec-value{font-size:13px;font-weight:500}
+  .facearea-cat{margin-left:6px;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.2px}
+  .facearea-cat-blue{background:#dbeafe;color:#1d4ed8}
+  .facearea-cat-teal{background:#ccfbf1;color:#0f766e}
+  .facearea-cat-orange{background:#fef3c7;color:#b45309}
+  .facearea-bar-wrap{position:relative;height:10px;border-radius:5px;margin:8px 0 6px;background:var(--border);overflow:visible}
+  .facearea-band{position:absolute;top:0;bottom:0;border-radius:5px}
+  .facearea-band-blue{background:#2563eb}
+  .facearea-band-teal{background:#0d9488}
+  .facearea-band-orange{background:#d97706}
+  .facearea-marker{position:absolute;top:-3px;bottom:-3px;width:3px;background:#0d1f2d;border-radius:2px;transform:translateX(-50%);box-shadow:0 0 0 2px #fff}
+  [data-theme="dark"] .facearea-marker{background:#f5f7fa;box-shadow:0 0 0 2px #0d1f2d}
+  [data-theme="dark"] .facearea-cat-blue{background:#1e3a8a;color:#bfdbfe}
+  [data-theme="dark"] .facearea-cat-teal{background:#134e4a;color:#99f6e4}
+  [data-theme="dark"] .facearea-cat-orange{background:#78350f;color:#fde68a}
   .pcl-buy{margin-top:auto;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .btn-primary{padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block}
   .btn-primary:hover{background:var(--green-mid)}
@@ -710,6 +724,34 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue; var c=r[ci.company],pd=r[ci.paddle]; if(!c||!pd) continue;
         m[(String(c)+'||'+String(pd)).toLowerCase().trim()]={views:+r[ci.views]||0,labAdds:+r[ci.labadds]||0,up:+r[ci.up]||0,down:+r[ci.down]||0}; }
       STATS_MAP=m; render(); if(typeof populateDropdowns==='function') populateDropdowns();
+    },error:function(){}});
+  }
+
+  /* ---- Face Surface Area (computed, photo-based pixel measurement) ----
+     Lives in a "Face Area (Computed)" tab in the main paddle DB spreadsheet, kept in sync
+     via an Apps Script function I re-run whenever new measurements are added. Band edges
+     below are the 33rd/66th percentile of the 189 currently-measured paddles (Low/Medium/
+     High each cover roughly a third of the population, not a third of the sq-in range) --
+     update these if the dataset changes meaningfully. */
+  var PADDLE_DB_SHEET_ID='1ukZFKMasomu1NKcILe6VqQrDLciQj_BhMfWshSy8MaI';
+  var FACE_AREA_MAP={};
+  var FACE_AREA_RANGE={min:64.9,max:77.0,p33:69.4,p66:71.1};
+  function faceAreaKey(p){ return (p.company+'||'+p.paddle).toLowerCase().trim(); }
+  function getFaceArea(p){ var v=FACE_AREA_MAP[faceAreaKey(p)]; return v==null?null:v; }
+  function faceAreaCat(v){ if(v==null) return null; if(v<FACE_AREA_RANGE.p33) return {label:'Low',cls:'blue'}; if(v<FACE_AREA_RANGE.p66) return {label:'Medium',cls:'teal'}; return {label:'High',cls:'orange'}; }
+  function loadFaceArea(){
+    if(!PADDLE_DB_SHEET_ID) return;
+    var url='https://docs.google.com/spreadsheets/d/'+PADDLE_DB_SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent('Face Area (Computed)')+'&cb='+Date.now();
+    Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
+      var rows=res.data||[]; if(rows.length<2) return;
+      var head=rows[0].map(function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');});
+      var ci={company:head.indexOf('company'),paddle:head.indexOf('paddle'),area:head.indexOf('facesurfaceareasqin')};
+      if(ci.company<0||ci.paddle<0||ci.area<0) return;
+      var m={};
+      for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue; var c=r[ci.company],pd=r[ci.paddle]; if(!c||!pd) continue;
+        var a=parseFloat(r[ci.area]); if(isNaN(a)) continue;
+        m[(String(c)+'||'+String(pd)).toLowerCase().trim()]=a; }
+      FACE_AREA_MAP=m; render();
     },error:function(){}});
   }
   var EYE_SVG='<svg class="eng-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -1233,6 +1275,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       ['Surface',p.surfaceTexture||'—'],['Core Type',p.coreType||'—']
     ].map(function(s){return specItem(s[0],s[1]);}).join('');
     var layup = p.surfaceLayup?'<div class="spec-item" style="margin-top:8px"><div class="spec-label">Surface Layup</div><div class="spec-value">'+esc(p.surfaceLayup)+'</div></div>':'';
+    var faceAreaHTML = faceAreaSpecHTML(p);
     var details=[['Certification',p.cert||'—'],['Warranty',p.warranty||'—'],['Build',p.build||'—'],['Condition',p.condition||'—']].map(function(s){return specItem(s[0],s[1]);}).join('');
     var buy = (p.link && /^https?:/i.test(p.link))
       ? '<a class="btn-primary" href="'+esc(p.link)+'" target="_blank" rel="noopener noreferrer">Buy Now ↗</a>' : '<span style="font-size:12px;color:var(--muted)">No purchase link</span>';
@@ -1246,7 +1289,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         + (p.process?'<span class="badge badge-proc" title="Manufacturing Process">'+esc(p.process)+'</span>':'')
         + spinBadge(p.spinCategory)+durTierBadge(p)+certBadge(p.cert)+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Performance</div><div class="perf-grid">'+perf+'</div></div>'
-      + '<div class="modal-section"><div class="modal-section-title">Specifications</div><div class="spec-grid">'+specs+'</div>'+layup+'</div>'
+      + '<div class="modal-section"><div class="modal-section-title">Specifications</div><div class="spec-grid">'+specs+'</div>'+faceAreaHTML+layup+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Details</div><div class="spec-grid">'+details+'</div></div>'
       + '<div class="pcl-buy">'+priceLine+buy+'</div>'
       + '</div>';
@@ -1257,6 +1300,30 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + '<div class="perf-label">'+esc(label)+'</div></div>';
   }
   function specItem(l,v){ return '<div class="spec-item"><div class="spec-label">'+esc(l)+'</div><div class="spec-value">'+esc(v)+'</div></div>'; }
+  function faceAreaSpecHTML(p){
+    var v=getFaceArea(p), r=FACE_AREA_RANGE, cat=faceAreaCat(v);
+    var pctOf=function(x){ return Math.min(100,Math.max(0,(x-r.min)/(r.max-r.min)*100)); };
+    var lowEnd=pctOf(r.p33), medEnd=pctOf(r.p66);
+    var valueText = v==null ? '—' : fmt(v,1)+' in²';
+    var catBadge = cat ? '<span class="facearea-cat facearea-cat-'+cat.cls+'">'+esc(cat.label)+'</span>' : '';
+    var bar = v==null ? '' :
+        '<div class="facearea-bar-wrap">'
+      +   '<div class="facearea-band facearea-band-blue" style="left:0%;width:'+lowEnd.toFixed(1)+'%"></div>'
+      +   '<div class="facearea-band facearea-band-teal" style="left:'+lowEnd.toFixed(1)+'%;width:'+(medEnd-lowEnd).toFixed(1)+'%"></div>'
+      +   '<div class="facearea-band facearea-band-orange" style="left:'+medEnd.toFixed(1)+'%;width:'+(100-medEnd).toFixed(1)+'%"></div>'
+      +   '<div class="facearea-marker" style="left:'+pctOf(v).toFixed(1)+'%" title="'+fmt(v,1)+' in²"></div>'
+      + '</div>'
+      + '<div class="pcl-gauge-legend" style="justify-content:flex-start">'
+      +   '<span class="pcl-gl-item"><i class="gauge-blue"></i>Low</span>'
+      +   '<span class="pcl-gl-item"><i class="gauge-teal"></i>Medium</span>'
+      +   '<span class="pcl-gl-item"><i class="gauge-orange"></i>High</span>'
+      + '</div>';
+    return '<div class="spec-item" style="grid-column:1/-1;margin-top:8px">'
+      + '<div class="spec-label">Face Surface Area'+catBadge+'</div>'
+      + '<div class="spec-value">'+esc(valueText)+'</div>'
+      + bar
+      + '</div>';
+  }
 
   /* ---- render ---- */
   var elSlots=document.getElementById('pclSlots'), elCompare=document.getElementById('pclCompare'),
@@ -1555,6 +1622,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var fcsv=WORKER_BASE+'/csv/feel?cb='+Date.now();
     loadFeel(fcsv, FEEL_CSV+'&cb='+Date.now());
     loadStats();
+    loadFaceArea();
   }
   function load(url, fb){
     Papa.parse(url,{download:true, skipEmptyLines:true, complete:function(r){
