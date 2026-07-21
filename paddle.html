@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  JohnKew Pickleball — Standalone Paddle Review page (permalink template)
+  =========================================================================
+  WHAT THIS IS: a real, crawlable, single-paddle URL — not a modal. Loads live
+  data from the same Google Sheets the Paddle Database + Comparison Lab read
+  from, reuses the exact chart-generator functions from paddle-comparison-lab.html
+  (radarSVG, bulletSVG, surfaceSVG, feelCol, gaugeSVG), and layers a written
+  review on top from the REVIEWS object near the bottom of this file.
+
+  URL: paddle.html?paddle=Company||Paddle   (same key format as the DB's own
+       ?paddle= deep link) — or paddle.html?slug=company-paddle-slug using the
+       same photoSlug() convention already used for image filenames.
+       Example seeded in this draft: paddle.html?paddle=Ronbus||Tenon R2.16
+
+  INTENTIONAL DIFFERENCE FROM paddle-comparison-lab.html: that page opts AI
+  crawlers OUT (noai/noindex meta tags on GPTBot, ClaudeBot, etc.) because it's
+  a data tool, not something meant to be cited. THIS page is the opposite case —
+  the entire point is AI-search discoverability for the written review — so
+  those opt-out tags are deliberately NOT included here. Flagging this so it
+  doesn't get "fixed" by copy-pasting the other page's head block later.
+
+  STATUS: draft/unpublished. Not yet pushed to GitHub Pages. Content in the
+  REVIEWS object below is a first pass for Ronbus Tenon R2 only, built from
+  the hooks/verdicts already approved for the video script — for review
+  before this becomes a real workflow.
+
+  NEXT STEP (not built yet, deliberately deferred per the phased plan): once
+  the template and voice hold up across a few real reviews, a small script
+  can snapshot this template into individual static files per paddle
+  (e.g. reviews/ronbus-tenon-r2.html) at publish time, so each paddle has
+  fully pre-rendered HTML rather than client-fetched content. Worth doing
+  once the format is proven, not before.
+-->
+<title>Loading review… — JohnKew Pickleball</title>
+<meta name="description" content="Independent paddle review and lab data from JohnKew Pickleball.">
+<link rel="canonical" href="">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="JohnKew Pickleball">
+<meta property="og:title" content="Loading review… — JohnKew Pickleball">
+<meta property="og:description" content="Independent paddle review and lab data from JohnKew Pickleball.">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script>
+(function(){ try{ var s=localStorage.getItem('pbTheme');
+  var dark = s ? s==='dark' : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.setAttribute('data-theme', dark?'dark':'light');
+}catch(e){} })();
+</script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    --green:#1a7a4a;--green-light:#e8f5ee;--green-mid:#2d9c5f;
+    --navy:#0d1f2d;--slate:#2a3f52;--muted:#64748b;--border:#e2e8f0;--bg:#f8faf9;--white:#fff;
+    --yellow:#fbbf24;--red:#ef4444;--text:#1a2535;--radius:10px;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);
+    font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+    line-height:1.55;
+  }
+  [data-theme="dark"] body{--bg:#0b1622;--white:#101d2b;--text:#e6edf3;--border:#233246;--muted:#8fa3b8;--green-light:#0f2b20}
+  a{color:var(--green)}
+  .pr-wrap{max-width:840px;margin:0 auto;padding:0 18px 80px}
+
+  /* status */
+  .pr-status{max-width:840px;margin:60px auto;text-align:center;color:var(--muted);font-size:15px}
+
+  /* header */
+  .pr-crumbs{max-width:840px;margin:0 auto;padding:18px 18px 0;font-size:12.5px;color:var(--muted)}
+  .pr-crumbs a{color:var(--muted);text-decoration:none}
+  .pr-crumbs a:hover{color:var(--green)}
+  .pr-hero{display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:22px 0 8px}
+  .pr-photo{position:relative;flex:0 0 260px;width:260px;aspect-ratio:1/1;border:2px dashed var(--border);border-radius:12px;background:var(--white);display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .pr-photo img{width:100%;height:100%;object-fit:contain;padding:14px}
+  .pr-photo .ph-txt{font-size:12px;font-weight:600;color:#94a3b8;text-align:center;padding:0 12px}
+  .pr-xray-toggle{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;text-transform:uppercase;display:none}
+  .pr-xray-toggle.avail{display:inline-block}
+  .pr-head-main{flex:1 1 320px;min-width:260px}
+  .pr-brand{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:4px}
+  .pr-name{font-size:clamp(24px,4vw,32px);font-weight:800;color:var(--navy);letter-spacing:-.4px;line-height:1.15;margin-bottom:10px}
+  [data-theme="dark"] .pr-name{color:var(--text)}
+  .pr-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+  .badge{font-size:10.5px;padding:3px 9px;border-radius:12px;font-weight:600}
+  .badge-shape{background:#eff6ff;color:#1d4ed8}
+  .badge-build{background:#f5f3ff;color:#6d28d9}
+  .badge-spin-Elite{background:#7c3aed;color:#fff}.badge-spin-Good{background:#059669;color:#fff}
+  .badge-spin-Fair{background:#d97706;color:#fff}.badge-spin-Poor{background:#dc2626;color:#fff}
+  .badge-cert{background:#fff7ed;color:#c2410c}
+  .badge-tier{background:#eef2f7;color:#334155}
+  .badge-tier-1{background:#e8f5ee;color:#15803d}
+  .badge-tier-2{background:#e6f1fb;color:#1d4ed8}
+  .badge-tier-3{background:#fdf2e3;color:#b45309}
+  .badge-tier-4{background:#fdeaea;color:#c0392b}
+  [data-theme="dark"] .badge-shape{background:#16304d;color:#8ab4f8}
+  [data-theme="dark"] .badge-build{background:#2a2247;color:#c4b5fd}
+  [data-theme="dark"] .badge-cert{background:#3a2a16;color:#fdba74}
+  [data-theme="dark"] .badge-tier-1{background:#123528;color:#6ee7b7}
+  [data-theme="dark"] .badge-tier-2{background:#16304d;color:#93c5fd}
+  [data-theme="dark"] .badge-tier-3{background:#3a2c14;color:#fcd34d}
+  [data-theme="dark"] .badge-tier-4{background:#3a1d1d;color:#fca5a5}
+  .pr-price-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .pr-price{font-size:22px;font-weight:700;color:var(--navy)}
+  [data-theme="dark"] .pr-price{color:var(--text)}
+  .pr-strike{font-size:14px;color:var(--muted);text-decoration:line-through}
+  .pr-code{font-size:11px;font-family:'DM Mono',monospace;background:var(--green-light);color:var(--green);padding:3px 8px;border-radius:5px}
+  .pr-buy{display:inline-block;background:var(--green);color:#fff;text-decoration:none;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:8px}
+  .pr-buy:hover{background:var(--green-mid)}
+
+  /* generic section chrome */
+  .pr-h2{font-size:20px;font-weight:800;color:var(--navy);margin:38px 0 6px;letter-spacing:-.2px}
+  [data-theme="dark"] .pr-h2{color:var(--text)}
+  .pr-sub{font-size:13.5px;color:var(--muted);margin-bottom:14px}
+  .pr-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px}
+  .pr-prose{font-size:15px;line-height:1.7}
+  .pr-prose p{margin-bottom:12px}
+  .pr-prose p:last-child{margin-bottom:0}
+
+  /* quick take */
+  .pr-quicktake{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .pr-quicktake li{display:flex;gap:10px;font-size:15px;line-height:1.5}
+  .pr-quicktake li:before{content:"";flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:var(--green);margin-top:7px}
+
+  /* specs table */
+  .pr-spec-table{width:100%;border-collapse:collapse;font-size:13.5px}
+  .pr-spec-table td{padding:9px 4px;border-bottom:1px solid var(--border)}
+  .pr-spec-table tr:last-child td{border-bottom:none}
+  .pr-spec-table td:first-child{color:var(--muted);width:44%}
+  .pr-spec-table td:last-child{font-weight:600;text-align:right}
+  .pr-spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 28px}
+  @media(max-width:560px){.pr-spec-grid{grid-template-columns:1fr}}
+
+  /* manufacturer-claim callout */
+  .pr-mfr{background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 14px;font-size:13px;color:#7c2d12;margin-top:12px}
+  [data-theme="dark"] .pr-mfr{background:#2a1a0a;border-color:#7c4a1a;color:#fdba74}
+  .pr-mfr b{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;color:#c2410c}
+  [data-theme="dark"] .pr-mfr b{color:#fb923c}
+
+  /* charts row */
+  .pr-charts{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:640px){.pr-charts{grid-template-columns:1fr}}
+  .pr-cap{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:center;margin-bottom:6px}
+  .pcl-radar .ax-line{stroke:#d6deea;stroke-width:1}
+  [data-theme="dark"] .pcl-radar .ax-line{stroke:#2a3a49}
+  .pcl-radar .ax-label{fill:var(--navy);font-weight:700;font-size:13px;font-family:'DM Sans',sans-serif}
+  [data-theme="dark"] .pcl-radar .ax-label{fill:var(--text)}
+  .pcl-radar .radar-fill{fill:url(#prRadarGrad);fill-opacity:.92;stroke:#a21d77;stroke-width:1.5;stroke-opacity:.5}
+  .pr-legend{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
+  .pr-legend b{color:var(--text)}
+
+  /* kewcor gauge + surface */
+  .pcl-gauge-svg{width:100%;max-width:220px;display:block;margin:0 auto}
+  .pcl-gauge-svg .gband-blue{fill:#2563eb}.pcl-gauge-svg .gband-teal{fill:#0d9488}
+  .pcl-gauge-svg .gband-orange{fill:#d97706}.pcl-gauge-svg .gband-red{fill:#dc2626}
+  .pcl-gauge-svg .gneedle{fill:var(--text)}.pcl-gauge-svg .ghub{fill:var(--text);stroke:var(--white);stroke-width:2}
+  .pcl-gauge-svg .gnum{font-size:20px;font-weight:700;font-family:'DM Sans',sans-serif;fill:var(--text)}
+  .pcl-gauge-svg .gunit{font-size:9px;font-weight:500;fill:var(--muted)}
+  .pcl-gauge-svg .gcat{font-size:10.5px;font-weight:600}
+  .pcl-gauge-svg .gtick{font-size:8px;fill:var(--muted)}
+  .pr-gauge-legend{display:flex;justify-content:center;gap:9px;font-size:10.5px;color:var(--muted);margin-top:4px;flex-wrap:wrap}
+  .pr-gauge-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:middle}
+  .pcl-surf .kc-axis,.pcl-surf .kc-drop{stroke:#cbd5e1;stroke-width:1}
+  [data-theme="dark"] .pcl-surf .kc-axis,[data-theme="dark"] .pcl-surf .kc-drop{stroke:#3a4c5e}
+  .pcl-surf .kc-line{fill:none;stroke:#1f4e79;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+  [data-theme="dark"] .pcl-surf .kc-line{stroke:#7dd3fc}
+  .pcl-surf .kc-ylab,.pcl-surf .kc-xlab{fill:#64748b;font-size:6.5px}
+  .pcl-surf .kc-axtitle{fill:#64748b;font-size:7.5px}
+  .pcl-surf .kc-val{fill:var(--text);font-size:7px;font-weight:600;paint-order:stroke;stroke:var(--white);stroke-width:1.8px}
+  .pcl-surf .kc-title{fill:var(--text);font-size:9px;font-weight:600}
+
+  /* feel map */
+  .pclf-frame{position:relative;width:100%;max-width:300px;margin:0 auto;padding:22px 46px;container-type:inline-size}
+  .pclf-map{position:relative;width:100%;aspect-ratio:1/1;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+  .pclf-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .pclf-box{stroke:#475569;stroke-width:1.4;fill:none}
+  [data-theme="dark"] .pclf-box{stroke:#5b6b7a}
+  .pclf-grid-soft{stroke:#dbe2ea;stroke-width:.5;fill:none}
+  [data-theme="dark"] .pclf-grid-soft{stroke:#26313d}
+  .pclf-tick{stroke:#cbd5e1;stroke-width:.5}
+  .pclf-axis{stroke:#9aa7b4;stroke-width:.5}
+  .pclf-arrow{stroke:#475569;stroke-width:1;fill:none;stroke-linecap:round}
+  .pclf-center{fill:#475569}
+  .pclf-edge{position:absolute;color:#334155;font-size:9.5px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+  [data-theme="dark"] .pclf-edge{color:var(--text)}
+  .pclf-edge.t{top:3px;left:50%;transform:translateX(-50%)}
+  .pclf-edge.b{bottom:3px;left:50%;transform:translateX(-50%)}
+  .pclf-edge.l{left:4px;top:50%;transform:translateY(-50%)}
+  .pclf-edge.r{right:4px;top:50%;transform:translateY(-50%)}
+  .pclf-quad{position:absolute;width:22px;height:22px;border-radius:50%;background:var(--white);border:1.5px solid #94a3b8;color:#475569;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:default}
+  .pclf-quad.a{top:10%;left:10%;transform:translate(-50%,-50%)} .pclf-quad.b{top:10%;left:90%;transform:translate(-50%,-50%)}
+  .pclf-quad.c{top:90%;left:10%;transform:translate(-50%,-50%)} .pclf-quad.d{top:90%;left:90%;transform:translate(-50%,-50%)}
+  .pclf-markers{position:absolute;inset:0;z-index:5}
+  .pclf-dot{position:absolute;transform:translate(-50%,-50%)}
+  .pclf-dot .pt{display:block;width:14px;height:14px;border-radius:50%;background:#ff8a00;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+  .pclf-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;text-align:center;padding:0 18px}
+
+  /* who for / not for */
+  .pr-forgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media(max-width:560px){.pr-forgrid{grid-template-columns:1fr}}
+  .pr-for h3,.pr-notfor h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+  .pr-for h3{color:var(--green)}
+  .pr-notfor h3{color:#b45309}
+  .pr-for ul,.pr-notfor ul{list-style:none;display:flex;flex-direction:column;gap:8px;font-size:14px}
+  .pr-for li,.pr-notfor li{display:flex;gap:8px}
+  .pr-for li:before{content:"✓";color:var(--green);font-weight:700}
+  .pr-notfor li:before{content:"✕";color:#b45309;font-weight:700}
+
+  /* disclosure */
+  .pr-disclosure{font-size:12.5px;color:var(--muted);border-top:1px solid var(--border);margin-top:44px;padding-top:16px}
+
+  .pr-draftnote{background:#fef9c3;border:1px solid #fde68a;color:#713f12;font-size:12.5px;padding:10px 14px;border-radius:8px;margin:0 0 20px}
+  [data-theme="dark"] .pr-draftnote{background:#2a2410;border-color:#5c4d17;color:#fde68a}
+</style>
+</head>
+<body>
+
+<div class="pr-crumbs" id="prCrumbs" hidden>
+  <a href="https://johnkewpickleball.com">JohnKew Pickleball</a> ›
+  <a href="https://johnkewpickleball.com/paddle-database">Paddle Database</a> ›
+  <span id="prCrumbCurrent"></span>
+</div>
+
+<div class="pr-status" id="prStatus">Loading paddle data…</div>
+
+<div class="pr-wrap" id="prApp" hidden>
+
+  <div class="pr-draftnote">Draft/unpublished review page — reused chart functions from the Comparison Lab, live database data. Not yet linked from the main site.</div>
+
+  <div class="pr-hero">
+    <div class="pr-photo" id="prPhoto"></div>
+    <div class="pr-head-main">
+      <div class="pr-brand" id="prBrand"></div>
+      <div class="pr-name" id="prName"></div>
+      <div class="pr-badges" id="prBadges"></div>
+      <div class="pr-price-row" id="prPriceRow"></div>
+      <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
+    </div>
+  </div>
+
+  <div class="pr-h2">Quick Take</div>
+  <div class="pr-card"><ul class="pr-quicktake" id="prQuickTake"></ul></div>
+
+  <div class="pr-h2">Specs</div>
+  <div class="pr-card"><div class="pr-spec-grid" id="prSpecGrid"></div></div>
+  <div class="pr-prose" id="prSpecNote" style="margin-top:12px"></div>
+
+  <div class="pr-h2">Construction &amp; Build</div>
+  <div class="pr-card pr-prose" id="prConstruction"></div>
+
+  <div class="pr-h2">Performance Metrics</div>
+  <p class="pr-sub">Z-scores compared against hundreds of paddles in the database. Scaled chart is 0 (center) to 100 (edge); raw chart shows actual standard-deviation distance from the dataset mean.</p>
+  <div class="pr-card">
+    <div class="pr-charts">
+      <div><div class="pr-cap">Scaled (Radar)</div><div id="prRadar"></div><div class="pr-legend" id="prRadarLegend"></div></div>
+      <div><div class="pr-cap">Raw Z-Scores</div><div id="prBullet"></div></div>
+    </div>
+  </div>
+  <div class="pr-prose" id="prMetricsNote" style="margin-top:12px"></div>
+
+  <div class="pr-h2">KewCOR</div>
+  <p class="pr-sub">KewCOR is a controlled firepower metric — how efficiently the paddle transfers energy back into the ball, measured with a ball cannon.</p>
+  <div class="pr-card">
+    <div class="pr-charts">
+      <div><div class="pr-cap">KewCOR Score</div><div id="prGauge"></div><div class="pr-gauge-legend" id="prGaugeLegend"></div></div>
+      <div><div class="pr-cap">Across-the-Face Curve</div><div id="prSurface"></div></div>
+    </div>
+  </div>
+  <div class="pr-prose" id="prKewcorNote" style="margin-top:12px"></div>
+
+  <div class="pr-h2">Spin Durability</div>
+  <div class="pr-card">
+    <div id="prDurBadge" style="margin-bottom:10px"></div>
+    <div class="pr-prose" id="prDurNote"></div>
+  </div>
+
+  <div class="pr-h2">Feel Map</div>
+  <p class="pr-sub">Subjective feel — dense ↔ hollow (x-axis), stiff ↔ soft (y-axis).</p>
+  <div class="pr-card">
+    <div id="prFeel"></div>
+  </div>
+  <div class="pr-prose" id="prFeelNote" style="margin-top:12px"></div>
+
+  <div class="pr-h2">Who It's For / Who It's Not</div>
+  <div class="pr-card">
+    <div class="pr-forgrid">
+      <div class="pr-for"><h3>Who it's for</h3><ul id="prWhoFor"></ul></div>
+      <div class="pr-notfor"><h3>Who it's NOT for</h3><ul id="prWhoNotFor"></ul></div>
+    </div>
+  </div>
+
+  <div class="pr-h2">Final Thoughts</div>
+  <div class="pr-card pr-prose" id="prVerdict"></div>
+
+  <div class="pr-disclosure" id="prDisclosure"></div>
+
+</div>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <radialGradient id="prRadarGrad" cx="50%" cy="50%" r="62%">
+    <stop offset="0%" stop-color="#ff2d6f"/><stop offset="52%" stop-color="#cc1f86"/><stop offset="100%" stop-color="#6d28d9"/>
+  </radialGradient>
+</defs></svg>
+
+<script id="prJsonLd" type="application/ld+json"></script>
+
+<script>
+(function(){
+  'use strict';
+
+  /* ================= data sources (same sheets the live site reads) ================= */
+  var CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
+  var FEEL_CSV='https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
+  var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
+  var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
+  var PHOTO_URLS={};
+
+  function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function fmt(v,d){return v==null?'—':Number(v).toFixed(d==null?1:d);}
+  function fmtInt(v){return v==null?'—':Math.round(v).toLocaleString();}
+  function money(v){return v==null?'—':'$'+Number(v).toFixed(2);}
+  function photoSlug(p){ return (p.company+'-'+p.paddle).toLowerCase().replace(/\+/g,'-plus').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); }
+  function hostedURL(p){ return PHOTO_BASE + photoSlug(p) + '.png'; }
+  function hostedURLJpg(p){ return PHOTO_BASE + photoSlug(p) + '.jpg'; }
+  function photoCandidates(p){ var c=[]; if(PHOTO_URLS[p.key]) c.push(PHOTO_URLS[p.key]); else { c.push(hostedURL(p)); c.push(hostedURLJpg(p)); } return c; }
+
+  /* ================= column mapping + row parsing (verbatim from comparison lab) ================= */
+  var M = {
+    company:['company','brand'], paddle:['paddle','model','name'],
+    shape:['shape'], build:['build','buildgeneration','generation'],
+    process:['manufacturingprocess','process','manufacturing'],
+    spinCategory:['spincategory','spinrating'], spinDurTier:['spindurabilitytier','spindurability','durabilitytier'],
+    cert:['certificationstatus','certification','cert'], condition:['condition'], dateEntered:['dateentered','dateadded','entrydate','added'],
+    warranty:['warranty'], surfaceTexture:['surfacetexture','texture'],
+    surfaceLayup:['surfacelayup','layup'], coreType:['coretype','core'],
+    thickness:['corethicknessmm','corethickness','thickness'],
+    spinRPM:['spinrpm','rpm'], serveSpeed:['servespeedmphpower','servespeed','servemph'],
+    punchVolley:['punchvolleyspeedmphpop','punchvolley','volley'],
+    firepower:['firepower'], swingResist:['handspeedindex0100','handspeedindex','swingresistance0100','swingresistance','swingresist'],
+    kewcor:['kewcor'],
+    length:['lengthin','length'], width:['widthin','width'], handleLength:['handlelengthin','handlelength'],
+    weight:['staticweightoz','staticweight','weight'], swingWeight:['swingweight'],
+    twistWeight:['twistweight'], balance:['balancepointcm','balancepoint','balance'],
+    price:['retailprice','price'], discountedPrice:['discountedprice','saleprice'],
+    discount:['discount'], discountCode:['discountcode','code'], link:['linktopurchase','link','url'],
+    spinScaled:['spinscaledzscore','spinscaled'], powerScaled:['powerscaledzscore','powerscaled'],
+    popScaled:['popscaledzscore','popscaled'], swingScaled:['swingscaledzscore','swingscaled'],
+    twistScaled:['twistscaledzscore','twistscaled'], balanceScaled:['balancescaledzscore','balancescaled'],
+    spinZ:['spinzscore'], powerZ:['powerzscore'], popZ:['popzscore'],
+    swingZ:['swingweightzscore'], twistZ:['twistweightzscore'], balanceZ:['balancepointzscore']
+  };
+  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,spinDurTier:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1};
+  function norm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
+  function num(v){ if(v==null) return null; var x=String(v).replace(/[^0-9.\-]/g,''); if(x===''||x==='-'||x==='.') return null; var n=parseFloat(x); return isNaN(n)?null:n; }
+  function buildColMap(headers){
+    var nh=headers.map(norm), map={}, used={};
+    nh.forEach(function(n,i){ if(used[i])return; for(var f in M){ if(map[f]!=null)continue; if(M[f].indexOf(n)>-1){map[f]=i;used[i]=1;break;} } });
+    nh.forEach(function(n,i){ if(used[i])return; for(var f in M){ if(map[f]!=null)continue; if(M[f].some(function(a){return n.indexOf(a)===0||a.indexOf(n)===0;})){map[f]=i;used[i]=1;break;} } });
+    return map;
+  }
+  function parseRows(rows){
+    var head=rows[0], map=buildColMap(head);
+    var g=function(row,f){ return map[f]!=null ? (row[map[f]]||'').trim() : ''; };
+    return rows.slice(1).map(function(row){
+      var o={};
+      for(var f in M){ var raw=g(row,f); o[f]= TEXT[f]? raw : num(raw); o[f+'_raw']=raw; }
+      o.discountRaw=g(row,'discount');
+      o.discountType=/%/.test(o.discountRaw)?'pct':(/[\$\d]/.test(o.discountRaw)?'usd':null);
+      o.key=o.company+'||'+o.paddle;
+      return o;
+    }).filter(function(p){return p.company && p.paddle;});
+  }
+  function pricing(p){
+    var price=p.price, isSelkirk=!!(p.company && p.company.toLowerCase().indexOf('selkirk')>-1);
+    if(isSelkirk){ var g=price?(price>300?40:price>200?30:price>100?20:price>50?10:0):0;
+      return {isSelkirk:true,finalPrice:price,savedAmt:0,giftCard:g,hasDiscount:!!(p.discountCode&&g>0),label:g>0?('Receive $'+g+' digital gift card'):''}; }
+    if(!price) return {isSelkirk:false,finalPrice:price,savedAmt:0,giftCard:0,hasDiscount:false,label:''};
+    var finalPrice=price,saved=0,label='';
+    var dp=p.discountedPrice;
+    if(dp!=null && dp>0 && dp<price-0.005){ finalPrice=dp; saved=price-dp; label='Save '+money(saved); }
+    else { var d=p.discount, t=p.discountType||(d!=null&&d<1?'pct':'usd');
+      if(d!=null&&d>0){ if(t==='pct'){var f=d<1?d:d/100; saved=price*f; finalPrice=price-saved; label=Math.round(f*100)+'% off';}
+        else { saved=d; finalPrice=price-saved; label='Save '+money(saved); } } }
+    if(saved<0.005){finalPrice=price;saved=0;label='';}
+    return {isSelkirk:false,finalPrice:finalPrice,savedAmt:saved,giftCard:0,hasDiscount:!!(p.discountCode&&saved>0.005),label:label};
+  }
+  function spinBadge(c){return c?'<span class="badge badge-spin-'+esc(c)+'" title="Spin Category">'+esc(c)+' Spin</span>':'';}
+  function certBadge(c){ if(!c||c==='None')return ''; var s=''; if(c.indexOf('Dual')>-1)s='Dual Cert'; else if(c.indexOf('USAP')>-1)s='USAP'; else if(c.indexOf('UPA-A')>-1)s='UPA-A'; else return ''; return '<span class="badge badge-cert" title="Certification Status">'+s+'</span>'; }
+  function durTierBadge(p){ var t=(p.spinDurTier||'').trim(); if(!t) return ''; var m=t.match(/[1-4]/); var cls=m?('badge-tier-'+m[0]):''; var label=m?('Spin Tier '+m[0]):esc(t); return '<span class="badge badge-tier '+cls+'">'+label+'</span>'; }
+
+  /* ================= radar (verbatim) ================= */
+  var AX=[
+    {key:'twistScaled', label:'Twist Weight', ang:0},
+    {key:'spinScaled',  label:'Spin',         ang:60},
+    {key:'powerScaled', label:'Power',        ang:120},
+    {key:'popScaled',   label:'Pop',          ang:180},
+    {key:'swingScaled', label:'Swing Weight', ang:240},
+    {key:'balanceScaled',label:'Balance Point',ang:300}
+  ];
+  var RW=320, RH=300, RCX=160, RCY=150, RR=92;
+  function pt(ang,rad){ var a=ang*Math.PI/180; return [RCX+rad*Math.cos(a), RCY-rad*Math.sin(a)]; }
+  function radarSVG(p){
+    var lines='', labels='', target=[];
+    [[0,180],[60,240],[120,300]].forEach(function(pr){
+      var a=pt(pr[0],RR), b=pt(pr[1],RR);
+      lines+='<line class="ax-line" x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'"/>';
+    });
+    AX.forEach(function(ax){
+      var v=Math.max(0,Math.min(100, p[ax.key]==null?0:p[ax.key]));
+      var tp=pt(ax.ang, RR*v/100); target.push(tp[0].toFixed(1)+','+tp[1].toFixed(1));
+      var lp=pt(ax.ang, RR+16), c=Math.cos(ax.ang*Math.PI/180);
+      var anchor = c>0.3?'start':(c<-0.3?'end':'middle');
+      var words=ax.label.split(' '), ty=lp[1];
+      if(words.length>1){
+        labels+='<text class="ax-label" x="'+lp[0].toFixed(1)+'" y="'+(ty-6).toFixed(1)+'" text-anchor="'+anchor+'">'
+              + esc(words[0])+'</text><text class="ax-label" x="'+lp[0].toFixed(1)+'" y="'+(ty+8).toFixed(1)+'" text-anchor="'+anchor+'">'+esc(words.slice(1).join(' '))+'</text>';
+      } else {
+        labels+='<text class="ax-label" x="'+lp[0].toFixed(1)+'" y="'+(ty+4).toFixed(1)+'" text-anchor="'+anchor+'">'+esc(ax.label)+'</text>';
+      }
+    });
+    return '<svg viewBox="0 0 '+RW+' '+RH+'" preserveAspectRatio="xMidYMid meet" class="pcl-radar">'
+      + lines + '<polygon class="radar-fill" points="'+target.join(' ')+'"></polygon>' + labels + '</svg>';
+  }
+  function radarLegend(p){
+    return AX.map(function(ax){var v=p[ax.key];return ax.label+' <b>'+(v==null?'—':Math.round(v))+'</b>';}).join(' · ');
+  }
+
+  /* ================= bullet chart (verbatim, static — no scroll animation needed here) ================= */
+  var BULLET=[
+    {label:'Power',        key:'powerZ',   lo:-2.51, hi:2.03},
+    {label:'Pop',          key:'popZ',     lo:-3.01, hi:1.87},
+    {label:'Spin',         key:'spinZ',    lo:-3.64, hi:1.65},
+    {label:'Twist Weight', key:'twistZ',   lo:-3.56, hi:2.62},
+    {label:'Swing Weight', key:'swingZ',   lo:-3.39, hi:3.50},
+    {label:'Balance Pt.',  key:'balanceZ', lo:-3.21, hi:3.54}
+  ];
+  var BMIN=-4, BMAX=4, BX0=92, BX1=292, BTOP=26, BROW=34, BBARH=16;
+  function bx(v){ if(v<BMIN)v=BMIN; if(v>BMAX)v=BMAX; return BX0+(v-BMIN)/(BMAX-BMIN)*(BX1-BX0); }
+  function bulletSVG(p){
+    var grid='', rows='', labels='', v;
+    for(v=BMIN; v<=BMAX; v++){ var gx=bx(v).toFixed(1);
+      grid+='<line x1="'+gx+'" y1="16" x2="'+gx+'" y2="210" stroke="'+(v===0?'#cbd5e1':'#edf1f6')+'" stroke-width="1"/>';
+      labels+='<text x="'+gx+'" y="226" text-anchor="middle" font-size="9" fill="#94a3b8">'+v+'</text>';
+    }
+    BULLET.forEach(function(m,i){
+      var cy=BTOP+i*BROW, yt=cy-BBARH/2, seg=(m.hi-m.lo)/3;
+      var xlo=bx(m.lo), xa=bx(m.lo+seg), xb=bx(m.lo+2*seg), xhi=bx(m.hi);
+      rows+='<rect x="'+xlo.toFixed(1)+'" y="'+yt+'" width="'+(xa-xlo).toFixed(1)+'" height="'+BBARH+'" fill="#2d9cdb" rx="'+(BBARH/2)+'"/>'
+        + '<rect x="'+xa.toFixed(1)+'" y="'+yt+'" width="'+(xb-xa).toFixed(1)+'" height="'+BBARH+'" fill="#27ae60"/>'
+        + '<rect x="'+xb.toFixed(1)+'" y="'+yt+'" width="'+(xhi-xb).toFixed(1)+'" height="'+BBARH+'" fill="#eb5757" rx="'+(BBARH/2)+'"/>';
+      labels+='<text x="86" y="'+(cy+4)+'" text-anchor="end" font-size="11" font-weight="600" fill="#0d1f2d">'+esc(m.label)+'</text>';
+      var z=p[m.key];
+      if(z!=null && !isNaN(z)){
+        var dx=bx(z), s=5.5;
+        rows+='<g transform="translate('+dx.toFixed(1)+','+cy+')">'
+          + '<polygon points="0,'+(-s)+' '+s+',0 0,'+s+' '+(-s)+',0" fill="#0d1f2d" stroke="#fff" stroke-width="1.2"/>'
+          + '<text x="0" y="'+(-s-3)+'" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0d1f2d" stroke="#fff" stroke-width="2.6" paint-order="stroke">'+(Math.round(z*100)/100).toFixed(2)+'</text>'
+          + '</g>';
+      }
+    });
+    var axis='<line x1="'+BX0+'" y1="214" x2="'+BX1+'" y2="214" stroke="#cbd5e1" stroke-width="1"/>';
+    var leg='<g font-size="10" fill="#0d1f2d">'
+      + '<rect x="64" y="248" width="12" height="12" rx="2" fill="#2d9cdb"/><text x="80" y="258">Low</text>'
+      + '<rect x="120" y="248" width="12" height="12" rx="2" fill="#27ae60"/><text x="136" y="258">Medium</text>'
+      + '<rect x="196" y="248" width="12" height="12" rx="2" fill="#eb5757"/><text x="212" y="258">High</text>'
+      + '</g>';
+    return '<svg viewBox="0 0 300 288" preserveAspectRatio="xMidYMid meet" font-family="\'DM Sans\',sans-serif">'+grid+rows+labels+axis+leg+'</svg>';
+  }
+
+  /* ================= KewCOR gauge (verbatim, single gauge) ================= */
+  function gClamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
+  function gFrac(v,min,max){ return gClamp((v-min)/(max-min),0,1); }
+  function gAngle(frac){ return 180-180*frac; }
+  function gPolar(cx,cy,r,angDeg){ var rad=angDeg*Math.PI/180; return [cx+r*Math.cos(rad), cy-r*Math.sin(rad)]; }
+  function gBandPath(cx,cy,rO,rI,fracA,fracB){
+    var aA=gAngle(fracA), aB=gAngle(fracB);
+    var oA=gPolar(cx,cy,rO,aA), oB=gPolar(cx,cy,rO,aB);
+    var iB=gPolar(cx,cy,rI,aB), iA=gPolar(cx,cy,rI,aA);
+    var large=(aA-aB)>180?1:0;
+    return 'M'+oA[0].toFixed(2)+' '+oA[1].toFixed(2)
+      +' A'+rO+' '+rO+' 0 '+large+' 1 '+oB[0].toFixed(2)+' '+oB[1].toFixed(2)
+      +' L'+iB[0].toFixed(2)+' '+iB[1].toFixed(2)
+      +' A'+rI+' '+rI+' 0 '+large+' 0 '+iA[0].toFixed(2)+' '+iA[1].toFixed(2)+' Z';
+  }
+  var KEWCOR_BANDS=[{a:0.340,b:0.370,cls:'blue'},{a:0.370,b:0.400,cls:'teal'},{a:0.400,b:0.447,cls:'orange'},{a:0.447,b:0.470,cls:'red'}];
+  var GCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626'};
+  function kewcorCat(v){ if(v==null) return null; if(v<0.370) return {label:'Control',cls:'blue'}; if(v<0.400) return {label:'All-Court',cls:'teal'}; if(v<0.447) return {label:'Power',cls:'orange'}; return {label:'Beyond Spec',cls:'red'}; }
+  function gaugeSVG(value,min,max,bands,cat,decimals){
+    var cx=100,cy=100,rO=88,rI=63;
+    var minLbl='<text class="gtick" x="'+(cx-rO+2)+'" y="'+(cy+15)+'" text-anchor="start">'+min.toFixed(decimals)+'</text>';
+    var maxLbl='<text class="gtick" x="'+(cx+rO-2)+'" y="'+(cy+15)+'" text-anchor="end">'+max.toFixed(decimals)+'</text>';
+    if(value==null){
+      var grayBands=bands.map(function(bd){ return '<path fill="var(--border)" d="'+gBandPath(cx,cy,rO,rI,gFrac(bd.a,min,max),gFrac(bd.b,min,max))+'"/>'; }).join('');
+      return '<svg class="pcl-gauge-svg" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'+grayBands+minLbl+maxLbl+'<text x="100" y="132" text-anchor="middle" font-size="11" fill="var(--muted)">Not available</text></svg>';
+    }
+    var bandsSVG=bands.map(function(bd){ return '<path class="gband-'+bd.cls+'" d="'+gBandPath(cx,cy,rO,rI,gFrac(bd.a,min,max),gFrac(bd.b,min,max))+'"/>'; }).join('');
+    var clamped=gClamp(value,min,max), frac=gFrac(clamped,min,max), needleLen=rO-8;
+    var needle='<g transform="rotate('+ (180-180*frac) +' '+cx+' '+cy+')"><polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx-needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
+    var hub='<circle class="ghub" cx="'+cx+'" cy="'+cy+'" r="7"/>';
+    var valueTxt='<text class="gnum" x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="'+(cat?GCOLOR[cat.cls]:'var(--text)')+'">'+value.toFixed(decimals)+'</text>';
+    var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+GCOLOR[cat.cls]+'">'+esc(cat.label)+'</text>':'';
+    return '<svg class="pcl-gauge-svg" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'+bandsSVG+needle+hub+minLbl+maxLbl+valueTxt+catTxt+'</svg>';
+  }
+
+  /* ================= KewCOR surface curve (verbatim) ================= */
+  var SURFACE_MAP={};
+  var SURFACE_OVERRIDE={};
+  var SURFACE_EXCLUDE={'Vatic Pro||V-Sol Pro Bloom':1};
+  var S_ALI={addias:'adidas',aiero:'aireo',babalot:'babolat',falcolos:'facolos',packle:'pakle',franlkin:'franklin'};
+  var S_SYN={wb:'widebody',el:'elongated',elong:'elongated',hyb:'hybrid',std:'standard',blak:'black',paris:'pariss'};
+  var S_GEN={pro:1,power:1,'new':1,solid:1,foam:1,full:1,paddle:1,co:1,company:1,pickleball:1,the:1,of:1,and:1,b:1,w:1,c:1,t:1,s:1,v:1,x:1,e:1,'16':1,'14':1,'13':1,'15':1,'18':1,'19':1,'10':1};
+  function sAlias(s){ s=String(s).toLowerCase(); for(var a in S_ALI) s=s.split(a).join(S_ALI[a]); return s; }
+  function sToks(s){ s=sAlias(s).replace(/\d+(\.\d+)?\s*mm/g,'').replace(/\+/g,' plus ').replace(/[^a-z0-9 ]/g,' '); return s.split(/\s+/).filter(Boolean).map(function(w){return S_SYN[w]||w;}); }
+  function sBrand(c){ return sAlias(c).replace(/[^a-z0-9]/g,''); }
+  function sTh(s){ var m=sAlias(s).match(/(\d+(?:\.\d+)?)\s*mm/); return m?parseFloat(m[1]):null; }
+  function parseSurfaceRows(rows){
+    var head=rows[0], ir=rows.slice(1), out=[]; if(!head) return out;
+    for(var c=1;c<head.length;c++){ var nm=(head[c]||'').trim(); if(!nm) continue; var pts=[];
+      for(var r=0;r<ir.length;r++){ var lab=(ir[r][0]||'').trim(); var m=lab.match(/(\d+)/); if(!m) continue; var v=(ir[r][c]||'').trim(); if(v===''){continue;} var fl=parseFloat(v); if(!isNaN(fl)) pts.push([+m[1],Math.round(fl*10000)/10000]); }
+      if(pts.length) out.push({name:nm,pts:pts}); }
+    return out;
+  }
+  function buildSurfaceMap(curves, PADDLES_LOCAL, targetOnly){
+    var byName={}; curves.forEach(function(cu){ byName[cu.name]=cu.pts; });
+    var surfP=curves.map(function(cu){ var st={}; sToks(cu.name).forEach(function(w){st[w]=1;}); return {set:st,th:sTh(cu.name),pts:cu.pts}; });
+    var map={};
+    PADDLES_LOCAL.forEach(function(p){
+      if(targetOnly && p.key!==targetOnly) return;
+      if(SURFACE_EXCLUDE[p.key]) return;
+      var ov=SURFACE_OVERRIDE[p.key]; if(ov && byName[ov]){ map[p.key]=byName[ov]; return; }
+      var b=sBrand(p.company), dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
+      var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
+      var dbth=(p.thickness!=null&&p.thickness!=='')?parseFloat(p.thickness):null;
+      var best=null,bs=0;
+      surfP.forEach(function(sp){
+        var sj=Object.keys(sp.set).join('');
+        if(sj.indexOf(b)<0 && (b.length<6 || sj.indexOf(b.slice(0,6))<0)) return;
+        var shcore=Object.keys(sp.set).filter(function(w){return !S_GEN[w];});
+        if(!dbcore.some(function(w){return sp.set[w];})) return;
+        var dbSub=dbcore.every(function(w){return sp.set[w];}), shSub=shcore.every(function(w){return dbt[w];});
+        if(!dbSub && !shSub) return;
+        var uni={}; Object.keys(dbt).forEach(function(w){uni[w]=1;}); Object.keys(sp.set).forEach(function(w){uni[w]=1;});
+        var inter=Object.keys(dbt).filter(function(w){return sp.set[w];}).length;
+        var sc=inter/Object.keys(uni).length + ((dbcore.length===shcore.length&&dbSub&&shSub)?0.1:0);
+        if(dbth && sp.th!=null) sc += (Math.abs(dbth-sp.th)<0.3?0.1:-0.15);
+        if(sc>bs){ bs=sc; best=sp.pts; }
+      });
+      if(best && bs>=0.62) map[p.key]=best;
+    });
+    return map;
+  }
+  function yWindow(vals){
+    var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals), lo, hi;
+    if(mx-mn <= 0.07){ var c=(mn+mx)/2; lo=Math.floor((c-0.035)*100)/100; hi=lo+0.07; }
+    else { lo=Math.floor(mn*100)/100; hi=Math.ceil(mx*100)/100; }
+    if(mn<lo) lo=Math.floor(mn*100)/100;
+    if(mx>hi) hi=Math.ceil(mx*100)/100;
+    return [lo,hi];
+  }
+  function smoothPath(pts){
+    if(!pts.length) return '';
+    if(pts.length<3) return 'M'+pts.map(function(p){return p[0].toFixed(1)+' '+p[1].toFixed(1);}).join(' L');
+    var d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
+    for(var i=0;i<pts.length-1;i++){
+      var p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+      var c1x=p1[0]+(p2[0]-p0[0])/6, c1y=p1[1]+(p2[1]-p0[1])/6;
+      var c2x=p2[0]-(p3[0]-p1[0])/6, c2y=p2[1]-(p3[1]-p1[1])/6;
+      d+=' C'+c1x.toFixed(1)+' '+c1y.toFixed(1)+' '+c2x.toFixed(1)+' '+c2y.toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1);
+    }
+    return d;
+  }
+  function surfaceSVG(p){
+    var data=SURFACE_MAP[p.key]; if(!data||!data.length) return null;
+    var inches=data.map(function(d){return d[0];}), vals=data.map(function(d){return d[1];});
+    var win=yWindow(vals), lo=win[0], hi=win[1];
+    var PX0=50, PX1=282, PY0=22, PY1=176, minI=Math.min.apply(null,inches), maxI=Math.max.apply(null,inches);
+    function xS(i){ return maxI===minI ? (PX0+PX1)/2 : PX0+(i-minI)/(maxI-minI)*(PX1-PX0); }
+    function yS(v){ return PY1-(v-lo)/(hi-lo)*(PY1-PY0); }
+    var axis='<line class="kc-axis" x1="'+PX0+'" y1="'+PY1+'" x2="'+PX1+'" y2="'+PY1+'"/>';
+    var step=(hi-lo)<=0.075?0.01:0.02, yl='';
+    for(var t=lo; t<=hi+1e-9; t+=step){ var tv=Math.round(t*1000)/1000;
+      yl+='<text class="kc-ylab" x="'+(PX0-5)+'" y="'+(yS(tv)+3).toFixed(1)+'" text-anchor="end">'+tv.toFixed(3)+'</text>'; }
+    var drops='', vlab='', xl='', sp=[];
+    data.forEach(function(d){
+      var x=xS(d[0]), y=yS(d[1]);
+      sp.push([x,y]);
+      drops+='<line class="kc-drop" x1="'+x.toFixed(1)+'" y1="'+y.toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+PY1+'"/>';
+      vlab+='<text class="kc-val" x="'+x.toFixed(1)+'" y="'+(y-7).toFixed(1)+'" text-anchor="middle">'+d[1].toFixed(3)+'</text>';
+      xl+='<text class="kc-xlab" x="'+x.toFixed(1)+'" y="'+(PY1+13)+'" text-anchor="middle">'+d[0]+' in</text>';
+    });
+    var line='<path class="kc-line" d="'+smoothPath(sp)+'"/>';
+    var titles='<text class="kc-axtitle" transform="translate(11,'+((PY0+PY1)/2).toFixed(0)+') rotate(-90)" text-anchor="middle">KewCOR</text>'
+      + '<text class="kc-axtitle" x="'+((PX0+PX1)/2).toFixed(0)+'" y="206" text-anchor="middle">Inches from top of paddle</text>'
+      + '<text class="kc-title" x="'+((PX0+PX1)/2).toFixed(0)+'" y="13" text-anchor="middle">'+esc(p.company+' '+p.paddle)+'</text>';
+    return '<svg class="kc-svg" viewBox="0 0 300 212" preserveAspectRatio="xMidYMid meet">'+axis+yl+drops+line+vlab+xl+titles+'</svg>';
+  }
+
+  /* ================= feel map (verbatim) ================= */
+  var FEEL=[];
+  var FEEL_QUAD={A:'Stiff + Dense',B:'Stiff + Hollow',C:'Soft + Dense',D:'Soft + Hollow'};
+  function feelTicks(){ var s=''; for(var i=-5;i<=5;i++){ if(i===0||Math.abs(i)===5) continue; var px=50+(i/5)*40, py=50-(i/5)*40; s+='<line class="pclf-tick" x1="'+px+'" y1="48.4" x2="'+px+'" y2="51.6"/><line class="pclf-tick" x1="48.4" y1="'+py+'" x2="51.6" y2="'+py+'"/>'; } return s; }
+  var FEEL_SVG='<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'
+    +'<rect class="pclf-box" x="10" y="10" width="80" height="80" rx="4"/>'
+    +'<rect class="pclf-grid-soft" x="23.33" y="23.33" width="53.34" height="53.34" rx="2.5"/>'
+    +'<rect class="pclf-grid-soft" x="36.67" y="36.67" width="26.66" height="26.66" rx="1.5"/>'
+    +'<line class="pclf-axis" x1="10" y1="50" x2="90" y2="50"/>'
+    +'<line class="pclf-axis" x1="50" y1="10" x2="50" y2="90"/>'+feelTicks()
+    +'<circle class="pclf-center" cx="50" cy="50" r="1.1"/></svg>';
+  function feelClamp(v,a,b){return v<a?a:v>b?b:v;}
+  function feelNorm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
+  function feelBool(v){ var s=String(v==null?'':v).trim().toLowerCase(); return !(s==='false'||s==='0'||s==='no'||s==='off'); }
+  function feelThickCount(PADDLES_LOCAL){
+    var g={}; PADDLES_LOCAL.forEach(function(p){ var k=(p.company+'||'+p.paddle).toLowerCase().trim();
+      var n=parseFloat(p.thickness); if(!g[k])g[k]={}; if(!isNaN(n))g[k][n]=1; });
+    var o={}; for(var k in g) o[k]=Object.keys(g[k]).length; return o;
+  }
+  function feelNameOf(p, PADDLES_LOCAL){
+    var k=(p.company+'||'+p.paddle).toLowerCase().trim(), c=feelThickCount(PADDLES_LOCAL);
+    if(c[k]>1){ var x=parseFloat(p.thickness); if(!isNaN(x)) return p.paddle+' '+String(x)+'mm'; }
+    return p.paddle;
+  }
+  function feelEntryFor(p, PADDLES_LOCAL){
+    var want=(p.company+'||'+feelNameOf(p, PADDLES_LOCAL)).toLowerCase().trim();
+    for(var i=0;i<FEEL.length;i++){ var f=FEEL[i]; if((f.company+'||'+f.paddle).toLowerCase().trim()===want) return f; }
+    return null;
+  }
+  function feelColMarkup(p, PADDLES_LOCAL){
+    var f=feelEntryFor(p, PADDLES_LOCAL);
+    var marker = f
+      ? '<div class="pclf-dot" style="left:'+(50+(f.x/5)*40)+'%;top:'+(50-(f.y/5)*40)+'%" title="'+esc(p.paddle)+' ('+f.x.toFixed(2)+', '+f.y.toFixed(2)+')"><span class="pt"></span></div>'
+      : '<div class="pclf-empty">Not placed on the feel map yet.</div>';
+    return '<div class="pclf-frame">'
+      +'<span class="pclf-edge t">STIFF</span><span class="pclf-edge b">SOFT</span>'
+      +'<span class="pclf-edge l">DENSE</span><span class="pclf-edge r">HOLLOW</span>'
+      +'<div class="pclf-map">'+FEEL_SVG
+      +'<div class="pclf-quad a">A</div><div class="pclf-quad b">B</div><div class="pclf-quad c">C</div><div class="pclf-quad d">D</div>'
+      +'<div class="pclf-markers">'+marker+'</div></div>'
+      +'</div>';
+  }
+  function loadFeel(url,fb,cb){
+    Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
+      var rows=res.data||[]; if(rows.length<1){ if(fb) return loadFeel(fb,null,cb); return; }
+      var head=rows[0].map(feelNorm), ci={};
+      ['company','paddle','x','y','on'].forEach(function(k){ci[k]=head.indexOf(k);});
+      if(ci.company<0||ci.paddle<0){ if(fb) return loadFeel(fb,null,cb); return; }
+      var out=[];
+      for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue;
+        var c=r[ci.company], p=r[ci.paddle]; if(!c||!p) continue;
+        out.push({company:String(c).trim(),paddle:String(p).trim(),
+                  x:feelClamp(parseFloat(r[ci.x])||0,-5,5),
+                  y:feelClamp(parseFloat(r[ci.y])||0,-5,5),
+                  on:ci.on>-1?feelBool(r[ci.on]):true});
+      }
+      FEEL=out; if(cb) cb();
+    },error:function(){ if(fb) loadFeel(fb,null,cb); }});
+  }
+
+  /* ===================================================================
+     WRITTEN REVIEW CONTENT — this is the "20-40% human layer" from the
+     proposal. Keyed by p.key ("Company||Paddle"). Fill one of these in
+     per review; everything else on the page is auto-generated from data.
+     =================================================================== */
+  var REVIEWS = {
+    'Ronbus||Tenon R2.16': {
+      quickTake: [
+        'Sneaky power: this shape tests in the Power category despite a soft, dense feel that reads like a control paddle in hand.',
+        'NanoBond texture generates real spin (high 2,200s RPM) without feeling aggressive under the fingers.',
+        'Flat KewCOR curve across the face — the sweet spot is genuinely excellent, not just in the widebody\'s wheelhouse.',
+        'Tier 3 spin durability: a real step up from raw carbon fiber, though not the best surface on the market.',
+        'Best-testing shape of the four-shape Tenon lineup: highest spin, highest firepower, highest KewCOR of R1–R4.'
+      ],
+      constructionNote: 'Ronbus\'s own explanation: the EPP/EVA full-foam core is joined with an actual mortise-and-tenon joint — the same joinery woodworkers have used for centuries to lock two pieces of wood together without fasteners — which they say adds strength against pulling and twisting, balanced by an elastomer layer at the seam for targeted flex. The NanoBond surface is a grit-infused peel ply that Ronbus says uses a cross-linked bonding network to hold grit in place longer than typical textures.',
+      kewcorNote: 'R2\'s KewCOR score of 0.419 lands in the Power category — not All-Court, which is what you\'d guess just holding it, and not what Ronbus\'s own "all-court control" pitch would suggest either. Mapped across the face, the curve comes out flat: no sharp peak, no real drop-off toward the edges, just a wide, consistent plateau from top to bottom. That flat curve is most of what\'s behind the "sneaky power" read — mishits still come back with real pace and predictable direction.',
+      spinDurabilityNote: 'An accelerated wear test (100 simulated impacts at 70 mph) put NanoBond at Tier 3 — an 8 to 15 percent spin loss. That\'s not the best measured here; Tier 1 surfaces like HexGrit or Diamond Tough hold at close to zero loss. But it\'s a real, meaningful step up from raw carbon fiber, which typically falls in the 20-30 percent range on the same test. <span class="pr-mfr"><b>From manufacturer — not independently verified</b>Ronbus ran their own version of this test (100 hits at 100 mph) and published 8-15% spin loss for NanoBond against 22-32% for a standard raw carbon fiber surface. The conditions weren\'t independently verified, but it\'s a good sign when an independent number and a manufacturer number land in the same neighborhood.</span>',
+      feelNote: 'R2 sits in Quadrant C — soft and dense. That\'s not a natural preference (stiffer, hollower paddles usually are), but the contact quality here is genuinely gratifying — an almost buttery feel that\'s hard to describe until you\'ve hit with it. It\'s soft without feeling dead, dense without feeling muted, and it\'s exactly what makes the power disconnect from the feel so noticeable in play.',
+      whoFor: [
+        'Players who want more power than the feel profile lets on',
+        'Players who like a soft, dense contact but still want to hit with authority',
+        'Players who want good spin without a rough, grabby surface under their fingers'
+      ],
+      whoNotFor: [
+        'Players who specifically want stiff, hollow, high-feedback contact — this is the opposite of that by design',
+        'Players chasing the single most durable spin surface on the market — Tier 3 is good, not best-in-class',
+        'Anyone already happy with their current paddle — a new release alone isn\'t a reason to switch'
+      ],
+      verdict: 'Across the whole Tenon series: sneaky power that doesn\'t announce itself, spin that shows up without an aggressive-feeling surface, a genuinely excellent and consistent sweet spot, and Tier 3 spin durability that\'s a real step up from raw carbon fiber. Coming back to the hooks up top — the sneaky power, the smooth-feeling spin, the Tier 3 durability, the buttery-not-preferred feel, and the flat KewCOR curve — R2 is the shape that delivers on all five most convincingly of the four, which is exactly why it\'s the one most players should start with.',
+      disclosure: 'Ronbus sent these paddles in for testing ahead of their July 27th public release, with no payment and no editorial input. Code JOHNKEW takes $20 off, and I earn a commission that helps support the channel.'
+    }
+  };
+
+  /* ================= page assembly ================= */
+  var qs=new URLSearchParams(location.search);
+  var wantKey=qs.get('paddle');
+  var wantSlug=qs.get('slug');
+  var DEFAULT_KEY='Ronbus||Tenon R2.16'; // seeded example paddle for this draft
+
+  function findPaddle(PADDLES_LOCAL){
+    if(wantKey){
+      var k=wantKey.toLowerCase();
+      var m=PADDLES_LOCAL.find(function(p){return p.key.toLowerCase()===k;});
+      if(m) return m;
+    }
+    if(wantSlug){
+      var m2=PADDLES_LOCAL.find(function(p){return photoSlug(p)===wantSlug;});
+      if(m2) return m2;
+    }
+    if(!wantKey && !wantSlug){
+      return PADDLES_LOCAL.find(function(p){return p.key.toLowerCase()===DEFAULT_KEY.toLowerCase();});
+    }
+    return null;
+  }
+
+  function renderSpecRow(label,val){ return '<tr><td>'+esc(label)+'</td><td>'+val+'</td></tr>'; }
+
+  function render(p, PADDLES_LOCAL){
+    var R = REVIEWS[p.key] || {};
+    var pr = pricing(p);
+
+    document.getElementById('prCrumbs').hidden=false;
+    document.getElementById('prCrumbCurrent').textContent = p.company+' '+p.paddle;
+    document.title = p.company+' '+p.paddle+' Review — JohnKew Pickleball';
+    var desc = (R.quickTake && R.quickTake[0]) ? R.quickTake[0] : ('Independent lab-tested review of the '+p.company+' '+p.paddle+'.');
+    document.querySelector('meta[name="description"]').setAttribute('content', desc);
+    document.querySelector('meta[property="og:title"]').setAttribute('content', document.title);
+    document.querySelector('meta[property="og:description"]').setAttribute('content', desc);
+    var canonicalUrl = location.origin + location.pathname + '?paddle=' + encodeURIComponent(p.key);
+    document.querySelector('link[rel="canonical"]').setAttribute('href', canonicalUrl);
+
+    // photo
+    var cands=photoCandidates(p);
+    document.getElementById('prPhoto').innerHTML =
+      '<img src="'+esc(cands[0])+'" data-fb="'+esc(JSON.stringify(cands.slice(1)))+'" alt="'+esc(p.company+' '+p.paddle)+'" '
+      + 'onerror="var fb=JSON.parse(this.getAttribute(\'data-fb\')||\'[]\'); if(fb.length){this.setAttribute(\'data-fb\',JSON.stringify(fb.slice(1)));this.src=fb[0];} else {this.parentNode.innerHTML=\'<div class=&quot;ph-txt&quot;>Paddle image coming soon</div>\';}">';
+
+    document.getElementById('prBrand').textContent = p.company;
+    document.getElementById('prName').textContent = p.paddle;
+    document.getElementById('prBadges').innerHTML = [
+      p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
+      p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
+      spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
+    ].join('');
+
+    var priceMain = pr.isSelkirk? money(p.price) : money(pr.finalPrice);
+    var strike = (!pr.isSelkirk && pr.savedAmt>0.005) ? '<span class="pr-strike">'+money(p.price)+'</span>' : '';
+    document.getElementById('prPriceRow').innerHTML = '<span class="pr-price">'+priceMain+'</span>'+strike
+      + (p.discountCode?'<span class="pr-code">'+esc(p.discountCode)+'</span>':'');
+    var buyBtn=document.getElementById('prBuyBtn');
+    if(p.link && /^https?:/i.test(p.link)){ buyBtn.href=p.link; } else { buyBtn.style.display='none'; }
+
+    // quick take
+    document.getElementById('prQuickTake').innerHTML = (R.quickTake||['Quick-take bullets not yet written for this paddle.']).map(function(t){return '<li>'+t+'</li>';}).join('');
+
+    // specs
+    var specsLeft = [
+      renderSpecRow('Shape', esc(p.shape||'—')),
+      renderSpecRow('Build', esc(p.build||'—')),
+      renderSpecRow('Length × Width', (p.length?fmt(p.length,2):'—')+' × '+(p.width?fmt(p.width,2):'—')+' in'),
+      renderSpecRow('Handle Length', p.handleLength?fmt(p.handleLength,2)+' in':'—'),
+      renderSpecRow('Core Thickness', p.thickness?fmt(p.thickness,1)+' mm':'—')
+    ].join('');
+    var specsRight = [
+      renderSpecRow('Static Weight', p.weight?fmt(p.weight,1)+' oz':'—'),
+      renderSpecRow('Swing Weight', p.swingWeight?fmt(p.swingWeight,0):'—'),
+      renderSpecRow('Twist Weight', p.twistWeight?fmt(p.twistWeight,2):'—'),
+      renderSpecRow('Balance Point', p.balance?fmt(p.balance,1)+' cm':'—'),
+      renderSpecRow('Certification', esc(p.cert||'—')),
+      renderSpecRow('Warranty', esc(p.warranty||'—'))
+    ].join('');
+    document.getElementById('prSpecGrid').innerHTML = '<table class="pr-spec-table">'+specsLeft+'</table><table class="pr-spec-table">'+specsRight+'</table>';
+    document.getElementById('prSpecNote').innerHTML = R.specNote ? '<p>'+R.specNote+'</p>' : '';
+
+    // construction
+    var constructionParts=[];
+    if(p.coreType) constructionParts.push('Core: '+esc(p.coreType)+'.');
+    if(p.surfaceLayup) constructionParts.push('Surface layup: '+esc(p.surfaceLayup)+'.');
+    if(p.surfaceTexture) constructionParts.push('Surface texture: '+esc(p.surfaceTexture)+'.');
+    var constructionHtml = '<p>'+(constructionParts.join(' ')||'Construction details not yet in the database for this paddle.')+'</p>';
+    if(R.constructionNote) constructionHtml += '<div class="pr-mfr"><b>From manufacturer — not independently verified</b>'+R.constructionNote+'</div>';
+    document.getElementById('prConstruction').innerHTML = constructionHtml;
+
+    // performance metrics
+    document.getElementById('prRadar').innerHTML = radarSVG(p);
+    document.getElementById('prRadarLegend').innerHTML = radarLegend(p);
+    document.getElementById('prBullet').innerHTML = bulletSVG(p);
+    document.getElementById('prMetricsNote').innerHTML = R.metricsNote ? '<p>'+R.metricsNote+'</p>' : '';
+
+    // kewcor
+    var kcCat=kewcorCat(p.kewcor);
+    document.getElementById('prGauge').innerHTML = gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3);
+    document.getElementById('prGaugeLegend').innerHTML = '<span><i style="background:#2563eb"></i>Control</span><span><i style="background:#0d9488"></i>All-Court</span><span><i style="background:#d97706"></i>Power</span><span><i style="background:#dc2626"></i>Beyond Spec</span>';
+    document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? '<p>'+R.kewcorNote+'</p>' : '<p>Surface curve loading…</p>';
+    refreshSurfaceChart(p);
+
+    // spin durability
+    document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
+    document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? '<p>'+R.spinDurabilityNote+'</p>' : '';
+
+    // feel map
+    refreshFeelChart(p, PADDLES_LOCAL);
+    document.getElementById('prFeelNote').innerHTML = R.feelNote ? '<p>'+R.feelNote+'</p>' : '';
+
+    // who for / not for
+    document.getElementById('prWhoFor').innerHTML = (R.whoFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
+    document.getElementById('prWhoNotFor').innerHTML = (R.whoNotFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
+
+    // verdict
+    document.getElementById('prVerdict').innerHTML = R.verdict ? '<p>'+R.verdict+'</p>' : '<p>Full write-up not yet drafted for this paddle.</p>';
+
+    // disclosure
+    document.getElementById('prDisclosure').textContent = R.disclosure || 'Independent testing. See johnkewpickleball.com for full disclosure policy.';
+
+    // JSON-LD (Product + Review; no star rating included — nothing here should read as
+    // a fabricated numeric score. Add reviewRating later only if a real rating scale exists.)
+    var ld = {
+      "@context":"https://schema.org",
+      "@type":"Product",
+      "name": p.company+' '+p.paddle,
+      "brand": {"@type":"Brand","name": p.company},
+      "image": cands[0],
+      "description": desc,
+      "offers": p.price ? {"@type":"Offer","price": String(pr.isSelkirk?p.price:pr.finalPrice),"priceCurrency":"USD","url": p.link||canonicalUrl} : undefined,
+      "review": {
+        "@type":"Review",
+        "author": {"@type":"Person","name":"John Kew"},
+        "publisher": {"@type":"Organization","name":"JohnKew Pickleball"},
+        "reviewBody": (R.verdict||desc).replace(/<[^>]+>/g,'')
+      }
+    };
+    document.getElementById('prJsonLd').textContent = JSON.stringify(ld);
+
+    document.getElementById('prStatus').hidden=true;
+    document.getElementById('prApp').hidden=false;
+  }
+
+  function refreshSurfaceChart(p){
+    var host=document.getElementById('prSurface');
+    var svg=surfaceSVG(p);
+    host.innerHTML = svg ? '<div class="pcl-surf">'+svg+'</div>' : '<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:30px 10px">No centerline surface data for this paddle yet.</div>';
+  }
+  function refreshFeelChart(p, PADDLES_LOCAL){
+    document.getElementById('prFeel').innerHTML = feelColMarkup(p, PADDLES_LOCAL);
+  }
+
+  /* ================= load ================= */
+  function load(){
+    Papa.parse(CSV_URL,{download:true,skipEmptyLines:true,complete:function(res){
+      if(!res.data || res.data.length<3){ document.getElementById('prStatus').textContent='Could not load paddle data.'; return; }
+      var PADDLES=parseRows(res.data);
+      var p=findPaddle(PADDLES);
+      if(!p){ document.getElementById('prStatus').innerHTML='Paddle not found. Check the <code>?paddle=Company||Paddle</code> link, or <a href="https://johnkewpickleball.com/paddle-database">browse the full database</a>.'; return; }
+      render(p, PADDLES);
+
+      // live surface curve (fuzzy-matched, same logic as the comparison lab)
+      Papa.parse(SURFACE_CSV,{download:true,skipEmptyLines:true,complete:function(sres){
+        if(sres.data && sres.data.length>1){
+          try{
+            var live=buildSurfaceMap(parseSurfaceRows(sres.data), PADDLES, p.key);
+            for(var k in live) SURFACE_MAP[k]=live[k];
+            refreshSurfaceChart(p);
+          }catch(e){}
+        }
+      },error:function(){}});
+
+      // live feel map
+      loadFeel(FEEL_CSV, null, function(){ refreshFeelChart(p, PADDLES); });
+    },error:function(){ document.getElementById('prStatus').textContent='Could not load paddle data. Please refresh.'; }});
+  }
+  if(window.Papa) load(); else window.addEventListener('load', load);
+})();
+</script>
+</body>
+</html>
