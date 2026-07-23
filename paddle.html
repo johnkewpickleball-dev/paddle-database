@@ -220,9 +220,9 @@
   @media(max-width:560px){.pr-simgrid{grid-template-columns:1fr}}
   .pr-simcard{border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--white)}
   [data-theme="dark"] .pr-page .pr-simcard{background:var(--surface,#141d27)}
-  .pr-simcard-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-  .pr-simcard-idbox{min-width:0}
-  .pr-compare-cta{display:inline-flex;align-items:center;gap:8px;margin-left:auto;text-decoration:none;flex:0 0 auto}
+  .pr-simcard-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+  .pr-simcard-idbox{flex:1 1 auto;min-width:0}
+  .pr-compare-cta{display:inline-flex;align-items:center;gap:8px;text-decoration:none;flex:0 0 auto}
   .pr-compare-icon{width:34px;height:34px;border-radius:9px;background:#151b3d;color:#4ade80;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 0 0 0 rgba(74,222,128,.5);animation:prComparePulse 1.8s ease-in-out infinite}
   .pr-compare-icon svg{width:18px;height:18px}
   .pr-compare-label{font-size:11px;font-weight:700;color:var(--green);line-height:1.25;max-width:74px}
@@ -231,7 +231,8 @@
   @media(prefers-reduced-motion:reduce){.pr-compare-icon{animation:none}}
   .pr-buybox .pr-price-row{margin-bottom:16px}
   .pr-simcard-photo{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--bg,#f1f5f9);flex:0 0 auto;border:1px solid var(--border)}
-  .pr-simcard-name{font-weight:700;font-size:13.5px;color:var(--navy);line-height:1.25}
+  .pr-simcard-brand{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);overflow-wrap:break-word}
+  .pr-simcard-name{font-weight:700;font-size:13.5px;color:var(--navy);line-height:1.3;overflow-wrap:break-word}
   [data-theme="dark"] .pr-page .pr-simcard-name{color:var(--text)}
   .pr-simcard-score{font-size:12.5px;color:var(--green);font-weight:700;margin-top:2px}
   .pr-simcard-metrics{display:flex;flex-direction:column;gap:5px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
@@ -743,7 +744,21 @@
     var vals=keys.map(function(k){return simRatio(p[k],q[k]);}).filter(function(v){return v!=null;});
     return vals.length ? vals.reduce(function(a,b){return a+b;},0)/vals.length : null;
   }
-  function paddleSimilarity(p,q){
+  // Feel Map x/y (dense<->hollow, soft<->stiff) run -5..+5, so unlike the ratio-based metrics
+  // above, a min/max ratio would mangle negative/opposite-sign values. Distance-based instead:
+  // each axis's max possible distance is 10 (from -5 to +5), so similarity = 100*(1-|a-b|/10).
+  function axisSim(a,b){
+    if(a==null||b==null||isNaN(a)||isNaN(b)) return null;
+    return 100*(1-Math.abs(a-b)/10);
+  }
+  function feelSim(p,q,PADDLES_LOCAL){
+    var fp=feelEntryFor(p,PADDLES_LOCAL), fq=feelEntryFor(q,PADDLES_LOCAL);
+    if(!fp||!fq) return null;
+    var xs=axisSim(fp.x,fq.x), ys=axisSim(fp.y,fq.y);
+    if(xs==null||ys==null) return null;
+    return (xs+ys)/2;
+  }
+  function paddleSimilarity(p,q,PADDLES_LOCAL){
     var m={
       spin:simRatio(p.spinScaled,q.spinScaled),
       dimensions:simAvg(p,q,SIM_DIMENSION_KEYS),
@@ -752,24 +767,25 @@
       power:simRatio(p.powerScaled,q.powerScaled),
       pop:simRatio(p.popScaled,q.popScaled),
       firepower:simRatio(p.firepower,q.firepower),
-      kewcor:simRatio(p.kewcor,q.kewcor)
+      kewcor:simRatio(p.kewcor,q.kewcor),
+      feel:feelSim(p,q,PADDLES_LOCAL)
     };
-    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor'];
+    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor','feel'];
     var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
-    if(vals.length<5) return null;
+    if(vals.length<Math.ceil(order.length*0.6)) return null;
     return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
   }
   function findSimilarPaddles(p,PADDLES_LOCAL,n){
     var scored=[];
     PADDLES_LOCAL.forEach(function(q){
       if(q.key===p.key) return;
-      var s=paddleSimilarity(p,q);
+      var s=paddleSimilarity(p,q,PADDLES_LOCAL);
       if(s) scored.push({paddle:q,sim:s});
     });
     scored.sort(function(a,b){return b.sim.overall-a.sim.overall;});
     return scored.slice(0,n||4);
   }
-  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR'};
+  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR',feel:'Feel Profile'};
   function simMetricRow(key,val){
     return '<div class="pr-simmetric"><span class="pr-simmetric-label">'+esc(SIM_METRIC_LABELS[key])+'</span>'
       +'<span class="pr-simmetric-val">'+(val==null?'—':Math.round(val)+'%')+'</span></div>';
@@ -789,7 +805,8 @@
     return '<div class="pr-simcard">'
       +'<div class="pr-simcard-head">'
         +'<img class="pr-simcard-photo" src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
-        +'<div class="pr-simcard-idbox"><div class="pr-simcard-name">'+esc(q.company)+' '+esc(q.paddle)+'</div>'
+        +'<div class="pr-simcard-idbox"><div class="pr-simcard-brand">'+esc(q.company)+'</div>'
+        +'<div class="pr-simcard-name">'+esc(q.paddle)+'</div>'
         +'<div class="pr-simcard-score">'+Math.round(s.overall)+'% similar</div></div>'
         +'<a class="pr-compare-cta" href="'+esc(compareUrl)+'" target="_blank" rel="noopener noreferrer" title="Compare '+esc(target.company+' '+target.paddle)+' vs '+esc(q.company+' '+q.paddle)+' in the Paddle Comparison Lab">'
           +'<span class="pr-compare-icon">'+COMPARE_ICON_SVG+'</span>'
@@ -1149,7 +1166,7 @@
       },error:function(){}});
 
       // live feel map
-      loadFeel(FEEL_CSV, null, function(){ refreshFeelChart(p, PADDLES); });
+      loadFeel(FEEL_CSV, null, function(){ refreshFeelChart(p, PADDLES); document.getElementById('prSimilar').innerHTML = similarPaddlesHtml(p, PADDLES); });
     },error:function(){ document.getElementById('prStatus').textContent='Could not load paddle data. Please refresh.'; }});
   }
   if(window.Papa) load(); else window.addEventListener('load', load);

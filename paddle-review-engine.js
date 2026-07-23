@@ -402,14 +402,19 @@ window.JKPaddleReview = (function(){
   /* ================= similar paddles (similarity score + spin durability match) =============
      A per-metric similarity score is a plain min/max ratio expressed as a percentage (e.g.
      reviewed=100, candidate=90 -> 90%). That only produces a sane number for metrics that are
-     always >0 on a shared scale, which is true of every metric used here: the four *Scaled
-     fields and Firepower/Hand-Speed-Index are already 0-100 scaled scores (not raw +/- Z-scores,
-     which a min/max ratio would mangle), KewCOR and every physical dimension/weight field are
-     plain positive measurements. Dimensions and Weight/Balance are each an average of 4 sub-
-     metrics rolled into one number -- individual sub-scores are intentionally not exposed, per
-     spec. Overall score is the average of all 8 top-level metrics (with Dimensions and
-     Weight/Balance each counting once, already averaged). A candidate needs at least 5 of the 8
-     metrics present to be considered at all, so a paddle missing most of its data can't luck
+     always >0 on a shared scale, which is true of every ratio-based metric used here: the four
+     *Scaled fields and Firepower/Hand-Speed-Index are already 0-100 scaled scores (not raw +/-
+     Z-scores, which a min/max ratio would mangle), KewCOR and every physical dimension/weight
+     field are plain positive measurements. Dimensions and Weight/Balance are each an average of
+     4 sub-metrics rolled into one number -- individual sub-scores are intentionally not exposed,
+     per spec. Feel Profile is different: Feel Map x/y coordinates (dense<->hollow, soft<->stiff)
+     run -5..+5, so a ratio would mangle negative values -- it uses a distance-based formula
+     instead (axisSim: 100*(1-|a-b|/10), the two axes averaged), pulled from the same Feel Map
+     Google Sheet (FEEL_CSV) via feelEntryFor(), which also handles paddles that have multiple
+     thickness variants under one name. Overall score is the average of all 9 top-level metrics
+     (with Dimensions and Weight/Balance each counting once, already averaged). A candidate needs
+     at least 60% of the top-level metrics present to be considered at all (rounded up -- 5 of 8
+     before Feel Profile was added, 6 of 9 now), so a paddle missing most of its data can't luck
      into a high score off one or two fields. Spin Durability Tier is categorical (Tier 1-4, or
      blank) so it gets a separate exact-match Yes/No box instead of a percentage. */
   var SIM_DIMENSION_KEYS=['length','width','thickness','handleLength'];
@@ -422,7 +427,21 @@ window.JKPaddleReview = (function(){
     var vals=keys.map(function(k){return simRatio(p[k],q[k]);}).filter(function(v){return v!=null;});
     return vals.length ? vals.reduce(function(a,b){return a+b;},0)/vals.length : null;
   }
-  function paddleSimilarity(p,q){
+  // Feel Map x/y (dense<->hollow, soft<->stiff) run -5..+5, so unlike the ratio-based metrics
+  // above, a min/max ratio would mangle negative/opposite-sign values. Distance-based instead:
+  // each axis's max possible distance is 10 (from -5 to +5), so similarity = 100*(1-|a-b|/10).
+  function axisSim(a,b){
+    if(a==null||b==null||isNaN(a)||isNaN(b)) return null;
+    return 100*(1-Math.abs(a-b)/10);
+  }
+  function feelSim(p,q,PADDLES_LOCAL){
+    var fp=feelEntryFor(p,PADDLES_LOCAL), fq=feelEntryFor(q,PADDLES_LOCAL);
+    if(!fp||!fq) return null;
+    var xs=axisSim(fp.x,fq.x), ys=axisSim(fp.y,fq.y);
+    if(xs==null||ys==null) return null;
+    return (xs+ys)/2;
+  }
+  function paddleSimilarity(p,q,PADDLES_LOCAL){
     var m={
       spin:simRatio(p.spinScaled,q.spinScaled),
       dimensions:simAvg(p,q,SIM_DIMENSION_KEYS),
@@ -431,24 +450,27 @@ window.JKPaddleReview = (function(){
       power:simRatio(p.powerScaled,q.powerScaled),
       pop:simRatio(p.popScaled,q.popScaled),
       firepower:simRatio(p.firepower,q.firepower),
-      kewcor:simRatio(p.kewcor,q.kewcor)
+      kewcor:simRatio(p.kewcor,q.kewcor),
+      feel:feelSim(p,q,PADDLES_LOCAL)
     };
-    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor'];
+    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor','feel'];
     var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
-    if(vals.length<5) return null;
+    // minimum-data threshold scales with the metric count (was 5 of 8 = 62.5%; same ratio,
+    // rounded up, applied to however many top-level metrics exist).
+    if(vals.length<Math.ceil(order.length*0.6)) return null;
     return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
   }
   function findSimilarPaddles(p,PADDLES_LOCAL,n){
     var scored=[];
     PADDLES_LOCAL.forEach(function(q){
       if(q.key===p.key) return;
-      var s=paddleSimilarity(p,q);
+      var s=paddleSimilarity(p,q,PADDLES_LOCAL);
       if(s) scored.push({paddle:q,sim:s});
     });
     scored.sort(function(a,b){return b.sim.overall-a.sim.overall;});
     return scored.slice(0,n||4);
   }
-  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR'};
+  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR',feel:'Feel Profile'};
   function simMetricRow(key,val){
     return '<div class="pr-simmetric"><span class="pr-simmetric-label">'+esc(SIM_METRIC_LABELS[key])+'</span>'
       +'<span class="pr-simmetric-val">'+(val==null?'—':Math.round(val)+'%')+'</span></div>';
@@ -468,7 +490,8 @@ window.JKPaddleReview = (function(){
     return '<div class="pr-simcard">'
       +'<div class="pr-simcard-head">'
         +'<img class="pr-simcard-photo" src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
-        +'<div class="pr-simcard-idbox"><div class="pr-simcard-name">'+esc(q.company)+' '+esc(q.paddle)+'</div>'
+        +'<div class="pr-simcard-idbox"><div class="pr-simcard-brand">'+esc(q.company)+'</div>'
+        +'<div class="pr-simcard-name">'+esc(q.paddle)+'</div>'
         +'<div class="pr-simcard-score">'+Math.round(s.overall)+'% similar</div></div>'
         +'<a class="pr-compare-cta" href="'+esc(compareUrl)+'" target="_blank" rel="noopener noreferrer" title="Compare '+esc(target.company+' '+target.paddle)+' vs '+esc(q.company+' '+q.paddle)+' in the Paddle Comparison Lab">'
           +'<span class="pr-compare-icon">'+COMPARE_ICON_SVG+'</span>'
@@ -986,8 +1009,10 @@ window.JKPaddleReview = (function(){
           }
         },error:function(){}});
 
-        // live feel map
-        loadFeel(FEEL_CSV, null, function(){ refreshFeelChart(p, PADDLES); });
+        // live feel map -- also re-renders Similar Paddles, since that section's Feel Profile
+        // metric depends on this same data and the first render() call above runs before this
+        // async fetch finishes (so it renders once without Feel Profile, then again with it).
+        loadFeel(FEEL_CSV, null, function(){ refreshFeelChart(p, PADDLES); document.getElementById('prSimilar').innerHTML = similarPaddlesHtml(p, PADDLES); });
       },error:function(){ document.getElementById('prStatus').textContent='Could not load paddle data. Please refresh.'; }});
     }
     function startLoad(){ if(window.Papa) load(); else window.addEventListener('load', load); }
