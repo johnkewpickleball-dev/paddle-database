@@ -479,8 +479,6 @@ window.JKPaddleReview = (function(){
 
 <div class="pr-wrap" id="prApp" hidden>
 
-  <div class="pr-draftnote">Draft/unpublished review page — reused chart functions from the Comparison Lab, live database data. Not yet linked from the main site.</div>
-
   <div class="pr-hero">
     <div class="pr-photo" id="prPhoto"></div>
     <div class="pr-head-main">
