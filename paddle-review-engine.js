@@ -59,6 +59,16 @@ window.JKPaddleReview = (function(){
         + (cap ? ('<figcaption>'+esc(cap)+'</figcaption>') : '') + '</figure>';
     });
   }
+  // Turns a prose field into one <p> per paragraph instead of one giant block. A field with no
+  // blank-line breaks in it (single-paragraph inline review:{} text, e.g.) still renders as a
+  // single <p>, so this is a no-op for older content -- only fields that actually contain a
+  // paragraph break (\n\n, from a Doc's blank lines or a manually-inserted one in inline text)
+  // get split. Each paragraph runs through renderImageMarkers independently.
+  function proseHtml(text){
+    if(!text) return '';
+    return String(text).split(/\n{2,}/).map(function(p){ return p.trim(); }).filter(Boolean)
+      .map(function(p){ return '<p>'+renderImageMarkers(p)+'</p>'; }).join('');
+  }
   // Full-review video block: paste any standard YouTube URL, thumbnail + link are derived.
   function ytVideoId(url){
     if(!url) return null;
@@ -388,8 +398,10 @@ window.JKPaddleReview = (function(){
   }
   /* ================= review text from a Google Doc (alternative to inline opts.review) =====
      Convention: one Google Doc per paddle, shared "Anyone with the link can view". Section
-     names below (case-insensitive, must be on their own line) split the doc into fields; blank
-     lines don't matter otherwise. Quick Take / Who It's For / Who It's NOT For treat every
+     names below (case-insensitive, must be on their own line) split the doc into fields. Inside
+     a prose section, a blank line marks a paragraph break, and that break is preserved onto the
+     page as a separate <p> (via proseHtml()) -- so a section written as several paragraphs in
+     the Doc renders as several paragraphs, not one flattened block. Quick Take / Who It's For / Who It's NOT For treat every
      non-empty line under the heading as one bullet. Most other sections are joined into one
      prose block. A paragraph starting with "MFR CLAIM:" becomes the manufacturer-claim callout
      box. A "[[IMAGE: url]]" or "[[IMAGE: url | caption]]" marker anywhere in a prose section
@@ -477,12 +489,15 @@ window.JKPaddleReview = (function(){
           else para.push(l.trim());
         });
         if(para.length) paras.push(para.join(' ').trim());
+        // Joined with a paragraph-break marker (\n\n), not a plain space -- proseHtml() at
+        // render time splits on this to produce one <p> per paragraph instead of flattening
+        // an entire multi-paragraph section (e.g. On-Court Impressions) into one wall of text.
         out[current.key] = paras.map(function(pText){
           var m = pText.match(/^MFR CLAIM:\s*(.*)$/i);
           return m
             ? ('<span class="pr-mfr"><b>From manufacturer — not independently verified</b>'+m[1]+'</span>')
             : pText;
-        }).join(' ');
+        }).join('\n\n');
       }
       buf=[];
     }
@@ -697,7 +712,7 @@ window.JKPaddleReview = (function(){
 
       // hero (optional lead image/note before Quick Take)
       var heroEl = document.getElementById('prHero');
-      if(R.heroNote){ heroEl.innerHTML = renderImageMarkers(R.heroNote); heroEl.hidden = false; }
+      if(R.heroNote){ heroEl.innerHTML = proseHtml(R.heroNote); heroEl.hidden = false; }
       else { heroEl.hidden = true; heroEl.innerHTML = ''; }
 
       // quick take
@@ -750,7 +765,7 @@ window.JKPaddleReview = (function(){
       // used to be the default here, which incorrectly flagged independently-verified writing
       // (e.g. John's own x-ray/testing analysis) as an unverified manufacturer claim.
       var constructionHtml = '<p>'+(constructionParts.join(' ')||'Construction details not yet in the database for this paddle.')+'</p>';
-      if(R.constructionNote) constructionHtml += '<p>'+renderImageMarkers(R.constructionNote)+'</p>';
+      if(R.constructionNote) constructionHtml += proseHtml(R.constructionNote);
       document.getElementById('prConstruction').innerHTML = constructionHtml;
 
       // performance metrics
@@ -763,23 +778,23 @@ window.JKPaddleReview = (function(){
       var kcCat=kewcorCat(p.kewcor);
       document.getElementById('prGauge').innerHTML = gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3);
       document.getElementById('prGaugeLegend').innerHTML = '<span><i style="background:#2563eb"></i>Control</span><span><i style="background:#0d9488"></i>All-Court</span><span><i style="background:#d97706"></i>Power</span><span><i style="background:#dc2626"></i>Beyond Spec</span>';
-      document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? '<p>'+renderImageMarkers(R.kewcorNote)+'</p>' : '<p>Surface curve loading…</p>';
+      document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? proseHtml(R.kewcorNote) : '<p>Surface curve loading…</p>';
       refreshSurfaceChart(p);
 
       // spin durability
       document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
-      document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? '<p>'+renderImageMarkers(R.spinDurabilityNote)+'</p>' : '';
+      document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? proseHtml(R.spinDurabilityNote) : '';
 
       // feel map
       refreshFeelChart(p, PADDLES_LOCAL);
-      document.getElementById('prFeelNote').innerHTML = R.feelNote ? '<p>'+renderImageMarkers(R.feelNote)+'</p>' : '';
+      document.getElementById('prFeelNote').innerHTML = R.feelNote ? proseHtml(R.feelNote) : '';
 
       // on-court impressions + mods (full reviews only -- hidden until content exists)
       var onCourtSection = document.getElementById('prOnCourtSection');
-      if(R.onCourtNote){ document.getElementById('prOnCourt').innerHTML = '<p>'+renderImageMarkers(R.onCourtNote)+'</p>'; onCourtSection.hidden = false; }
+      if(R.onCourtNote){ document.getElementById('prOnCourt').innerHTML = proseHtml(R.onCourtNote); onCourtSection.hidden = false; }
       else { onCourtSection.hidden = true; }
       var modsSection = document.getElementById('prModsSection');
-      if(R.modsNote){ document.getElementById('prMods').innerHTML = '<p>'+renderImageMarkers(R.modsNote)+'</p>'; modsSection.hidden = false; }
+      if(R.modsNote){ document.getElementById('prMods').innerHTML = proseHtml(R.modsNote); modsSection.hidden = false; }
       else { modsSection.hidden = true; }
 
       // who for / not for
@@ -787,7 +802,7 @@ window.JKPaddleReview = (function(){
       document.getElementById('prWhoNotFor').innerHTML = (R.whoNotFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
 
       // verdict
-      document.getElementById('prVerdict').innerHTML = R.verdict ? '<p>'+renderImageMarkers(R.verdict)+'</p>' : '<p>Full write-up not yet drafted for this paddle.</p>';
+      document.getElementById('prVerdict').innerHTML = R.verdict ? proseHtml(R.verdict) : '<p>Full write-up not yet drafted for this paddle.</p>';
 
       // disclosure
       document.getElementById('prDisclosure').textContent = R.disclosure || 'Independent testing. See johnkewpickleball.com for full disclosure policy.';
