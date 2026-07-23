@@ -677,7 +677,7 @@
         'Tier 3 spin durability: a real step up from raw carbon fiber, though not the best surface on the market.',
         'Best-testing shape of the four-shape Tenon lineup: highest spin, highest firepower, highest KewCOR of R1–R4.'
       ],
-      constructionNote: 'Ronbus\'s own explanation: the EPP/EVA full-foam core is joined with an actual mortise-and-tenon joint (the same joinery woodworkers have used for centuries to lock two pieces of wood together without fasteners), which they say adds strength against pulling and twisting, balanced by an elastomer layer at the seam for targeted flex. The NanoBond surface is a grit-infused peel ply that Ronbus says uses a cross-linked bonding network to hold grit in place longer than typical textures.',
+      constructionNote: '<span class="pr-mfr"><b>From manufacturer — not independently verified</b>Ronbus\'s own explanation: the EPP/EVA full-foam core is joined with an actual mortise-and-tenon joint (the same joinery woodworkers have used for centuries to lock two pieces of wood together without fasteners), which they say adds strength against pulling and twisting, balanced by an elastomer layer at the seam for targeted flex. The NanoBond surface is a grit-infused peel ply that Ronbus says uses a cross-linked bonding network to hold grit in place longer than typical textures.</span>',
       kewcorNote: 'R2\'s KewCOR score of 0.419 lands in the Power category, not All-Court. That\'s what you\'d guess just holding it, and not what Ronbus\'s own "all-court control" pitch would suggest either. Mapped across the face, the curve comes out flat: no sharp peak, no real drop-off toward the edges, just a wide, consistent plateau from top to bottom. That flat curve is most of what\'s behind the "sneaky power" read. Mishits still come back with real pace and predictable direction.',
       spinDurabilityNote: 'An accelerated wear test (100 simulated impacts at 70 mph) put NanoBond at Tier 3: an 8 to 15 percent spin loss. That\'s not the best measured here; Tier 1 surfaces like HexGrit or Diamond Tough hold at close to zero loss. But it\'s a real, meaningful step up from raw carbon fiber, which typically falls in the 20-30 percent range on the same test. <span class="pr-mfr"><b>From manufacturer — not independently verified</b>Ronbus ran their own version of this test (100 hits at 100 mph) and published 8-15% spin loss for NanoBond against 22-32% for a standard raw carbon fiber surface. The conditions weren\'t independently verified, but it\'s a good sign when an independent number and a manufacturer number land in the same neighborhood.</span>',
       feelNote: 'R2 sits in Quadrant C: soft and dense. That\'s not a natural preference (stiffer, hollower paddles usually are), but the contact quality here is genuinely gratifying: an almost buttery feel that\'s hard to describe until you\'ve hit with it. It\'s soft without feeling dead, dense without feeling muted, and it\'s exactly what makes the power disconnect from the feel so noticeable in play.',
@@ -806,8 +806,10 @@
     if(p.coreType) constructionParts.push('Core: '+esc(p.coreType)+'.');
     if(p.surfaceLayup) constructionParts.push('Surface layup: '+esc(p.surfaceLayup)+'.');
     if(p.surfaceTexture) constructionParts.push('Surface texture: '+esc(p.surfaceTexture)+'.');
+    // constructionNote renders as plain prose by default -- the manufacturer callout only
+    // appears where the text explicitly opts in with an inline <span class="pr-mfr">.
     var constructionHtml = '<p>'+(constructionParts.join(' ')||'Construction details not yet in the database for this paddle.')+'</p>';
-    if(R.constructionNote) constructionHtml += '<div class="pr-mfr"><b>From manufacturer — not independently verified</b>'+R.constructionNote+'</div>';
+    if(R.constructionNote) constructionHtml += '<p>'+R.constructionNote+'</p>';
     document.getElementById('prConstruction').innerHTML = constructionHtml;
 
     // performance metrics

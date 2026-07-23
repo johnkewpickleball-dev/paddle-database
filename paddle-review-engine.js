@@ -657,8 +657,14 @@ window.JKPaddleReview = (function(){
       if(p.coreType) constructionParts.push('Core: '+esc(p.coreType)+'.');
       if(p.surfaceLayup) constructionParts.push('Surface layup: '+esc(p.surfaceLayup)+'.');
       if(p.surfaceTexture) constructionParts.push('Surface texture: '+esc(p.surfaceTexture)+'.');
+      // constructionNote renders as plain prose by default -- it is NOT assumed to be a
+      // manufacturer claim. The "From manufacturer -- not independently verified" callout only
+      // appears where the text explicitly opts in with an inline <span class="pr-mfr"> (written
+      // directly, or via the "MFR CLAIM:" line in a review Doc). Auto-wrapping the whole note
+      // used to be the default here, which incorrectly flagged independently-verified writing
+      // (e.g. John's own x-ray/testing analysis) as an unverified manufacturer claim.
       var constructionHtml = '<p>'+(constructionParts.join(' ')||'Construction details not yet in the database for this paddle.')+'</p>';
-      if(R.constructionNote) constructionHtml += '<div class="pr-mfr"><b>From manufacturer — not independently verified</b>'+R.constructionNote+'</div>';
+      if(R.constructionNote) constructionHtml += '<p>'+R.constructionNote+'</p>';
       document.getElementById('prConstruction').innerHTML = constructionHtml;
 
       // performance metrics
