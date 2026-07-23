@@ -81,7 +81,8 @@
   .pr-brand{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:4px}
   .pr-name{font-size:clamp(24px,4vw,32px);font-weight:800;color:var(--navy);letter-spacing:-.4px;line-height:1.15;margin-bottom:6px}
   [data-theme="dark"] .pr-name{color:var(--text)}
-  .pr-byline{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .pr-byline{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-bottom:14px}
+  .pr-author-pic{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)}
   .pr-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
   .badge{font-size:10.5px;padding:3px 9px;border-radius:12px;font-weight:600}
   .badge-shape{background:#eff6ff;color:#1d4ed8}
@@ -243,7 +244,7 @@
     <div class="pr-head-main">
       <div class="pr-brand" id="prBrand"></div>
       <div class="pr-name" id="prName"></div>
-      <div class="pr-byline">By John Kew</div>
+      <div class="pr-byline"><img class="pr-author-pic" src="https://johnkewpickleball-dev.github.io/paddle-database/images/john-kew-author.png" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
       <div class="pr-badges" id="prBadges"></div>
       <div class="pr-price-row" id="prPriceRow"></div>
       <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
@@ -337,6 +338,7 @@
   var FEEL_CSV='https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
   var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
+  var AUTHOR_PHOTO=PHOTO_BASE+'john-kew-author.png';
   var PHOTO_URLS={};
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -746,6 +748,31 @@
       ],
       verdict: 'I walked into this one expecting a reskinned Vapor: the same internals, new mold, slightly different numbers. The data said otherwise, and so did a month of real court time: I\'ve been playing the Ultré as my main paddle since testing it, which is notable given my own preference usually runs elongated, not hybrid. The highest KewCOR and flattest KewCOR curve in the entire Power 2 family, Tier 1 spin durability that held at effectively zero loss under accelerated wear, and a balance point high enough to shift Z-score categories while barely touching swing weight. All four Power 2 shapes share the same HexGrit surface and CFC/MPP internals, but geometry alone is doing real work here. And the market seems to agree: within about a month of release, the Ultré climbed to the top of my Trending Paddles list, tied for the highest engagement score of any paddle in a database of more than 300. That\'s not the kind of thing that happens to a reskin.',
       disclosure: '11SIX24 sent this paddle in for testing, with no payment and no editorial input. If you use code JOHNKEW, you\'ll get $10 off, and I earn a commission that helps support the channel.'
+    },
+    'Spartus||Spitfire': {
+      quickTake: [
+        'Tests as one of the strongest budget paddles I\'ve put through the lab: Elite spin, a large forgiving sweet spot, and a KewCOR score that lands it in Power, not All-Court.',
+        'Turbo Foam core and PermaGritNano surface deliver real firepower and elite spin for $99 with code JOHNKEW.',
+        'Tier 3 spin durability across two units tested, about 14% loss on average. A real step up from raw carbon fiber, but short of Spartus\'s own Tier 1 PermaGrit on the P1.',
+        'Sits almost exactly on the stiff/soft line but squarely in hollow territory on the Feel Map, an uncommon combination most players find comfortable in a power paddle.',
+        'Balance point runs high for the weight class, which normally costs you maneuverability, but static weight under 8 ounces keeps it from feeling sluggish.'
+      ],
+      constructionNote: 'Construction is Gen-4: a full foam core with an EPP center floated inside a ring of EVA foam, the same general approach behind most of today\'s more forgiving paddles. The clearest feature on the x-ray is a set of internal perimeter weights along the sides, added specifically to boost twist weight and make off-center hits less punishing. <span class="pr-mfr"><b>From manufacturer — not independently verified</b>Spartus calls the core Turbo Foam, a modified EPP/EVA blend using non-standard foam densities that they say is how they get this much power out of such a light paddle. They also describe a new carbon fiber layup engineered for more pocketing, paired with the PermaGritNano surface, as the combination behind the spin numbers.</span> PermaGritNano is worth its own callout, because it\'s not the surface Spartus is best known for. The original PermaGrit on the P1 is made of bonded grit particles and is one of the most durable surfaces I\'ve tested. Under a microscope, PermaGritNano is visibly different: a grit-infused peel-ply surface, the same general category most manufacturers use for their durable-grit paddles. It doesn\'t carry over the P1\'s durability edge, more on that below.',
+      kewcorNote: 'KewCOR comes in at 0.407, which lands the Spitfire in my Power category rather than All-Court, where a lot of budget paddles tend to fall. Mapped across the face, the curve is flat and consistent rather than sharply peaked, which in lab terms means a big, forgiving sweet spot along the length of the paddle. There\'s a slight dip right around the 4-inch mark, which is usually where paddles peak. It\'s small enough that I doubt anyone would feel it in play, just an interesting wrinkle in the data.',
+      spinDurabilityNote: 'I ran my accelerated wear test, 100 impacts at 70 mph measured with a high-speed camera, on two separate units: an early prototype and a retail production paddle. Both landed in Tier 3, with the production unit losing 14.7% of its spin and the prototype 13.4%, right around 14% on average. Surface roughness dropped by a nearly identical margin, which gives me a good amount of confidence in the result. That\'s a real, meaningful step up from raw carbon fiber, which typically loses 20 to 30 percent on the same test, but it\'s not the Spitfire\'s strongest suit. It doesn\'t match Spartus\'s own PermaGrit surface on the P1, which is Tier 1 and one of the most durable surfaces I\'ve tested. Worth noting: Braydon at Pickleball Effect ran a different kind of durability test on this same surface, an abrasion test rather than an impact test, and published a Tier 1 result. I don\'t think either test invalidates the other. We\'re simply measuring different things.',
+      feelNote: 'The Spitfire sits almost exactly on the stiff/soft line, just barely leaning soft, but squarely in hollow territory. That combination is genuinely uncommon; most paddles in the database don\'t land in that soft-and-hollow pocket. It\'s a comfortable, slightly muted-sounding contact that a lot of players naturally gravitate toward, especially in a power paddle.',
+      whoFor: [
+        'Players who want legitimate Power-category firepower and elite spin without spending premium-paddle money. At $99 with code JOHNKEW, this tests like paddles costing twice as much or more.',
+        'Players who like a soft, hollow feel paired with real pop, an uncommon combination on the Feel Map that a lot of players naturally gravitate toward in a power paddle.',
+        'Players who want a large, forgiving sweet spot in a lightweight package. Static weight is under 8 ounces, and the flat KewCOR curve backs up the on-paper spin and power numbers.'
+      ],
+      whoNotFor: [
+        'Players whose top priority is long-term spin retention. Tier 3 is a real improvement over raw carbon fiber, but it doesn\'t match Spartus\'s own PermaGrit surface on the P1 (Tier 1), or other Tier 1 surfaces like Honolulu Blue Grit, 11SIX24 HexGrit, or Six Zero Diamond Tough, though those all sit closer to $200.',
+        'Players who already love the P1 Hybrid or P1 Standard and assume this plays the same because it shares the brand. The Spitfire is noticeably softer and more hollow than the stiffer, more solid-feeling P1s; they\'re genuinely different experiences.',
+        'Anyone who doesn\'t enjoy power paddles generally. This one is unapologetically built for firepower, and that shows up across the numbers.'
+      ],
+      verdict: 'This is one of the strongest-testing budget paddles I\'ve put through the lab. Elite spin, a large and forgiving sweet spot, and a KewCOR score that lands it in Power rather than All-Court, all in a paddle that retails for $110 (or $99 with code JOHNKEW) and weighs under 8 ounces. The durability story is a little more nuanced. Tier 3 spin durability is a genuine step up from raw carbon fiber, but it\'s not the benchmark Spartus already set with its own PermaGrit surface on the P1. If maximum spin retention is your top priority, there are better options, most of them closer to $200. But for the price, this is one of the easier recommendations I\'ve made in a while.',
+      disclosure: 'Quick disclosure: the owner of Spartus sent me the Spitfire for testing, with no payment and no editorial input. If you use my code JOHNKEW, you\'ll get 10% off, and I earn a commission that helps support the channel.'
     }
   };
 

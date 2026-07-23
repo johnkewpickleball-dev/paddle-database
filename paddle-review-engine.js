@@ -22,6 +22,7 @@ window.JKPaddleReview = (function(){
   var FEEL_CSV='https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
   var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
+  var AUTHOR_PHOTO=PHOTO_BASE+'john-kew-author.png';
   var PHOTO_URLS={};
   var XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>';
 
@@ -522,7 +523,7 @@ window.JKPaddleReview = (function(){
     <div class="pr-head-main">
       <div class="pr-brand" id="prBrand"></div>
       <div class="pr-name" id="prName"></div>
-      <div class="pr-byline">By John Kew</div>
+      <div class="pr-byline"><img class="pr-author-pic" src="${AUTHOR_PHOTO}" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
       <div class="pr-badges" id="prBadges"></div>
       <div class="pr-price-row" id="prPriceRow"></div>
       <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
