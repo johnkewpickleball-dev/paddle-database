@@ -101,6 +101,19 @@
   [data-theme="dark"] .badge-tier-2{background:#16304d;color:#93c5fd}
   [data-theme="dark"] .badge-tier-3{background:#3a2c14;color:#fcd34d}
   [data-theme="dark"] .badge-tier-4{background:#3a1d1d;color:#fca5a5}
+  .badge-reviewtype-full{background:#ede9fe;color:#6d28d9}
+  .badge-reviewtype-summary{background:#eef2f7;color:#475569}
+  [data-theme="dark"] .badge-reviewtype-full{background:#2a2247;color:#c4b5fd}
+  [data-theme="dark"] .badge-reviewtype-summary{background:#1c2733;color:#94a3b8}
+  .pr-video-card{display:flex;gap:14px;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;text-decoration:none;margin:14px 0 0}
+  .pr-video-thumb{position:relative;flex:0 0 160px;width:160px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0f172a}
+  .pr-video-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .pr-video-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;background:rgba(15,23,42,.28)}
+  .pr-video-label{font-size:14.5px;font-weight:700;color:var(--navy)}
+  [data-theme="dark"] .pr-video-label{color:var(--text)}
+  .pr-inline-img{margin:14px 0;text-align:center}
+  .pr-inline-img img{max-width:100%;border-radius:8px;display:block;margin:0 auto}
+  .pr-inline-img figcaption{font-size:12px;color:var(--muted);margin-top:6px}
   .pr-price-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   .pr-price{font-size:22px;font-weight:700;color:var(--navy)}
   [data-theme="dark"] .pr-price{color:var(--text)}
@@ -240,6 +253,8 @@
   <div class="pr-h2">Quick Take</div>
   <div class="pr-card"><ul class="pr-quicktake" id="prQuickTake"></ul></div>
 
+  <div id="prVideoBlock" hidden></div>
+
   <div class="pr-h2">Specs</div>
   <div class="pr-card"><div class="pr-spec-grid" id="prSpecGrid"></div></div>
   <div class="pr-prose" id="prSpecNote" style="margin-top:12px"></div>
@@ -280,6 +295,16 @@
   </div>
   <div class="pr-prose" id="prFeelNote" style="margin-top:12px"></div>
 
+  <div id="prOnCourtSection" hidden>
+    <div class="pr-h2">On-Court Impressions</div>
+    <div class="pr-card pr-prose" id="prOnCourt"></div>
+  </div>
+
+  <div id="prModsSection" hidden>
+    <div class="pr-h2">Mods</div>
+    <div class="pr-card pr-prose" id="prMods"></div>
+  </div>
+
   <div class="pr-h2">Who It's For / Who It's Not</div>
   <div class="pr-card">
     <div class="pr-forgrid">
@@ -315,6 +340,19 @@
   var PHOTO_URLS={};
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function renderImageMarkers(html){
+    if(!html) return html;
+    return String(html).replace(/\[\[\s*IMAGE:\s*([^|\]]+?)\s*(?:\|\s*([^\]]+?)\s*)?\]\]/gi, function(m, url, cap){
+      url = url.trim();
+      return '<figure class="pr-inline-img"><img src="'+esc(url)+'" alt="'+esc(cap||'')+'" loading="lazy">'
+        + (cap ? ('<figcaption>'+esc(cap)+'</figcaption>') : '') + '</figure>';
+    });
+  }
+  function ytVideoId(url){
+    if(!url) return null;
+    var m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/i);
+    return m ? m[1] : null;
+  }
   function fmt(v,d){return v==null?'—':Number(v).toFixed(d==null?1:d);}
   function fmtInt(v){return v==null?'—':Math.round(v).toLocaleString();}
   function money(v){return v==null?'—':'$'+Number(v).toFixed(2);}
@@ -755,7 +793,9 @@
 
     document.getElementById('prBrand').textContent = p.company;
     document.getElementById('prName').textContent = p.paddle + ' Paddle Review';
+    var ytId = ytVideoId(R.videoUrl);
     document.getElementById('prBadges').innerHTML = [
+      ytId ? '<span class="badge badge-reviewtype-full">Full Review</span>' : '<span class="badge badge-reviewtype-summary">Executive Summary</span>',
       p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
       p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
       spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
@@ -770,6 +810,21 @@
 
     // quick take
     document.getElementById('prQuickTake').innerHTML = (R.quickTake||['Quick-take bullets not yet written for this paddle.']).map(function(t){return '<li>'+t+'</li>';}).join('');
+
+    var videoBlockEl = document.getElementById('prVideoBlock');
+    if(ytId){
+      var watchUrl = 'https://www.youtube.com/watch?v='+ytId;
+      videoBlockEl.innerHTML =
+        '<a class="pr-video-card" href="'+esc(watchUrl)+'" target="_blank" rel="noopener noreferrer">'
+        + '<div class="pr-video-thumb"><img src="https://img.youtube.com/vi/'+ytId+'/maxresdefault.jpg" alt="" '
+        + 'onerror="this.onerror=null;this.src=\'https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg\';"><span class="pr-video-play">&#9654;</span></div>'
+        + '<div class="pr-video-label">Watch the full video review on YouTube →</div>'
+        + '</a>';
+      videoBlockEl.hidden = false;
+    } else {
+      videoBlockEl.hidden = true;
+      videoBlockEl.innerHTML = '';
+    }
 
     // specs
     var specsLeft = [
@@ -798,7 +853,7 @@
     // constructionNote renders as plain prose by default -- the manufacturer callout only
     // appears where the text explicitly opts in with an inline <span class="pr-mfr">.
     var constructionHtml = '<p>'+(constructionParts.join(' ')||'Construction details not yet in the database for this paddle.')+'</p>';
-    if(R.constructionNote) constructionHtml += '<p>'+R.constructionNote+'</p>';
+    if(R.constructionNote) constructionHtml += '<p>'+renderImageMarkers(R.constructionNote)+'</p>';
     document.getElementById('prConstruction').innerHTML = constructionHtml;
 
     // performance metrics
@@ -811,23 +866,31 @@
     var kcCat=kewcorCat(p.kewcor);
     document.getElementById('prGauge').innerHTML = gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3);
     document.getElementById('prGaugeLegend').innerHTML = '<span><i style="background:#2563eb"></i>Control</span><span><i style="background:#0d9488"></i>All-Court</span><span><i style="background:#d97706"></i>Power</span><span><i style="background:#dc2626"></i>Beyond Spec</span>';
-    document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? '<p>'+R.kewcorNote+'</p>' : '<p>Surface curve loading…</p>';
+    document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? '<p>'+renderImageMarkers(R.kewcorNote)+'</p>' : '<p>Surface curve loading…</p>';
     refreshSurfaceChart(p);
 
     // spin durability
     document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
-    document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? '<p>'+R.spinDurabilityNote+'</p>' : '';
+    document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? '<p>'+renderImageMarkers(R.spinDurabilityNote)+'</p>' : '';
 
     // feel map
     refreshFeelChart(p, PADDLES_LOCAL);
-    document.getElementById('prFeelNote').innerHTML = R.feelNote ? '<p>'+R.feelNote+'</p>' : '';
+    document.getElementById('prFeelNote').innerHTML = R.feelNote ? '<p>'+renderImageMarkers(R.feelNote)+'</p>' : '';
+
+    // on-court impressions + mods (full reviews only)
+    var onCourtSection = document.getElementById('prOnCourtSection');
+    if(R.onCourtNote){ document.getElementById('prOnCourt').innerHTML = '<p>'+renderImageMarkers(R.onCourtNote)+'</p>'; onCourtSection.hidden = false; }
+    else { onCourtSection.hidden = true; }
+    var modsSection = document.getElementById('prModsSection');
+    if(R.modsNote){ document.getElementById('prMods').innerHTML = '<p>'+renderImageMarkers(R.modsNote)+'</p>'; modsSection.hidden = false; }
+    else { modsSection.hidden = true; }
 
     // who for / not for
     document.getElementById('prWhoFor').innerHTML = (R.whoFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
     document.getElementById('prWhoNotFor').innerHTML = (R.whoNotFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
 
     // verdict
-    document.getElementById('prVerdict').innerHTML = R.verdict ? '<p>'+R.verdict+'</p>' : '<p>Full write-up not yet drafted for this paddle.</p>';
+    document.getElementById('prVerdict').innerHTML = R.verdict ? '<p>'+renderImageMarkers(R.verdict)+'</p>' : '<p>Full write-up not yet drafted for this paddle.</p>';
 
     // disclosure
     document.getElementById('prDisclosure').textContent = R.disclosure || 'Independent testing. See johnkewpickleball.com for full disclosure policy.';

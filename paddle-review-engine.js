@@ -46,6 +46,23 @@ window.JKPaddleReview = (function(){
   }
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  // [[IMAGE: url]] or [[IMAGE: url | caption]] anywhere inside a prose field becomes an inline
+  // figure. Applied uniformly to every prose field at render time, so it works the same way
+  // whether the text came from an inline review:{} object or a review Doc.
+  function renderImageMarkers(html){
+    if(!html) return html;
+    return String(html).replace(/\[\[\s*IMAGE:\s*([^|\]]+?)\s*(?:\|\s*([^\]]+?)\s*)?\]\]/gi, function(m, url, cap){
+      url = url.trim();
+      return '<figure class="pr-inline-img"><img src="'+esc(url)+'" alt="'+esc(cap||'')+'" loading="lazy">'
+        + (cap ? ('<figcaption>'+esc(cap)+'</figcaption>') : '') + '</figure>';
+    });
+  }
+  // Full-review video block: paste any standard YouTube URL, thumbnail + link are derived.
+  function ytVideoId(url){
+    if(!url) return null;
+    var m = String(url).match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{6,})/i);
+    return m ? m[1] : null;
+  }
   function fmt(v,d){return v==null?'—':Number(v).toFixed(d==null?1:d);}
   function fmtInt(v){return v==null?'—':Math.round(v).toLocaleString();}
   function money(v){return v==null?'—':'$'+Number(v).toFixed(2);}
@@ -371,12 +388,28 @@ window.JKPaddleReview = (function(){
      Convention: one Google Doc per paddle, shared "Anyone with the link can view". Section
      names below (case-insensitive, must be on their own line) split the doc into fields; blank
      lines don't matter otherwise. Quick Take / Who It's For / Who It's NOT For treat every
-     non-empty line under the heading as one bullet. Everything else is joined into one prose
-     block. A paragraph starting with "MFR CLAIM:" becomes the manufacturer-claim callout box
-     (same styling as the "From manufacturer -- not independently verified" note used today).
+     non-empty line under the heading as one bullet. Most other sections are joined into one
+     prose block. A paragraph starting with "MFR CLAIM:" becomes the manufacturer-claim callout
+     box. A "[[IMAGE: url]]" or "[[IMAGE: url | caption]]" marker anywhere in a prose section
+     becomes an inline image -- useful for b-roll stills in a Full Review's Construction/
+     On-Court/Mods sections; John uploads the image somewhere he controls (easiest: drop it into
+     a Squarespace image block, right-click it once published, "Copy Image Address") and pastes
+     that URL into the marker.
+
+     Two categories, distinguished purely by whether VIDEO is filled in (no separate flag to
+     keep in sync):
+       - Executive Summary: everything except VIDEO / ON-COURT IMPRESSIONS / MODS. Used for a
+         paddle with no video yet -- this is today's format, unchanged.
+       - Full Review: adds VIDEO (a YouTube link -- thumbnail + "watch" card render
+         automatically), ON-COURT IMPRESSIONS, and optionally MODS. Graduating a paddle from
+         Executive Summary to Full Review is just adding these three sections to its existing
+         Doc once the video is live; nothing else needs to change.
 
        QUICK TAKE
        (one bullet per line)
+
+       VIDEO
+       (one line: the YouTube URL -- Full Review only, omit entirely for an Executive Summary)
 
        CONSTRUCTION & BUILD
        (prose; a line starting "MFR CLAIM:" becomes the callout box)
@@ -385,6 +418,11 @@ window.JKPaddleReview = (function(){
        SPIN DURABILITY
        FEEL MAP
        (prose each)
+
+       ON-COURT IMPRESSIONS
+       MODS
+       (prose each -- Full Review only; omit both for an Executive Summary, or omit just MODS
+       if the paddle wasn't modded)
 
        WHO IT'S FOR
        WHO IT'S NOT FOR
@@ -396,10 +434,13 @@ window.JKPaddleReview = (function(){
   */
   var DOC_SECTIONS = [
     {key:'quickTake',          match:/^quick take$/i,                         list:true},
+    {key:'videoUrl',           match:/^video$/i,                              single:true},
     {key:'constructionNote',   match:/^construction( ?&? ?build)?$/i,          list:false},
     {key:'kewcorNote',         match:/^kewcor$/i,                             list:false},
     {key:'spinDurabilityNote', match:/^spin durability$/i,                    list:false},
     {key:'feelNote',           match:/^feel( map)?$/i,                        list:false},
+    {key:'onCourtNote',        match:/^on-?court impressions$/i,              list:false},
+    {key:'modsNote',           match:/^mods?$/i,                              list:false},
     {key:'whoFor',             match:/^who(?:'s| is)?\s*it'?s?\s*for$/i,       list:true},
     {key:'whoNotFor',          match:/^who(?:'s| is)?\s*it'?s?\s*not\s*for$/i, list:true},
     {key:'verdict',            match:/^final thoughts$/i,                     list:false},
@@ -411,7 +452,10 @@ window.JKPaddleReview = (function(){
     var current = null, buf = [];
     function flush(){
       if(!current){ buf=[]; return; }
-      if(current.list){
+      if(current.single){
+        var firstLine = buf.map(function(l){return l.trim();}).filter(Boolean)[0];
+        out[current.key] = firstLine || '';
+      } else if(current.list){
         out[current.key] = buf.map(function(l){return l.trim();}).filter(Boolean);
       } else {
         // Blank lines inside a section mark paragraph breaks -- checked independently so a
@@ -488,6 +532,8 @@ window.JKPaddleReview = (function(){
   <div class="pr-h2">Quick Take</div>
   <div class="pr-card"><ul class="pr-quicktake" id="prQuickTake"></ul></div>
 
+  <div id="prVideoBlock" hidden></div>
+
   <div class="pr-h2">Specs</div>
   <div class="pr-card"><div class="pr-spec-grid" id="prSpecGrid"></div></div>
   <div class="pr-prose" id="prSpecNote" style="margin-top:12px"></div>
@@ -527,6 +573,16 @@ window.JKPaddleReview = (function(){
     <div id="prFeel"></div>
   </div>
   <div class="pr-prose" id="prFeelNote" style="margin-top:12px"></div>
+
+  <div id="prOnCourtSection" hidden>
+    <div class="pr-h2">On-Court Impressions</div>
+    <div class="pr-card pr-prose" id="prOnCourt"></div>
+  </div>
+
+  <div id="prModsSection" hidden>
+    <div class="pr-h2">Mods</div>
+    <div class="pr-card pr-prose" id="prMods"></div>
+  </div>
 
   <div class="pr-h2">Who It's For / Who It's Not</div>
   <div class="pr-card">
@@ -607,7 +663,13 @@ window.JKPaddleReview = (function(){
 
       document.getElementById('prBrand').textContent = p.company;
       document.getElementById('prName').textContent = p.paddle + ' Paddle Review';
+      // Full Review vs Executive Summary is not a flag anyone sets -- it's derived from whether
+      // a video has been added yet, so the label can never drift out of sync with what's
+      // actually on the page. Graduating a paddle later (adding VIDEO/ON-COURT/MODS content)
+      // flips this automatically.
+      var ytId = ytVideoId(R.videoUrl);
       document.getElementById('prBadges').innerHTML = [
+        ytId ? '<span class="badge badge-reviewtype-full">Full Review</span>' : '<span class="badge badge-reviewtype-summary">Executive Summary</span>',
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
         p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
         spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
@@ -623,6 +685,22 @@ window.JKPaddleReview = (function(){
 
       // quick take
       document.getElementById('prQuickTake').innerHTML = (R.quickTake||['Quick-take bullets not yet written for this paddle.']).map(function(t){return '<li>'+t+'</li>';}).join('');
+
+      // video block (full reviews only -- hidden entirely until a video URL is present)
+      var videoBlockEl = document.getElementById('prVideoBlock');
+      if(ytId){
+        var watchUrl = 'https://www.youtube.com/watch?v='+ytId;
+        videoBlockEl.innerHTML =
+          '<a class="pr-video-card" href="'+esc(watchUrl)+'" target="_blank" rel="noopener noreferrer">'
+          + '<div class="pr-video-thumb"><img src="https://img.youtube.com/vi/'+ytId+'/maxresdefault.jpg" alt="" '
+          + 'onerror="this.onerror=null;this.src=\'https://img.youtube.com/vi/'+ytId+'/hqdefault.jpg\';"><span class="pr-video-play">&#9654;</span></div>'
+          + '<div class="pr-video-label">Watch the full video review on YouTube →</div>'
+          + '</a>';
+        videoBlockEl.hidden = false;
+      } else {
+        videoBlockEl.hidden = true;
+        videoBlockEl.innerHTML = '';
+      }
 
       // specs
       var specsLeft = [
@@ -655,7 +733,7 @@ window.JKPaddleReview = (function(){
       // used to be the default here, which incorrectly flagged independently-verified writing
       // (e.g. John's own x-ray/testing analysis) as an unverified manufacturer claim.
       var constructionHtml = '<p>'+(constructionParts.join(' ')||'Construction details not yet in the database for this paddle.')+'</p>';
-      if(R.constructionNote) constructionHtml += '<p>'+R.constructionNote+'</p>';
+      if(R.constructionNote) constructionHtml += '<p>'+renderImageMarkers(R.constructionNote)+'</p>';
       document.getElementById('prConstruction').innerHTML = constructionHtml;
 
       // performance metrics
@@ -668,23 +746,31 @@ window.JKPaddleReview = (function(){
       var kcCat=kewcorCat(p.kewcor);
       document.getElementById('prGauge').innerHTML = gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3);
       document.getElementById('prGaugeLegend').innerHTML = '<span><i style="background:#2563eb"></i>Control</span><span><i style="background:#0d9488"></i>All-Court</span><span><i style="background:#d97706"></i>Power</span><span><i style="background:#dc2626"></i>Beyond Spec</span>';
-      document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? '<p>'+R.kewcorNote+'</p>' : '<p>Surface curve loading…</p>';
+      document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? '<p>'+renderImageMarkers(R.kewcorNote)+'</p>' : '<p>Surface curve loading…</p>';
       refreshSurfaceChart(p);
 
       // spin durability
       document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
-      document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? '<p>'+R.spinDurabilityNote+'</p>' : '';
+      document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? '<p>'+renderImageMarkers(R.spinDurabilityNote)+'</p>' : '';
 
       // feel map
       refreshFeelChart(p, PADDLES_LOCAL);
-      document.getElementById('prFeelNote').innerHTML = R.feelNote ? '<p>'+R.feelNote+'</p>' : '';
+      document.getElementById('prFeelNote').innerHTML = R.feelNote ? '<p>'+renderImageMarkers(R.feelNote)+'</p>' : '';
+
+      // on-court impressions + mods (full reviews only -- hidden until content exists)
+      var onCourtSection = document.getElementById('prOnCourtSection');
+      if(R.onCourtNote){ document.getElementById('prOnCourt').innerHTML = '<p>'+renderImageMarkers(R.onCourtNote)+'</p>'; onCourtSection.hidden = false; }
+      else { onCourtSection.hidden = true; }
+      var modsSection = document.getElementById('prModsSection');
+      if(R.modsNote){ document.getElementById('prMods').innerHTML = '<p>'+renderImageMarkers(R.modsNote)+'</p>'; modsSection.hidden = false; }
+      else { modsSection.hidden = true; }
 
       // who for / not for
       document.getElementById('prWhoFor').innerHTML = (R.whoFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
       document.getElementById('prWhoNotFor').innerHTML = (R.whoNotFor||[]).map(function(t){return '<li>'+t+'</li>';}).join('') || '<li style="color:var(--muted)">Not yet written.</li>';
 
       // verdict
-      document.getElementById('prVerdict').innerHTML = R.verdict ? '<p>'+R.verdict+'</p>' : '<p>Full write-up not yet drafted for this paddle.</p>';
+      document.getElementById('prVerdict').innerHTML = R.verdict ? '<p>'+renderImageMarkers(R.verdict)+'</p>' : '<p>Full write-up not yet drafted for this paddle.</p>';
 
       // disclosure
       document.getElementById('prDisclosure').textContent = R.disclosure || 'Independent testing. See johnkewpickleball.com for full disclosure policy.';

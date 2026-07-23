@@ -57,6 +57,23 @@
   [data-theme="dark"] .pr-page .badge-tier-2{background:#16304d;color:#93c5fd}
   [data-theme="dark"] .pr-page .badge-tier-3{background:#3a2c14;color:#fcd34d}
   [data-theme="dark"] .pr-page .badge-tier-4{background:#3a1d1d;color:#fca5a5}
+  .badge-reviewtype-full{background:#ede9fe;color:#6d28d9}
+  .badge-reviewtype-summary{background:#eef2f7;color:#475569}
+  [data-theme="dark"] .pr-page .badge-reviewtype-full{background:#2a2247;color:#c4b5fd}
+  [data-theme="dark"] .pr-page .badge-reviewtype-summary{background:#1c2733;color:#94a3b8}
+
+  /* full-review video card */
+  .pr-video-card{display:flex;gap:14px;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;text-decoration:none;margin:14px 0 0}
+  .pr-video-thumb{position:relative;flex:0 0 160px;width:160px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0f172a}
+  .pr-video-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .pr-video-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;background:rgba(15,23,42,.28)}
+  .pr-video-label{font-size:14.5px;font-weight:700;color:var(--navy)}
+  [data-theme="dark"] .pr-page .pr-video-label{color:var(--text)}
+
+  /* inline b-roll images inside prose (via [[IMAGE: url | caption]]) */
+  .pr-inline-img{margin:14px 0;text-align:center}
+  .pr-inline-img img{max-width:100%;border-radius:8px;display:block;margin:0 auto}
+  .pr-inline-img figcaption{font-size:12px;color:var(--muted);margin-top:6px}
   .pr-price-row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
   .pr-price{font-size:22px;font-weight:700;color:var(--navy)}
   [data-theme="dark"] .pr-page .pr-price{color:var(--text)}
