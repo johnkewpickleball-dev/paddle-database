@@ -15,7 +15,8 @@
   URL: paddle.html?paddle=Company||Paddle   (same key format as the DB's own
        ?paddle= deep link) — or paddle.html?slug=company-paddle-slug using the
        same photoSlug() convention already used for image filenames.
-       Example seeded in this draft: paddle.html?paddle=Ronbus||Tenon R2.16
+       Examples seeded in this draft: paddle.html?paddle=Ronbus||Tenon R2.16
+       and paddle.html?paddle=11SIX24||Ultré Power 2
 
   INTENTIONAL DIFFERENCE FROM paddle-comparison-lab.html: that page opts AI
   crawlers OUT (noai/noindex meta tags on GPTBot, ClaudeBot, etc.) because it's
@@ -25,8 +26,9 @@
   doesn't get "fixed" by copy-pasting the other page's head block later.
 
   STATUS: draft/unpublished. Not yet pushed to GitHub Pages. Content in the
-  REVIEWS object below is a first pass for Ronbus Tenon R2 only, built from
-  the hooks/verdicts already approved for the video script — for review
+  REVIEWS object below now covers two paddles — Ronbus Tenon R2 (built from
+  the hooks/verdicts approved for that video script) and 11SIX24 Ultré Power 2
+  (sourced from the Final Teleprompter script for that video) — for review
   before this becomes a real workflow.
 
   NEXT STEP (not built yet, deliberately deferred per the phased plan): once
@@ -149,6 +151,11 @@
   .pcl-radar .radar-fill{fill:url(#prRadarGrad);fill-opacity:.92;stroke:#a21d77;stroke-width:1.5;stroke-opacity:.5}
   .pr-legend{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
   .pr-legend b{color:var(--text)}
+  /* Raw Z-Score chart draws row labels/legend text with hardcoded SVG fill colors tuned
+     for a white background -- invisible against the dark theme. */
+  [data-theme="dark"] #prBullet svg > text[fill="#0d1f2d"],
+  [data-theme="dark"] #prBullet svg > g[fill="#0d1f2d"] text{fill:var(--text)}
+  [data-theme="dark"] #prBullet svg > text[fill="#94a3b8"]{fill:var(--muted)}
 
   /* kewcor gauge + surface */
   .pcl-gauge-svg{width:100%;max-width:220px;display:block;margin:0 auto}
@@ -496,7 +503,7 @@
     }
     var bandsSVG=bands.map(function(bd){ return '<path class="gband-'+bd.cls+'" d="'+gBandPath(cx,cy,rO,rI,gFrac(bd.a,min,max),gFrac(bd.b,min,max))+'"/>'; }).join('');
     var clamped=gClamp(value,min,max), frac=gFrac(clamped,min,max), needleLen=rO-8;
-    var needle='<g transform="rotate('+ (180-180*frac) +' '+cx+' '+cy+')"><polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx-needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
+    var needle='<g transform="rotate('+ (180*frac) +' '+cx+' '+cy+')"><polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx-needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
     var hub='<circle class="ghub" cx="'+cx+'" cy="'+cy+'" r="7"/>';
     var valueTxt='<text class="gnum" x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="'+(cat?GCOLOR[cat.cls]:'var(--text)')+'">'+value.toFixed(decimals)+'</text>';
     var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+GCOLOR[cat.cls]+'">'+esc(cat.label)+'</text>':'';
@@ -686,6 +693,31 @@
       ],
       verdict: 'Across the whole Tenon series: sneaky power that doesn\'t announce itself, spin that shows up without an aggressive-feeling surface, a genuinely excellent and consistent sweet spot, and Tier 3 spin durability that\'s a real step up from raw carbon fiber. Coming back to the hooks up top — the sneaky power, the smooth-feeling spin, the Tier 3 durability, the buttery-not-preferred feel, and the flat KewCOR curve — R2 is the shape that delivers on all five most convincingly of the four, which is exactly why it\'s the one most players should start with.',
       disclosure: 'Ronbus sent these paddles in for testing ahead of their July 27th public release, with no payment and no editorial input. Code JOHNKEW takes $20 off, and I earn a commission that helps support the channel.'
+    },
+    '11SIX24||Ultré Power 2': {
+      quickTake: [
+        'Not just a reskinned Vapor: same HexGrit/CFC internals as the rest of the Power 2 family, but geometry alone makes it the highest-KewCOR, flattest-curve shape in the lineup.',
+        'Currently my main paddle — the first hybrid to unseat an elongated as my go-to in years, largely because of an unusually high balance point for its weight class.',
+        'HexGrit spin durability holds up: cannon-tested at about 1% loss after accelerated wear (2,439 → 2,417 RPM), effectively zero.',
+        'Flattest KewCOR curve of any Power 2 shape — a genuinely bigger, more forgiving sweet spot, not just a marketing line.',
+        'Climbed to the top of my Trending Paddles list within about a month of release — tied for the highest engagement score of any paddle in the database.'
+      ],
+      constructionNote: 'Same internals as the rest of the Power 2 family: a thermoformed, full-foam build with an MPP (microcellular) core wrapped in an EVA border, and a CFC face — carbon, fiberglass, carbon — under 11SIX24\'s HexGrit surface. The x-ray shows expanding edge foam in a carbon-fiber tube around the perimeter and the same molded honeycomb handle insert used across the lineup; zoom in and you can actually see the surface grit texture. Structurally there\'s nothing new here — every performance difference from the rest of the family is coming from geometry alone, not new core tech. One build detail worth flagging: UPA-A certification (unlike USAP) permits a more aggressive surface texture as long as the paddle passes direct spin limits, and HexGrit on the Power 2 line takes full advantage of that — it\'s genuinely aggressive to the touch, which is part of why the spin numbers run as high as they do.',
+      kewcorNote: 'KewCOR comes in at 0.417 — the highest of the four Power 2 shapes, edging out the Vapor\'s 0.412. Mapped across the face from 3 to 6 inches down, the curve is the flattest in the whole family: no real peak, no real drop-off, just a wide, consistent plateau of rebound response across nearly the entire hitting area. That\'s a bigger, more forgiving sweet spot in practice, not just on paper — the ball bounces predictably across most of the paddle\'s central axis. Worth noting: despite posting the highest KewCOR in the family, it doesn\'t feel meaningfully more powerful in hand than its siblings, aside from a bit more pop when the paddle is new.',
+      spinDurabilityNote: 'HexGrit lands in Tier 1 spin durability — one of only a handful of surfaces on the market that does. Cannon-tested with 100 controlled impacts at 70 mph, the Ultré dropped from 2,439 RPM new to 2,417 RPM post-wear: about 1% loss, effectively zero, right in line with the Vapor Power 2. (Earlier testing on the original Vapor Power 2 review put HexGrit\'s advantage over raw carbon fiber at roughly 2x — that was an earlier, less refined version of this protocol; after testing dozens more paddles since, today\'s numbers are the ones to trust.) Peak spin on day one has never been the number that matters most — it\'s the number six months in, and this is where HexGrit earns its reputation.',
+      feelNote: 'On the Feel Map, the Ultré sits in Quadrant B — stiff and hollow, the same firm response shared across the whole Power 2 lineup. The more interesting story here is balance point, not feel-map quadrant: at 24.1 cm it\'s noticeably higher than the Vapor\'s 23.3 — enough to shift Z-score categories — and even a touch higher than the elongated Hurache-X. That\'s despite a nearly identical swing weight to the Vapor (114.8 vs. 113.7), so the extra leverage isn\'t costing hand speed the way a higher balance point normally would. It\'s likely a real contributor to that flat KewCOR curve.',
+      whoFor: [
+        'Players who already like the Power 2 family\'s feel and want more consistency and forgiveness out of it',
+        'Players who want a longer handle for two-handed backhands without stepping all the way up to a full elongated shape',
+        'Players who want elite spin that\'s also some of the most durable on the market'
+      ],
+      whoNotFor: [
+        'Players who need USAP certification for USAP-only sanctioned events — the Power 2 line is UPA-A only',
+        'Players who already found the rest of the Power 2 lineup too hot to handle — the Ultré is more poppy out of the box, not less, though that pop mellows out with use',
+        'Anyone already completely happy with their current paddle — wait until it breaks, its spin goes away, or you stop liking it before switching'
+      ],
+      verdict: 'I walked into this one expecting a reskinned Vapor — same internals, new mold, slightly different numbers. The data said otherwise, and so did a month of real court time: I\'ve been playing the Ultré as my main paddle since testing it, which is notable given my own preference usually runs elongated, not hybrid. The highest KewCOR and flattest KewCOR curve in the entire Power 2 family, Tier 1 spin durability that held at effectively zero loss under accelerated wear, and a balance point high enough to shift Z-score categories while barely touching swing weight — all four Power 2 shapes share the same HexGrit surface and CFC/MPP internals, but geometry alone is doing real work here. And the market seems to agree: within about a month of release, the Ultré climbed to the top of my Trending Paddles list, tied for the highest engagement score of any paddle in a database of more than 300. That\'s not the kind of thing that happens to a reskin.',
+      disclosure: '11SIX24 sent this paddle in for testing, with no payment and no editorial input. If you use code JOHNKEW, you\'ll get $10 off, and I earn a commission that helps support the channel.'
     }
   };
 

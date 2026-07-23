@@ -22,8 +22,20 @@
   .pr-photo{position:relative;flex:0 0 260px;width:260px;aspect-ratio:1/1;border:2px dashed var(--border);border-radius:12px;background:var(--white);display:flex;align-items:center;justify-content:center;overflow:hidden}
   .pr-photo img{width:100%;height:100%;object-fit:contain;padding:14px}
   .pr-photo .ph-txt{font-size:12px;font-weight:600;color:#94a3b8;text-align:center;padding:0 12px}
-  .pr-xray-toggle{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;text-transform:uppercase;display:none}
-  .pr-xray-toggle.avail{display:inline-block}
+  .pcl-photo-flip-inner{position:relative;width:100%;height:100%;transition:transform .7s cubic-bezier(.4,.15,.2,1);transform-style:preserve-3d}
+  .pcl-photo-flip-inner.flipped{transform:rotateY(180deg)}
+  .pcl-photo-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center}
+  .pcl-photo-face-front{pointer-events:auto}
+  .pcl-photo-flip-inner.flipped .pcl-photo-face-front{pointer-events:none}
+  .pcl-photo-face-back{transform:rotateY(180deg);overflow:hidden;border-radius:10px;background:var(--white);pointer-events:none}
+  .pcl-photo-flip-inner.flipped .pcl-photo-face-back{pointer-events:auto}
+  .xray-badge{display:none;position:absolute;left:50%;bottom:8px;transform:translateX(-50%);z-index:5;align-items:center;gap:5px;background:#0f172a;color:#fff;border:none;border-radius:20px;padding:6px 12px;font-size:10.5px;font-weight:700;letter-spacing:.3px;cursor:pointer;font-family:inherit;text-transform:uppercase;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+  .xray-badge:hover{background:#1e293b}
+  .xray-badge.active{background:var(--green)}
+  .xray-badge svg{width:16px;height:16px;flex:0 0 auto}
+  [data-theme="dark"] .pr-page .xray-badge{background:#1e293b}
+  [data-theme="dark"] .pr-page .xray-badge:hover{background:#28394d}
+  [data-theme="dark"] .pr-page .xray-badge.active{background:var(--green)}
   .pr-head-main{flex:1 1 320px;min-width:260px}
   .pr-brand{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:4px}
   .pr-name{font-size:clamp(24px,4vw,32px);font-weight:800;color:var(--navy);letter-spacing:-.4px;line-height:1.15;margin-bottom:10px}
@@ -52,8 +64,12 @@
   [data-theme="dark"] .pr-page .pr-price{color:var(--text)}
   .pr-strike{font-size:14px;color:var(--muted);text-decoration:line-through}
   .pr-code{font-size:11px;font-family:'DM Mono',monospace;background:var(--green-light);color:var(--green);padding:3px 8px;border-radius:5px}
-  .pr-buy{display:inline-block;background:var(--green);color:#fff;text-decoration:none;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:8px}
-  .pr-buy:hover{background:var(--green-mid)}
+  .pr-copy-btn{font-size:10.5px;font-weight:600;font-family:'DM Sans',sans-serif;background:none;border:1px solid var(--border);color:var(--muted);padding:3px 9px;border-radius:5px;cursor:pointer;line-height:1.6}
+  .pr-copy-btn:hover{border-color:var(--green);color:var(--green)}
+  /* .pr-page prefix here is required: it out-specifies ".pr-page a{color:var(--green)}" above,
+     which would otherwise render this button's white text green-on-green (invisible). */
+  .pr-page .pr-buy{display:inline-block;background:var(--green);color:#fff;text-decoration:none;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:8px}
+  .pr-page .pr-buy:hover{background:var(--green-mid)}
 
   /* generic section chrome */
   .pr-h2{font-size:20px;font-weight:800;color:var(--navy);margin:38px 0 6px;letter-spacing:-.2px}
@@ -95,6 +111,13 @@
   .pcl-radar .radar-fill{fill:url(#prRadarGrad);fill-opacity:.92;stroke:#a21d77;stroke-width:1.5;stroke-opacity:.5}
   .pr-legend{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
   .pr-legend b{color:var(--text)}
+  /* Raw Z-Score (bullet) chart draws its row labels and legend text with hardcoded SVG
+     fill colors tuned for a white background -- invisible against a dark theme. Override
+     to the theme's text/muted colors instead of touching the SVG generator itself, matching
+     the same fix already applied on paddle-comparison-lab.html. */
+  [data-theme="dark"] .pr-page #prBullet svg > text[fill="#0d1f2d"],
+  [data-theme="dark"] .pr-page #prBullet svg > g[fill="#0d1f2d"] text{fill:var(--text)}
+  [data-theme="dark"] .pr-page #prBullet svg > text[fill="#94a3b8"]{fill:var(--muted)}
 
   /* kewcor gauge + surface */
   .pcl-gauge-svg{width:100%;max-width:220px;display:block;margin:0 auto}

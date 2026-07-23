@@ -23,6 +23,27 @@ window.JKPaddleReview = (function(){
   var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
   var PHOTO_URLS={};
+  var XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>';
+
+  function copyCode(btn, code){
+    var orig = btn.getAttribute('data-orig');
+    if(orig==null){ orig = btn.textContent; btn.setAttribute('data-orig', orig); }
+    function done(ok){
+      btn.textContent = ok ? 'Copied!' : 'Copy failed';
+      setTimeout(function(){ btn.textContent = btn.getAttribute('data-orig'); }, 1800);
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(code).then(function(){done(true);}, function(){done(false);});
+    } else { done(false); }
+  }
+
+  function toggleXray(){
+    var inner=document.getElementById('prPhotoFlip');
+    var badge=document.getElementById('prXrayBadge');
+    if(!inner) return;
+    var on=inner.classList.toggle('flipped');
+    if(badge){ badge.classList.toggle('active', on); }
+  }
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function fmt(v,d){return v==null?'—':Number(v).toFixed(d==null?1:d);}
@@ -204,7 +225,7 @@ window.JKPaddleReview = (function(){
     }
     var bandsSVG=bands.map(function(bd){ return '<path class="gband-'+bd.cls+'" d="'+gBandPath(cx,cy,rO,rI,gFrac(bd.a,min,max),gFrac(bd.b,min,max))+'"/>'; }).join('');
     var clamped=gClamp(value,min,max), frac=gFrac(clamped,min,max), needleLen=rO-8;
-    var needle='<g transform="rotate('+ (180-180*frac) +' '+cx+' '+cy+')"><polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx-needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
+    var needle='<g transform="rotate('+ (180*frac) +' '+cx+' '+cy+')"><polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx-needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
     var hub='<circle class="ghub" cx="'+cx+'" cy="'+cy+'" r="7"/>';
     var valueTxt='<text class="gnum" x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="'+(cat?GCOLOR[cat.cls]:'var(--text)')+'">'+value.toFixed(decimals)+'</text>';
     var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+GCOLOR[cat.cls]+'">'+esc(cat.label)+'</text>':'';
@@ -499,11 +520,16 @@ window.JKPaddleReview = (function(){
       var desc = (R.quickTake && R.quickTake[0]) ? R.quickTake[0] : ('Independent lab-tested review of the '+p.company+' '+p.paddle+'.');
       var canonicalUrl = location.href.split('?')[0];
 
-      // photo
+      // photo (flip card: front = product photo, back = x-ray, matching the Comparison Lab pattern)
       var cands=photoCandidates(p);
+      var xraySrc = PHOTO_BASE + photoSlug(p) + '-x-ray.png';
       document.getElementById('prPhoto').innerHTML =
-        '<img src="'+esc(cands[0])+'" data-fb="'+esc(JSON.stringify(cands.slice(1)))+'" alt="'+esc(p.company+' '+p.paddle)+'" '
-        + 'onerror="var fb=JSON.parse(this.getAttribute(\'data-fb\')||\'[]\'); if(fb.length){this.setAttribute(\'data-fb\',JSON.stringify(fb.slice(1)));this.src=fb[0];} else {this.parentNode.innerHTML=\'<div class=&quot;ph-txt&quot;>Paddle image coming soon</div>\';}">';
+        '<div class="pcl-photo-flip-inner" id="prPhotoFlip">'
+        + '<div class="pcl-photo-face pcl-photo-face-front"><img src="'+esc(cands[0])+'" data-fb="'+esc(JSON.stringify(cands.slice(1)))+'" alt="'+esc(p.company+' '+p.paddle)+'" '
+          + 'onerror="var fb=JSON.parse(this.getAttribute(\'data-fb\')||\'[]\'); if(fb.length){this.setAttribute(\'data-fb\',JSON.stringify(fb.slice(1)));this.src=fb[0];} else {this.parentNode.innerHTML=\'<div class=&quot;ph-txt&quot;>Paddle image coming soon</div>\';}"></div>'
+        + '<div class="pcl-photo-face pcl-photo-face-back"><img src="'+esc(xraySrc)+'" alt="" onload="var b=document.getElementById(\'prXrayBadge\'); if(b) b.style.display=\'flex\';" onerror="this.style.display=\'none\'"></div>'
+        + '</div>'
+        + '<button class="xray-badge" id="prXrayBadge" type="button" style="display:none" onclick="JKPaddleReview.toggleXray()">'+XRAY_ICON_SVG+'<span>X-Ray</span></button>';
 
       document.getElementById('prBrand').textContent = p.company;
       document.getElementById('prName').textContent = p.paddle;
@@ -516,7 +542,8 @@ window.JKPaddleReview = (function(){
       var priceMain = pr.isSelkirk? money(p.price) : money(pr.finalPrice);
       var strike = (!pr.isSelkirk && pr.savedAmt>0.005) ? '<span class="pr-strike">'+money(p.price)+'</span>' : '';
       document.getElementById('prPriceRow').innerHTML = '<span class="pr-price">'+priceMain+'</span>'+strike
-        + (p.discountCode?'<span class="pr-code">'+esc(p.discountCode)+'</span>':'');
+        + (p.discountCode?('<span class="pr-code">'+esc(p.discountCode)+'</span>'
+          + '<button type="button" class="pr-copy-btn" onclick="JKPaddleReview.copyCode(this,\''+esc(p.discountCode).replace(/'/g,"&#39;")+'\')">Copy code</button>'):'');
       var buyBtn=document.getElementById('prBuyBtn');
       if(p.link && /^https?:/i.test(p.link)){ buyBtn.href=p.link; } else { buyBtn.style.display='none'; }
 
@@ -641,5 +668,5 @@ window.JKPaddleReview = (function(){
     if(window.Papa) load(); else window.addEventListener('load', load);
   }
 
-  return { init: init };
+  return { init: init, copyCode: copyCode, toggleXray: toggleXray };
 })();
