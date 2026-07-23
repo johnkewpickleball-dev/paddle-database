@@ -367,6 +367,89 @@ window.JKPaddleReview = (function(){
       +'<div class="pclf-markers">'+marker+'</div></div>'
       +'</div>';
   }
+  /* ================= review text from a Google Doc (alternative to inline opts.review) =====
+     Convention: one Google Doc per paddle, shared "Anyone with the link can view". Section
+     names below (case-insensitive, must be on their own line) split the doc into fields; blank
+     lines don't matter otherwise. Quick Take / Who It's For / Who It's NOT For treat every
+     non-empty line under the heading as one bullet. Everything else is joined into one prose
+     block. A paragraph starting with "MFR CLAIM:" becomes the manufacturer-claim callout box
+     (same styling as the "From manufacturer -- not independently verified" note used today).
+
+       QUICK TAKE
+       (one bullet per line)
+
+       CONSTRUCTION & BUILD
+       (prose; a line starting "MFR CLAIM:" becomes the callout box)
+
+       KEWCOR
+       SPIN DURABILITY
+       FEEL MAP
+       (prose each)
+
+       WHO IT'S FOR
+       WHO IT'S NOT FOR
+       (one bullet per line each)
+
+       FINAL THOUGHTS
+       DISCLOSURE
+       (prose each)
+  */
+  var DOC_SECTIONS = [
+    {key:'quickTake',          match:/^quick take$/i,                         list:true},
+    {key:'constructionNote',   match:/^construction( ?&? ?build)?$/i,          list:false},
+    {key:'kewcorNote',         match:/^kewcor$/i,                             list:false},
+    {key:'spinDurabilityNote', match:/^spin durability$/i,                    list:false},
+    {key:'feelNote',           match:/^feel( map)?$/i,                        list:false},
+    {key:'whoFor',             match:/^who(?:'s| is)?\s*it'?s?\s*for$/i,       list:true},
+    {key:'whoNotFor',          match:/^who(?:'s| is)?\s*it'?s?\s*not\s*for$/i, list:true},
+    {key:'verdict',            match:/^final thoughts$/i,                     list:false},
+    {key:'disclosure',         match:/^disclosure$/i,                         list:false}
+  ];
+  function parseReviewDoc(text){
+    var lines = String(text||'').replace(/\r\n?/g,'\n').split('\n');
+    var out = {quickTake:[], whoFor:[], whoNotFor:[]};
+    var current = null, buf = [];
+    function flush(){
+      if(!current){ buf=[]; return; }
+      if(current.list){
+        out[current.key] = buf.map(function(l){return l.trim();}).filter(Boolean);
+      } else {
+        // Blank lines inside a section mark paragraph breaks -- checked independently so a
+        // "MFR CLAIM:" paragraph anywhere in the section (not just the first line) still
+        // gets converted to the callout box, matching how it's used in the existing reviews.
+        var paras=[], para=[];
+        buf.forEach(function(l){
+          if(l.trim()===''){ if(para.length){ paras.push(para.join(' ').trim()); para=[]; } }
+          else para.push(l.trim());
+        });
+        if(para.length) paras.push(para.join(' ').trim());
+        out[current.key] = paras.map(function(pText){
+          var m = pText.match(/^MFR CLAIM:\s*(.*)$/i);
+          return m
+            ? ('<span class="pr-mfr"><b>From manufacturer — not independently verified</b>'+m[1]+'</span>')
+            : pText;
+        }).join(' ');
+      }
+      buf=[];
+    }
+    lines.forEach(function(raw){
+      var line = raw.replace(/ /g,' '); // Docs sometimes exports non-breaking spaces
+      var trimmed = line.trim();
+      var matched = null;
+      for(var i=0;i<DOC_SECTIONS.length;i++){ if(DOC_SECTIONS[i].match.test(trimmed)){ matched=DOC_SECTIONS[i]; break; } }
+      if(matched){ flush(); current=matched; buf=[]; }
+      else if(current){ buf.push(line); }
+    });
+    flush();
+    return out;
+  }
+  function loadReviewDoc(docId, cb){
+    var url = 'https://docs.google.com/document/d/'+encodeURIComponent(docId)+'/export?format=txt';
+    fetch(url).then(function(r){ if(!r.ok) throw new Error('doc fetch failed: '+r.status); return r.text(); })
+      .then(function(txt){ cb(parseReviewDoc(txt)); })
+      .catch(function(err){ if(window.console) console.error('JKPaddleReview: could not load review doc ('+docId+')', err); cb(null); });
+  }
+
   function loadFeel(url,fb,cb){
     Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
       var rows=res.data||[]; if(rows.length<1){ if(fb) return loadFeel(fb,null,cb); return; }
@@ -665,8 +748,20 @@ window.JKPaddleReview = (function(){
         loadFeel(FEEL_CSV, null, function(){ refreshFeelChart(p, PADDLES); });
       },error:function(){ document.getElementById('prStatus').textContent='Could not load paddle data. Please refresh.'; }});
     }
-    if(window.Papa) load(); else window.addEventListener('load', load);
+    function startLoad(){ if(window.Papa) load(); else window.addEventListener('load', load); }
+
+    if(DEFAULT_KEY && opts.reviewDocId && !opts.review){
+      // Review text lives in a Google Doc (Anyone with the link can view) instead of being
+      // pasted inline -- fetch + parse it before rendering. Falls back to "not yet written"
+      // placeholders (handled already inside render()) if the fetch fails for any reason.
+      loadReviewDoc(opts.reviewDocId, function(parsed){
+        if(parsed) REVIEWS[DEFAULT_KEY] = parsed;
+        startLoad();
+      });
+    } else {
+      startLoad();
+    }
   }
 
-  return { init: init, copyCode: copyCode, toggleXray: toggleXray };
+  return { init: init, copyCode: copyCode, toggleXray: toggleXray, parseReviewDoc: parseReviewDoc };
 })();
