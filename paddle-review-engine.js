@@ -396,6 +396,91 @@ window.JKPaddleReview = (function(){
       +'<div class="pclf-markers">'+marker+'</div></div>'
       +'</div>';
   }
+
+  /* ================= similar paddles (similarity score + spin durability match) =============
+     A per-metric similarity score is a plain min/max ratio expressed as a percentage (e.g.
+     reviewed=100, candidate=90 -> 90%). That only produces a sane number for metrics that are
+     always >0 on a shared scale, which is true of every metric used here: the four *Scaled
+     fields and Firepower/Hand-Speed-Index are already 0-100 scaled scores (not raw +/- Z-scores,
+     which a min/max ratio would mangle), KewCOR and every physical dimension/weight field are
+     plain positive measurements. Dimensions and Weight/Balance are each an average of 4 sub-
+     metrics rolled into one number -- individual sub-scores are intentionally not exposed, per
+     spec. Overall score is the average of all 8 top-level metrics (with Dimensions and
+     Weight/Balance each counting once, already averaged). A candidate needs at least 5 of the 8
+     metrics present to be considered at all, so a paddle missing most of its data can't luck
+     into a high score off one or two fields. Spin Durability Tier is categorical (Tier 1-4, or
+     blank) so it gets a separate exact-match Yes/No box instead of a percentage. */
+  var SIM_DIMENSION_KEYS=['length','width','thickness','handleLength'];
+  var SIM_WEIGHT_KEYS=['weight','swingWeight','twistWeight','balance'];
+  function simRatio(a,b){
+    if(a==null||b==null||isNaN(a)||isNaN(b)||a<=0||b<=0) return null;
+    return (Math.min(a,b)/Math.max(a,b))*100;
+  }
+  function simAvg(p,q,keys){
+    var vals=keys.map(function(k){return simRatio(p[k],q[k]);}).filter(function(v){return v!=null;});
+    return vals.length ? vals.reduce(function(a,b){return a+b;},0)/vals.length : null;
+  }
+  function paddleSimilarity(p,q){
+    var m={
+      spin:simRatio(p.spinScaled,q.spinScaled),
+      dimensions:simAvg(p,q,SIM_DIMENSION_KEYS),
+      weightBalance:simAvg(p,q,SIM_WEIGHT_KEYS),
+      handSpeed:simRatio(p.swingResist,q.swingResist),
+      power:simRatio(p.powerScaled,q.powerScaled),
+      pop:simRatio(p.popScaled,q.popScaled),
+      firepower:simRatio(p.firepower,q.firepower),
+      kewcor:simRatio(p.kewcor,q.kewcor)
+    };
+    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor'];
+    var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
+    if(vals.length<5) return null;
+    return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
+  }
+  function findSimilarPaddles(p,PADDLES_LOCAL,n){
+    var scored=[];
+    PADDLES_LOCAL.forEach(function(q){
+      if(q.key===p.key) return;
+      var s=paddleSimilarity(p,q);
+      if(s) scored.push({paddle:q,sim:s});
+    });
+    scored.sort(function(a,b){return b.sim.overall-a.sim.overall;});
+    return scored.slice(0,n||4);
+  }
+  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR'};
+  function simMetricRow(key,val){
+    return '<div class="pr-simmetric"><span class="pr-simmetric-label">'+esc(SIM_METRIC_LABELS[key])+'</span>'
+      +'<span class="pr-simmetric-val">'+(val==null?'—':Math.round(val)+'%')+'</span></div>';
+  }
+  function similarPaddleCard(target,cand){
+    var q=cand.paddle, s=cand.sim;
+    var qImg=photoCandidates(q)[0], tImg=photoCandidates(target)[0];
+    var tTier=(target.spinDurTier||'').trim(), qTier=(q.spinDurTier||'').trim();
+    var knownTiers=!!(tTier&&qTier), tierMatch=knownTiers&&tTier.toLowerCase()===qTier.toLowerCase();
+    var matchHtml = !knownTiers ? '<span class="pr-match-unknown">Not enough data</span>'
+      : (tierMatch ? '<span class="pr-match-yes">&#10003; Yes</span>' : '<span class="pr-match-no">&#10005; No</span>');
+    return '<div class="pr-simcard">'
+      +'<div class="pr-simcard-head">'
+        +'<img class="pr-simcard-photo" src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
+        +'<div><div class="pr-simcard-name">'+esc(q.company)+' '+esc(q.paddle)+'</div>'
+        +'<div class="pr-simcard-score">'+Math.round(s.overall)+'% similar</div></div>'
+      +'</div>'
+      +'<div class="pr-simcard-metrics">'+s.order.map(function(k){return simMetricRow(k,s.metrics[k]);}).join('')+'</div>'
+      +'<div class="pr-simcard-dur">'
+        +'<div class="pr-simcard-dur-label">Spin Durability Tier</div>'
+        +'<div class="pr-simcard-dur-row">'
+          +'<div class="pr-simcard-dur-p"><img src="'+esc(tImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>'+esc(tTier||'—')+'</span></div>'
+          +'<div class="pr-simcard-dur-p"><img src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>'+esc(qTier||'—')+'</span></div>'
+        +'</div>'
+        +'<div class="pr-simcard-dur-match">Spin Durability Match? '+matchHtml+'</div>'
+      +'</div>'
+      +'</div>';
+  }
+  function similarPaddlesHtml(p,PADDLES_LOCAL){
+    var top=findSimilarPaddles(p,PADDLES_LOCAL,4);
+    if(!top.length) return '<div style="color:var(--muted);font-size:13px;padding:6px 2px">Not enough data in the database yet to compute similar paddles.</div>';
+    return '<div class="pr-simgrid">'+top.map(function(c){return similarPaddleCard(p,c);}).join('')+'</div>';
+  }
+
   /* ================= review text from a Google Doc (alternative to inline opts.review) =====
      Convention: one Google Doc per paddle, shared "Anyone with the link can view". Section
      names below (case-insensitive, must be on their own line) split the doc into fields. Inside
@@ -601,6 +686,10 @@ window.JKPaddleReview = (function(){
   </div>
   <div class="pr-prose" id="prFeelNote" style="margin-top:12px"></div>
 
+  <div class="pr-h2">Similar Paddles</div>
+  <p class="pr-sub">The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, and KewCOR.</p>
+  <div class="pr-card" id="prSimilar"></div>
+
   <div id="prOnCourtSection" hidden>
     <div class="pr-h2">On-Court Impressions</div>
     <div class="pr-card pr-prose" id="prOnCourt"></div>
@@ -788,6 +877,9 @@ window.JKPaddleReview = (function(){
       // feel map
       refreshFeelChart(p, PADDLES_LOCAL);
       document.getElementById('prFeelNote').innerHTML = R.feelNote ? proseHtml(R.feelNote) : '';
+
+      // similar paddles (data-driven, shown on both Executive Summary and Full Review)
+      document.getElementById('prSimilar').innerHTML = similarPaddlesHtml(p, PADDLES_LOCAL);
 
       // on-court impressions + mods (full reviews only -- hidden until content exists)
       var onCourtSection = document.getElementById('prOnCourtSection');

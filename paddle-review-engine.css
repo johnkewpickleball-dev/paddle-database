@@ -181,6 +181,32 @@
   .pclf-dot .pt{display:block;width:14px;height:14px;border-radius:50%;background:#ff8a00;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
   .pclf-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;text-align:center;padding:0 18px}
 
+  /* similar paddles */
+  .pr-simgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:560px){.pr-simgrid{grid-template-columns:1fr}}
+  .pr-simcard{border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--white)}
+  [data-theme="dark"] .pr-page .pr-simcard{background:var(--surface,#141d27)}
+  .pr-simcard-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .pr-simcard-photo{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--bg,#f1f5f9);flex:0 0 auto;border:1px solid var(--border)}
+  .pr-simcard-name{font-weight:700;font-size:13.5px;color:var(--navy);line-height:1.25}
+  [data-theme="dark"] .pr-page .pr-simcard-name{color:var(--text)}
+  .pr-simcard-score{font-size:12.5px;color:var(--green);font-weight:700;margin-top:2px}
+  .pr-simcard-metrics{display:flex;flex-direction:column;gap:5px;padding:10px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+  .pr-simmetric{display:flex;align-items:center;justify-content:space-between;font-size:12.5px}
+  .pr-simmetric-label{color:var(--muted)}
+  .pr-simmetric-val{font-weight:600;color:var(--navy)}
+  [data-theme="dark"] .pr-page .pr-simmetric-val{color:var(--text)}
+  .pr-simcard-dur{padding-top:10px}
+  .pr-simcard-dur-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
+  .pr-simcard-dur-row{display:flex;gap:14px;margin-bottom:6px}
+  .pr-simcard-dur-p{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--navy)}
+  [data-theme="dark"] .pr-page .pr-simcard-dur-p{color:var(--text)}
+  .pr-simcard-dur-p img{width:22px;height:22px;border-radius:5px;object-fit:cover;border:1px solid var(--border)}
+  .pr-simcard-dur-match{font-size:12.5px;color:var(--muted)}
+  .pr-match-yes{color:var(--green);font-weight:700}
+  .pr-match-no{color:#dc2626;font-weight:700}
+  .pr-match-unknown{color:var(--muted);font-style:italic}
+
   /* who for / not for */
   .pr-forgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   @media(max-width:560px){.pr-forgrid{grid-template-columns:1fr}}
