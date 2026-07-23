@@ -15,9 +15,6 @@
   .pr-status{max-width:840px;margin:60px auto;text-align:center;color:var(--muted);font-size:15px}
 
   /* header */
-  .pr-crumbs{max-width:840px;margin:0 auto;padding:18px 18px 0;font-size:12.5px;color:var(--muted)}
-  .pr-crumbs a{color:var(--muted);text-decoration:none}
-  .pr-crumbs a:hover{color:var(--green)}
   .pr-hero{display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:22px 0 8px}
   .pr-photo{position:relative;flex:0 0 260px;width:260px;aspect-ratio:1/1;border:2px dashed var(--border);border-radius:12px;background:var(--white);display:flex;align-items:center;justify-content:center;overflow:hidden}
   .pr-photo img{width:100%;height:100%;object-fit:contain;padding:14px}
@@ -38,8 +35,9 @@
   [data-theme="dark"] .pr-page .xray-badge.active{background:var(--green)}
   .pr-head-main{flex:1 1 320px;min-width:260px}
   .pr-brand{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:4px}
-  .pr-name{font-size:clamp(24px,4vw,32px);font-weight:800;color:var(--navy);letter-spacing:-.4px;line-height:1.15;margin-bottom:10px}
+  .pr-name{font-size:clamp(24px,4vw,32px);font-weight:800;color:var(--navy);letter-spacing:-.4px;line-height:1.15;margin-bottom:6px}
   [data-theme="dark"] .pr-page .pr-name{color:var(--text)}
+  .pr-byline{font-size:13px;color:var(--muted);margin-bottom:14px}
   .pr-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
   .badge{font-size:10.5px;padding:3px 9px;border-radius:12px;font-weight:600}
   .badge-shape{background:#eff6ff;color:#1d4ed8}

@@ -469,12 +469,6 @@ window.JKPaddleReview = (function(){
   }
 
   var SKELETON_HTML = `<div class="pr-page">
-<div class="pr-crumbs" id="prCrumbs" hidden>
-  <a href="https://johnkewpickleball.com">JohnKew Pickleball</a> ›
-  <a href="https://johnkewpickleball.com/paddle-database">Paddle Database</a> ›
-  <span id="prCrumbCurrent"></span>
-</div>
-
 <div class="pr-status" id="prStatus">Loading paddle data…</div>
 
 <div class="pr-wrap" id="prApp" hidden>
@@ -484,6 +478,7 @@ window.JKPaddleReview = (function(){
     <div class="pr-head-main">
       <div class="pr-brand" id="prBrand"></div>
       <div class="pr-name" id="prName"></div>
+      <div class="pr-byline">By John Kew</div>
       <div class="pr-badges" id="prBadges"></div>
       <div class="pr-price-row" id="prPriceRow"></div>
       <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
@@ -594,8 +589,6 @@ window.JKPaddleReview = (function(){
       var R = REVIEWS[p.key] || {};
       var pr = pricing(p);
 
-      document.getElementById('prCrumbs').hidden=false;
-      document.getElementById('prCrumbCurrent').textContent = p.company+' '+p.paddle;
       // Page <title> and SEO description are set once in Squarespace's own page settings
       // for this page -- not overwritten here, so there's a single source of truth.
       var desc = (R.quickTake && R.quickTake[0]) ? R.quickTake[0] : ('Independent lab-tested review of the '+p.company+' '+p.paddle+'.');
@@ -613,7 +606,7 @@ window.JKPaddleReview = (function(){
         + '<button class="xray-badge" id="prXrayBadge" type="button" style="display:none" onclick="JKPaddleReview.toggleXray()">'+XRAY_ICON_SVG+'<span>X-Ray</span></button>';
 
       document.getElementById('prBrand').textContent = p.company;
-      document.getElementById('prName').textContent = p.paddle;
+      document.getElementById('prName').textContent = p.paddle + ' Paddle Review';
       document.getElementById('prBadges').innerHTML = [
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
         p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
