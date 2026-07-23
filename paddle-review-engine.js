@@ -23,6 +23,7 @@ window.JKPaddleReview = (function(){
   var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
   var AUTHOR_PHOTO=PHOTO_BASE+'john-kew-author.png';
+  var REVIEW_IMG_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/written-reviews/';
   var PHOTO_URLS={};
   var XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>';
 
@@ -395,7 +396,12 @@ window.JKPaddleReview = (function(){
      becomes an inline image -- useful for b-roll stills in a Full Review's Construction/
      On-Court/Mods sections; John uploads the image somewhere he controls (easiest: drop it into
      a Squarespace image block, right-click it once published, "Copy Image Address") and pastes
-     that URL into the marker.
+     that URL into the marker. IMPORTANT: this must be typed marker text, not an actual image
+     object inserted/pasted into the Doc -- Google's plain-text export (what this pipeline reads)
+     silently drops real embedded images, leaving nothing behind for the marker text to replace.
+     Any text before the first recognized section header (e.g. an opening "[[IMAGE: ...]]" on
+     its own at the very top of the Doc) is captured as an optional lead image/note rendered
+     above Quick Take, no header needed for that one.
 
      Two categories, distinguished purely by whether VIDEO is filled in (no separate flag to
      keep in sync):
@@ -450,7 +456,10 @@ window.JKPaddleReview = (function(){
   function parseReviewDoc(text){
     var lines = String(text||'').replace(/\r\n?/g,'\n').split('\n');
     var out = {quickTake:[], whoFor:[], whoNotFor:[]};
-    var current = null, buf = [];
+    // Anything before the first recognized section header (e.g. an opening [[IMAGE: ...]]
+    // marker) is captured as heroNote and rendered above Quick Take -- lets a review open
+    // with a lead photo without needing its own section header.
+    var current = {key:'heroNote', list:false}, buf = [];
     function flush(){
       if(!current){ buf=[]; return; }
       if(current.single){
@@ -529,6 +538,8 @@ window.JKPaddleReview = (function(){
       <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
     </div>
   </div>
+
+  <div id="prHero" hidden></div>
 
   <div class="pr-h2">Quick Take</div>
   <div class="pr-card"><ul class="pr-quicktake" id="prQuickTake"></ul></div>
@@ -683,6 +694,11 @@ window.JKPaddleReview = (function(){
           + '<button type="button" class="pr-copy-btn" onclick="JKPaddleReview.copyCode(this,\''+esc(p.discountCode).replace(/'/g,"&#39;")+'\')">Copy code</button>'):'');
       var buyBtn=document.getElementById('prBuyBtn');
       if(p.link && /^https?:/i.test(p.link)){ buyBtn.href=p.link; } else { buyBtn.style.display='none'; }
+
+      // hero (optional lead image/note before Quick Take)
+      var heroEl = document.getElementById('prHero');
+      if(R.heroNote){ heroEl.innerHTML = renderImageMarkers(R.heroNote); heroEl.hidden = false; }
+      else { heroEl.hidden = true; heroEl.innerHTML = ''; }
 
       // quick take
       document.getElementById('prQuickTake').innerHTML = (R.quickTake||['Quick-take bullets not yet written for this paddle.']).map(function(t){return '<li>'+t+'</li>';}).join('');
