@@ -24,6 +24,8 @@ window.JKPaddleReview = (function(){
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
   var AUTHOR_PHOTO=PHOTO_BASE+'john-kew-author.png';
   var REVIEW_IMG_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/written-reviews/';
+  var LAB_URL='https://www.johnkewpickleball.com/paddle-comparison-lab';
+  var COMPARE_ICON_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3c2.2 0 4 1.8 4 4v5a4 4 0 0 1-4 4 4 4 0 0 1-4-4V7c0-2.2 1.8-4 4-4Z"></path><path d="M7 16v5"></path><path d="M17 3c2.2 0 4 1.8 4 4v5a4 4 0 0 1-4 4 4 4 0 0 1-4-4V7c0-2.2 1.8-4 4-4Z"></path><path d="M17 16v5"></path></svg>';
   var PHOTO_URLS={};
   var XRAY_ICON_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11.2" fill="#facc15" stroke="#0f172a" stroke-width="1.1"/><path d="M12,9.4 L16.08,3.64 A9.3,9.3 0 0 1 7.92,3.64 Z" fill="#0f172a"/><path d="M9.75,13.3 L2.72,12.65 A9.3,9.3 0 0 1 6.8,19.71 Z" fill="#0f172a"/><path d="M14.25,13.3 L17.2,19.71 A9.3,9.3 0 0 1 21.28,12.65 Z" fill="#0f172a"/><circle cx="12" cy="12" r="2.1" fill="#0f172a"/></svg>';
 
@@ -451,6 +453,10 @@ window.JKPaddleReview = (function(){
     return '<div class="pr-simmetric"><span class="pr-simmetric-label">'+esc(SIM_METRIC_LABELS[key])+'</span>'
       +'<span class="pr-simmetric-val">'+(val==null?'—':Math.round(val)+'%')+'</span></div>';
   }
+  function comparisonLabUrl(target,q){
+    return LAB_URL + '?p1=' + encodeURIComponent(target.company+'||'+target.paddle)
+      + '&p2=' + encodeURIComponent(q.company+'||'+q.paddle);
+  }
   function similarPaddleCard(target,cand){
     var q=cand.paddle, s=cand.sim;
     var qImg=photoCandidates(q)[0], tImg=photoCandidates(target)[0];
@@ -458,11 +464,16 @@ window.JKPaddleReview = (function(){
     var knownTiers=!!(tTier&&qTier), tierMatch=knownTiers&&tTier.toLowerCase()===qTier.toLowerCase();
     var matchHtml = !knownTiers ? '<span class="pr-match-unknown">Not enough data</span>'
       : (tierMatch ? '<span class="pr-match-yes">&#10003; Yes</span>' : '<span class="pr-match-no">&#10005; No</span>');
+    var compareUrl = comparisonLabUrl(target,q);
     return '<div class="pr-simcard">'
       +'<div class="pr-simcard-head">'
         +'<img class="pr-simcard-photo" src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
-        +'<div><div class="pr-simcard-name">'+esc(q.company)+' '+esc(q.paddle)+'</div>'
+        +'<div class="pr-simcard-idbox"><div class="pr-simcard-name">'+esc(q.company)+' '+esc(q.paddle)+'</div>'
         +'<div class="pr-simcard-score">'+Math.round(s.overall)+'% similar</div></div>'
+        +'<a class="pr-compare-cta" href="'+esc(compareUrl)+'" target="_blank" rel="noopener noreferrer" title="Compare '+esc(target.company+' '+target.paddle)+' vs '+esc(q.company+' '+q.paddle)+' in the Paddle Comparison Lab">'
+          +'<span class="pr-compare-icon">'+COMPARE_ICON_SVG+'</span>'
+          +'<span class="pr-compare-label">Compare This Paddle</span>'
+        +'</a>'
       +'</div>'
       +'<div class="pr-simcard-metrics">'+s.order.map(function(k){return simMetricRow(k,s.metrics[k]);}).join('')+'</div>'
       +'<div class="pr-simcard-dur">'
@@ -711,6 +722,11 @@ window.JKPaddleReview = (function(){
   <div class="pr-h2">Final Thoughts</div>
   <div class="pr-card pr-prose" id="prVerdict"></div>
 
+  <div id="prBuySection" hidden>
+    <div class="pr-h2">Where to Buy</div>
+    <div class="pr-card pr-buybox" id="prBuyBoxBottom"></div>
+  </div>
+
   <div class="pr-disclosure" id="prDisclosure"></div>
 
 </div>
@@ -895,6 +911,25 @@ window.JKPaddleReview = (function(){
 
       // verdict
       document.getElementById('prVerdict').innerHTML = R.verdict ? proseHtml(R.verdict) : '<p>Full write-up not yet drafted for this paddle.</p>';
+
+      // bottom purchase CTA -- repeats the header's price/discount/buy-link data (same `pr`,
+      // `priceMain`, `strike` computed above) so a reader who scrolls straight to the verdict
+      // still sees pricing without scrolling back up. Whole section hides if there's no link.
+      var buySection = document.getElementById('prBuySection'), buyBoxBottom = document.getElementById('prBuyBoxBottom');
+      if(buySection && buyBoxBottom){
+        if(p.link && /^https?:/i.test(p.link)){
+          buyBoxBottom.innerHTML = '<div class="pr-price-row">'
+            + '<span class="pr-price">'+priceMain+'</span>'+strike
+            + (p.discountCode?('<span class="pr-code">'+esc(p.discountCode)+'</span>'
+              + '<button type="button" class="pr-copy-btn" onclick="JKPaddleReview.copyCode(this,\''+esc(p.discountCode).replace(/'/g,"&#39;")+'\')">Copy code</button>'):'')
+            + '</div>'
+            + '<a class="pr-buy" href="'+esc(p.link)+'" target="_blank" rel="noopener noreferrer">Buy Now →</a>';
+          buySection.hidden = false;
+        } else {
+          buySection.hidden = true;
+          buyBoxBottom.innerHTML = '';
+        }
+      }
 
       // disclosure
       document.getElementById('prDisclosure').textContent = R.disclosure || 'Independent testing. See johnkewpickleball.com for full disclosure policy.';

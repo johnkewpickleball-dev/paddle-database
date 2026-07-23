@@ -186,7 +186,16 @@
   @media(max-width:560px){.pr-simgrid{grid-template-columns:1fr}}
   .pr-simcard{border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--white)}
   [data-theme="dark"] .pr-page .pr-simcard{background:var(--surface,#141d27)}
-  .pr-simcard-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .pr-simcard-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .pr-simcard-idbox{min-width:0}
+  .pr-compare-cta{display:inline-flex;align-items:center;gap:8px;margin-left:auto;text-decoration:none;flex:0 0 auto}
+  .pr-compare-icon{width:34px;height:34px;border-radius:9px;background:#151b3d;color:#4ade80;display:flex;align-items:center;justify-content:center;flex:0 0 auto;box-shadow:0 0 0 0 rgba(74,222,128,.5);animation:prComparePulse 1.8s ease-in-out infinite}
+  .pr-compare-icon svg{width:18px;height:18px}
+  .pr-compare-label{font-size:11px;font-weight:700;color:var(--green);line-height:1.25;max-width:74px}
+  .pr-compare-cta:hover .pr-compare-icon{animation:none;background:#1e2650}
+  @keyframes prComparePulse{0%,100%{box-shadow:0 0 0 0 rgba(74,222,128,.45)}50%{box-shadow:0 0 0 7px rgba(74,222,128,0)}}
+  @media(prefers-reduced-motion:reduce){.pr-compare-icon{animation:none}}
+  .pr-buybox .pr-price-row{margin-bottom:16px}
   .pr-simcard-photo{width:44px;height:44px;border-radius:8px;object-fit:cover;background:var(--bg,#f1f5f9);flex:0 0 auto;border:1px solid var(--border)}
   .pr-simcard-name{font-weight:700;font-size:13.5px;color:var(--navy);line-height:1.25}
   [data-theme="dark"] .pr-page .pr-simcard-name{color:var(--text)}
