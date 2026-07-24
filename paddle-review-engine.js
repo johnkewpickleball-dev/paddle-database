@@ -225,7 +225,7 @@ window.JKPaddleReview = (function(){
       + '<rect x="120" y="248" width="12" height="12" rx="2" fill="#27ae60"/><text x="136" y="258">Medium</text>'
       + '<rect x="196" y="248" width="12" height="12" rx="2" fill="#eb5757"/><text x="212" y="258">High</text>'
       + '</g>';
-    return '<svg viewBox="0 0 300 288" preserveAspectRatio="xMidYMid meet" font-family="\'DM Sans\',sans-serif">'+grid+rows+labels+axis+leg+'</svg>';
+    return '<svg class="pcl-bullet" viewBox="0 0 300 288" preserveAspectRatio="xMidYMid meet" font-family="\'DM Sans\',sans-serif">'+grid+rows+labels+axis+leg+'</svg>';
   }
 
   /* ================= KewCOR gauge (verbatim, single gauge) ================= */

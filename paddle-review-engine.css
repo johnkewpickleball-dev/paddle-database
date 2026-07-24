@@ -171,10 +171,12 @@
   /* Raw Z-Score (bullet) chart draws its row labels and legend text with hardcoded SVG
      fill colors tuned for a white background -- invisible against a dark theme. Override
      to the theme's text/muted colors instead of touching the SVG generator itself, matching
-     the same fix already applied on paddle-comparison-lab.html. */
-  [data-theme="dark"] .pr-page #prBullet svg > text[fill="#0d1f2d"],
-  [data-theme="dark"] .pr-page #prBullet svg > g[fill="#0d1f2d"] text{fill:var(--text)}
-  [data-theme="dark"] .pr-page #prBullet svg > text[fill="#94a3b8"]{fill:var(--muted)}
+     the same fix already applied on paddle-comparison-lab.html. Targeted by the .pcl-bullet
+     class on the svg itself (not an id) so this also covers series reviews, which render one
+     bullet chart per shape -- ids can't repeat, but every instance carries this class. */
+  [data-theme="dark"] .pr-page .pcl-bullet > text[fill="#0d1f2d"],
+  [data-theme="dark"] .pr-page .pcl-bullet > g[fill="#0d1f2d"] text{fill:var(--text)}
+  [data-theme="dark"] .pr-page .pcl-bullet > text[fill="#94a3b8"]{fill:var(--muted)}
 
   /* kewcor gauge + surface */
   .pcl-gauge-svg{width:100%;max-width:220px;display:block;margin:0 auto}
@@ -197,7 +199,7 @@
   .pcl-surf .kc-title{fill:var(--text);font-size:9px;font-weight:600}
 
   /* feel map */
-  .pclf-frame{position:relative;width:100%;max-width:300px;margin:0 auto;padding:22px 46px;container-type:inline-size}
+  .pclf-frame{position:relative;width:100%;max-width:380px;margin:0 auto;padding:24px 50px;container-type:inline-size}
   .pclf-map{position:relative;width:100%;aspect-ratio:1/1;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
   .pclf-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
   .pclf-box{stroke:#475569;stroke-width:1.4;fill:none}

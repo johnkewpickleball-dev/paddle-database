@@ -205,10 +205,12 @@
   .pr-legend{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px}
   .pr-legend b{color:var(--text)}
   /* Raw Z-Score chart draws row labels/legend text with hardcoded SVG fill colors tuned
-     for a white background -- invisible against the dark theme. */
-  [data-theme="dark"] #prBullet svg > text[fill="#0d1f2d"],
-  [data-theme="dark"] #prBullet svg > g[fill="#0d1f2d"] text{fill:var(--text)}
-  [data-theme="dark"] #prBullet svg > text[fill="#94a3b8"]{fill:var(--muted)}
+     for a white background -- invisible against the dark theme. Targeted by the .pcl-bullet
+     class on the svg itself (not an id) so this also covers series reviews, which render one
+     bullet chart per shape -- ids can't repeat, but every instance carries this class. */
+  [data-theme="dark"] .pcl-bullet > text[fill="#0d1f2d"],
+  [data-theme="dark"] .pcl-bullet > g[fill="#0d1f2d"] text{fill:var(--text)}
+  [data-theme="dark"] .pcl-bullet > text[fill="#94a3b8"]{fill:var(--muted)}
 
   /* kewcor gauge + surface */
   .pcl-gauge-svg{width:100%;max-width:220px;display:block;margin:0 auto}
@@ -231,7 +233,7 @@
   .pcl-surf .kc-title{fill:var(--text);font-size:9px;font-weight:600}
 
   /* feel map */
-  .pclf-frame{position:relative;width:100%;max-width:300px;margin:0 auto;padding:22px 46px;container-type:inline-size}
+  .pclf-frame{position:relative;width:100%;max-width:380px;margin:0 auto;padding:24px 50px;container-type:inline-size}
   .pclf-map{position:relative;width:100%;aspect-ratio:1/1;background:var(--white);border:1px solid var(--border);border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
   .pclf-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
   .pclf-box{stroke:#475569;stroke-width:1.4;fill:none}
@@ -617,7 +619,7 @@
       + '<rect x="120" y="248" width="12" height="12" rx="2" fill="#27ae60"/><text x="136" y="258">Medium</text>'
       + '<rect x="196" y="248" width="12" height="12" rx="2" fill="#eb5757"/><text x="212" y="258">High</text>'
       + '</g>';
-    return '<svg viewBox="0 0 300 288" preserveAspectRatio="xMidYMid meet" font-family="\'DM Sans\',sans-serif">'+grid+rows+labels+axis+leg+'</svg>';
+    return '<svg class="pcl-bullet" viewBox="0 0 300 288" preserveAspectRatio="xMidYMid meet" font-family="\'DM Sans\',sans-serif">'+grid+rows+labels+axis+leg+'</svg>';
   }
 
   /* ================= KewCOR gauge (verbatim, single gauge) ================= */
