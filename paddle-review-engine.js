@@ -398,6 +398,63 @@ window.JKPaddleReview = (function(){
       +'<div class="pclf-markers">'+marker+'</div></div>'
       +'</div>';
   }
+  function feelQuadLetter(x,y){
+    if(x==null||y==null) return null;
+    return y>=0 ? (x>=0?'B':'A') : (x>=0?'D':'C');
+  }
+
+  /* ================= shape lineup (multi-shape series reviews, e.g. a 4-shape line tested in
+     one video/write-up) ========================================================================
+     Most reviews are one paddle = one page. Some (Ronbus Tenon R1-R4, etc.) cover several named
+     shapes of the same core/surface tech in one write-up, each its own row in the database with
+     its own specs. opts.seriesKeys (array of "Company||Paddle" keys) renders a compact summary
+     card per shape -- price, badges, key specs, KewCOR + performance category, spin durability
+     tier, Feel Map quadrant -- so a reader can see how the shapes differ before the shared prose
+     sections (Construction, KewCOR, Spin Durability, Feel Map, On-Court, Mods) that follow. The
+     defaultKey shape is marked "Featured in this review" since it's the one those prose sections,
+     the Performance Metrics chart, and Similar Paddles all continue to describe specifically. */
+  function shapeSpecRow(label,val){ return val==null||val===''?'':'<div class="pr-shapespec"><span>'+esc(label)+'</span><b>'+esc(val)+'</b></div>'; }
+  function shapeCardHtml(p, PADDLES_LOCAL, isFeatured){
+    var img=photoCandidates(p)[0];
+    var pr=pricing(p);
+    var priceMain = pr.isSelkirk? money(p.price) : money(pr.finalPrice);
+    var kc=kewcorCat(p.kewcor);
+    var f=feelEntryFor(p, PADDLES_LOCAL);
+    var quad=f?feelQuadLetter(f.x,f.y):null;
+    return '<div class="pr-shapecard'+(isFeatured?' pr-shapecard-featured':'')+'">'
+      +(isFeatured?'<div class="pr-shapecard-flag">Featured in this review</div>':'')
+      +'<div class="pr-shapecard-head">'
+        +'<img class="pr-shapecard-photo" src="'+esc(img)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'">'
+        +'<div><div class="pr-shapecard-name">'+esc(p.paddle)+'</div>'
+        +'<div class="pr-shapecard-price">'+priceMain+'</div></div>'
+      +'</div>'
+      +'<div class="pr-shapecard-badges">'+[spinBadge(p.spinCategory),certBadge(p.cert),durTierBadge(p)].join('')+'</div>'
+      +'<div class="pr-shapecard-specs">'
+        +shapeSpecRow('L × W', (p.length!=null&&p.width!=null)?(p.length+' × '+p.width+' in'):null)
+        +shapeSpecRow('Handle', p.handleLength!=null?(p.handleLength+' in'):null)
+        +shapeSpecRow('Weight', p.weight!=null?(p.weight+' oz'):null)
+        +shapeSpecRow('Swing Wt', p.swingWeight)
+        +shapeSpecRow('Twist Wt', p.twistWeight)
+        +shapeSpecRow('Balance', p.balance!=null?(p.balance+' cm'):null)
+      +'</div>'
+      +'<div class="pr-shapecard-kewcor">'
+        +'<span>KewCOR</span><b>'+(p.kewcor!=null?p.kewcor.toFixed(3):'—')+'</b>'
+        +(kc?'<span class="badge badge-kc-'+kc.cls+'">'+esc(kc.label)+'</span>':'')
+      +'</div>'
+      +'<div class="pr-shapecard-feel"><span>Feel Map</span><b>'+(quad?(quad+' — '+esc(FEEL_QUAD[quad])):'Not placed yet')+'</b></div>'
+      +'</div>';
+  }
+  function shapeLineupHtml(seriesKeys, defaultKey, PADDLES_LOCAL){
+    if(!seriesKeys || !seriesKeys.length) return '';
+    var cards=[];
+    seriesKeys.forEach(function(k){
+      var kl=k.toLowerCase();
+      var p=PADDLES_LOCAL.find(function(x){return x.key.toLowerCase()===kl;});
+      if(p) cards.push(shapeCardHtml(p, PADDLES_LOCAL, p.key.toLowerCase()===String(defaultKey||'').toLowerCase()));
+    });
+    if(!cards.length) return '';
+    return '<div class="pr-shapegrid">'+cards.join('')+'</div>';
+  }
 
   /* ================= similar paddles (similarity score + spin durability match) =============
      A per-metric similarity score is a plain min/max ratio expressed as a percentage (e.g.
@@ -684,6 +741,12 @@ window.JKPaddleReview = (function(){
   <div class="pr-card"><div class="pr-spec-grid" id="prSpecGrid"></div></div>
   <div class="pr-prose" id="prSpecNote" style="margin-top:12px"></div>
 
+  <div id="prShapeLineupSection" hidden>
+    <div class="pr-h2">Shape Lineup</div>
+    <p class="pr-sub">This review covers every shape in the line. Specs below are per shape; the write-up that follows focuses on the featured shape.</p>
+    <div id="prShapeLineup"></div>
+  </div>
+
   <div class="pr-h2">Construction &amp; Build</div>
   <div class="pr-card pr-prose" id="prConstruction"></div>
 
@@ -880,6 +943,12 @@ window.JKPaddleReview = (function(){
       ].join('');
       document.getElementById('prSpecGrid').innerHTML = '<table class="pr-spec-table">'+specsLeft+'</table><table class="pr-spec-table">'+specsRight+'</table>';
       document.getElementById('prSpecNote').innerHTML = R.specNote ? '<p>'+R.specNote+'</p>' : '';
+
+      // shape lineup (multi-shape series reviews only -- see shapeLineupHtml() for opts.seriesKeys)
+      var shapeLineupSection = document.getElementById('prShapeLineupSection');
+      var lineupHtml = shapeLineupHtml(opts.seriesKeys, DEFAULT_KEY, PADDLES_LOCAL);
+      if(lineupHtml){ document.getElementById('prShapeLineup').innerHTML = lineupHtml; shapeLineupSection.hidden = false; }
+      else { shapeLineupSection.hidden = true; }
 
       // construction
       var constructionParts=[];
