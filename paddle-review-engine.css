@@ -58,14 +58,6 @@
   [data-theme="dark"] .pr-page .badge-tier-2{background:#16304d;color:#93c5fd}
   [data-theme="dark"] .pr-page .badge-tier-3{background:#3a2c14;color:#fcd34d}
   [data-theme="dark"] .pr-page .badge-tier-4{background:#3a1d1d;color:#fca5a5}
-  .badge-kc-blue{background:#eff6ff;color:#1d4ed8}
-  .badge-kc-teal{background:#e6fbf7;color:#0d9488}
-  .badge-kc-orange{background:#fdf2e3;color:#b45309}
-  .badge-kc-red{background:#fdeaea;color:#c0392b}
-  [data-theme="dark"] .pr-page .badge-kc-blue{background:#16304d;color:#93c5fd}
-  [data-theme="dark"] .pr-page .badge-kc-teal{background:#0f2e29;color:#5eead4}
-  [data-theme="dark"] .pr-page .badge-kc-orange{background:#3a2c14;color:#fcd34d}
-  [data-theme="dark"] .pr-page .badge-kc-red{background:#3a1d1d;color:#fca5a5}
   .badge-reviewtype-full{background:#ede9fe;color:#6d28d9}
   .badge-reviewtype-summary{background:#eef2f7;color:#475569}
   [data-theme="dark"] .pr-page .badge-reviewtype-full{background:#2a2247;color:#c4b5fd}
@@ -94,6 +86,35 @@
      which would otherwise render this button's white text green-on-green (invisible). */
   .pr-page .pr-buy{display:inline-block;background:var(--green);color:#fff;text-decoration:none;font-weight:700;font-size:13.5px;padding:10px 18px;border-radius:8px}
   .pr-page .pr-buy:hover{background:var(--green-mid)}
+
+  /* series hero (multi-shape reviews, e.g. Ronbus Tenon R1-R4 in one write-up): title +
+     byline sit above a row of per-shape photo/badges/price/buy cards, replacing the ordinary
+     single .pr-hero for these pages. */
+  #prSeriesHero{padding:22px 0 8px}
+  #prSeriesHero .pr-name{margin-bottom:6px}
+  .pr-shapeheroes{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:10px}
+  @media(max-width:900px){.pr-shapeheroes{grid-template-columns:1fr 1fr}}
+  @media(max-width:560px){.pr-shapeheroes{grid-template-columns:1fr}}
+  .pr-shapehero{position:relative;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--white)}
+  [data-theme="dark"] .pr-page .pr-shapehero{background:var(--surface,#141d27)}
+  .pr-shapehero-featured{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+  .pr-shapehero-flag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--green)}
+  .pr-shapehero-photo{width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--bg,#f1f5f9);border:1px solid var(--border)}
+  .pr-shapehero-photo img{width:100%;height:100%;object-fit:cover;display:block}
+  .pr-shapehero-name{font-weight:800;font-size:15px;color:var(--navy)}
+  [data-theme="dark"] .pr-page .pr-shapehero-name{color:var(--text)}
+  .pr-shapehero .pr-badges{margin-bottom:0}
+  .pr-shapehero .pr-price-row{margin-bottom:0}
+  .pr-shapehero .pr-buy{align-self:flex-start}
+
+  /* per-shape sections (Specs, Performance Metrics, KewCOR, Feel Map, Similar Paddles groups)
+     for series reviews -- each shape gets its own full section, stacked, clearly labeled. */
+  .pr-seriesblock{margin-bottom:22px}
+  .pr-seriesblock:last-child{margin-bottom:0}
+  .pr-seriesblock-h3{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  [data-theme="dark"] .pr-page .pr-seriesblock-h3{color:var(--text)}
+  .pr-seriesblock-flag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--green);border:1px solid var(--green);border-radius:20px;padding:2px 8px}
+  .pr-seriesblock-featured .pr-card{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
 
   /* generic section chrome */
   .pr-h2{font-size:20px;font-weight:800;color:var(--navy);margin:38px 0 6px;letter-spacing:-.2px}
@@ -188,31 +209,6 @@
   .pclf-dot{position:absolute;transform:translate(-50%,-50%)}
   .pclf-dot .pt{display:block;width:14px;height:14px;border-radius:50%;background:#ff8a00;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
   .pclf-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:12px;text-align:center;padding:0 18px}
-
-  /* shape lineup (multi-shape series reviews) */
-  .pr-shapegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-  @media(max-width:900px){.pr-shapegrid{grid-template-columns:1fr 1fr}}
-  @media(max-width:560px){.pr-shapegrid{grid-template-columns:1fr}}
-  .pr-shapecard{position:relative;border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--white)}
-  [data-theme="dark"] .pr-page .pr-shapecard{background:var(--surface,#141d27)}
-  .pr-shapecard-featured{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
-  .pr-shapecard-flag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--green);margin-bottom:8px}
-  .pr-shapecard-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-  .pr-shapecard-photo{width:40px;height:40px;border-radius:8px;object-fit:cover;background:var(--bg,#f1f5f9);flex:0 0 auto;border:1px solid var(--border)}
-  .pr-shapecard-name{font-weight:700;font-size:13px;color:var(--navy);line-height:1.25}
-  [data-theme="dark"] .pr-page .pr-shapecard-name{color:var(--text)}
-  .pr-shapecard-price{font-size:12.5px;color:var(--muted);margin-top:2px}
-  .pr-shapecard-badges{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
-  .pr-shapecard-specs{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:8px}
-  .pr-shapespec{display:flex;align-items:center;justify-content:space-between;font-size:12px}
-  .pr-shapespec span{color:var(--muted)}
-  .pr-shapespec b{color:var(--navy);font-weight:600}
-  [data-theme="dark"] .pr-page .pr-shapespec b{color:var(--text)}
-  .pr-shapecard-kewcor,.pr-shapecard-feel{display:flex;align-items:center;justify-content:space-between;font-size:12px;margin-bottom:4px}
-  .pr-shapecard-kewcor span,.pr-shapecard-feel span{color:var(--muted)}
-  .pr-shapecard-kewcor b,.pr-shapecard-feel b{color:var(--navy);font-weight:700;font-family:'DM Mono',monospace;font-size:11.5px}
-  [data-theme="dark"] .pr-page .pr-shapecard-kewcor b,[data-theme="dark"] .pr-page .pr-shapecard-feel b{color:var(--text)}
-  .pr-shapecard-kewcor .badge{margin-left:6px}
 
   /* similar paddles */
   .pr-simgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
