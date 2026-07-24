@@ -421,10 +421,11 @@ window.JKPaddleReview = (function(){
      Google Sheet (FEEL_CSV) via feelEntryFor(), which also handles paddles that have multiple
      thickness variants under one name. Overall score is the average of all 9 top-level metrics
      (with Dimensions and Weight/Balance each counting once, already averaged). A candidate needs
-     at least 60% of the top-level metrics present to be considered at all (rounded up -- 5 of 8
-     before Feel Profile was added, 6 of 9 now), so a paddle missing most of its data can't luck
-     into a high score off one or two fields. Spin Durability Tier is categorical (Tier 1-4, or
-     blank) so it gets a separate exact-match Yes/No box instead of a percentage. */
+     ALL 9 top-level metrics present to be considered at all -- a paddle missing even one (e.g.
+     no Feel Profile data yet) is excluded outright rather than scored on partial data, so it
+     can't surface as a "similar paddle" off an incomplete comparison. Spin Durability Tier is
+     categorical (Tier 1-4, or blank) so it gets a separate exact-match Yes/No box instead of a
+     percentage. */
   var SIM_DIMENSION_KEYS=['length','width','thickness','handleLength'];
   var SIM_WEIGHT_KEYS=['weight','swingWeight','twistWeight','balance'];
   function simRatio(a,b){
@@ -463,9 +464,11 @@ window.JKPaddleReview = (function(){
     };
     var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor','feel'];
     var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
-    // minimum-data threshold scales with the metric count (was 5 of 8 = 62.5%; same ratio,
-    // rounded up, applied to however many top-level metrics exist).
-    if(vals.length<Math.ceil(order.length*0.6)) return null;
+    // A candidate must have every one of the 9 top-level metrics present to be considered at
+    // all -- partial data used to be allowed (60% threshold) but that let paddles missing Feel
+    // Profile (or anything else) keep surfacing as "similar" off an incomplete comparison, which
+    // read as a data-quality bug rather than a real match. Require all 9, no partial credit.
+    if(vals.length<order.length) return null;
     return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
   }
   function findSimilarPaddles(p,PADDLES_LOCAL,n,excludeKeySet){
@@ -692,7 +695,6 @@ window.JKPaddleReview = (function(){
   </div>
 
   <div id="prSeriesHero" hidden>
-    <div class="pr-badges" id="prSeriesBadges"></div>
     <div class="pr-name" id="prSeriesTitle"></div>
     <div class="pr-byline"><img class="pr-author-pic" src="${AUTHOR_PHOTO}" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
     <div id="prSeriesHeroes"></div>
@@ -748,7 +750,7 @@ window.JKPaddleReview = (function(){
   </div>
 
   <div class="pr-h2">Feel Map</div>
-  <p class="pr-sub">Subjective feel — dense ↔ hollow (x-axis), stiff ↔ soft (y-axis).</p>
+  <p class="pr-sub" id="prFeelSub">Subjective feel — dense ↔ hollow (x-axis), stiff ↔ soft (y-axis).</p>
   <div id="prFeelSingle">
     <div class="pr-card">
       <div id="prFeel"></div>
@@ -837,11 +839,13 @@ window.JKPaddleReview = (function(){
     /* ================= multi-shape series reviews (e.g. Ronbus Tenon R1-R4 in one write-up) ===
        opts.seriesKeys (array of "Company||Paddle" keys) switches the page into series mode: one
        title/byline for the whole line, a hero row of per-shape photo+badges+price+buy cards, and
-       Specs/Performance Metrics/KewCOR/Feel Map each repeated once per shape (its own real chart,
-       not a condensed summary). Quick Take, Construction & Build, Spin Durability, On-Court
-       Impressions, Mods, Who It's For/Not For, and Final Thoughts stay singular -- they're written
-       to apply across the whole line. defaultKey's card/section is flagged "Featured in this
-       review" since Similar Paddles and the shared prose still center on that one shape. */
+       Specs/Performance Metrics/KewCOR each repeated once per shape (its own real chart, not a
+       condensed summary), Feel Map plotted as one shared chart with every shape's dot labeled.
+       Quick Take, Construction & Build, Spin Durability, On-Court Impressions, Mods, Who It's
+       For/Not For, and Final Thoughts stay singular -- they're written to apply across the whole
+       line. All shapes are treated as equals throughout -- no shape is visually flagged as
+       "featured," per John's correction that a series review isn't one shape with a sidebar
+       about the others. */
     function seriesShapes(seriesKeys, PADDLES_LOCAL){
       if(!seriesKeys || !seriesKeys.length) return [];
       var out=[];
@@ -852,12 +856,10 @@ window.JKPaddleReview = (function(){
       });
       return out;
     }
-    function seriesBlockOpen(p, defaultKey){
-      var featured = p.key.toLowerCase()===String(defaultKey||'').toLowerCase();
-      return '<div class="pr-seriesblock'+(featured?' pr-seriesblock-featured':'')+'">'
-        +'<div class="pr-seriesblock-h3">'+esc(p.paddle)+(featured?' <span class="pr-seriesblock-flag">Featured in this review</span>':'')+'</div>';
+    function seriesBlockOpen(p){
+      return '<div class="pr-seriesblock"><div class="pr-seriesblock-h3">'+esc(p.paddle)+'</div>';
     }
-    function specsSeriesHtml(shapes, defaultKey){
+    function specsSeriesHtml(shapes){
       return shapes.map(function(p){
         var specsLeft=[
           renderSpecRow('Shape', esc(p.shape||'—')),
@@ -874,15 +876,15 @@ window.JKPaddleReview = (function(){
           renderSpecRow('Certification', esc(p.cert||'—')),
           renderSpecRow('Warranty', esc(p.warranty||'—'))
         ].join('');
-        return seriesBlockOpen(p, defaultKey)
+        return seriesBlockOpen(p)
           + '<div class="pr-card"><div class="pr-spec-grid">'
             + '<table class="pr-spec-table">'+specsLeft+'</table><table class="pr-spec-table">'+specsRight+'</table>'
           + '</div></div></div>';
       }).join('');
     }
-    function metricsSeriesHtml(shapes, defaultKey){
+    function metricsSeriesHtml(shapes){
       return shapes.map(function(p){
-        return seriesBlockOpen(p, defaultKey)
+        return seriesBlockOpen(p)
           + '<div class="pr-card"><div class="pr-charts">'
             + '<div><div class="pr-cap">Scaled (Radar)</div><div>'+radarSVG(p)+'</div><div class="pr-legend">'+radarLegend(p)+'</div></div>'
             + '<div><div class="pr-cap">Raw Z-Scores</div><div>'+bulletSVG(p)+'</div></div>'
@@ -890,38 +892,57 @@ window.JKPaddleReview = (function(){
       }).join('');
     }
     var GAUGE_LEGEND_HTML = '<span><i style="background:#2563eb"></i>Control</span><span><i style="background:#0d9488"></i>All-Court</span><span><i style="background:#d97706"></i>Power</span><span><i style="background:#dc2626"></i>Beyond Spec</span>';
-    function kewcorSeriesHtml(shapes, defaultKey){
+    function kewcorSeriesHtml(shapes){
       return shapes.map(function(p){
         var kcCat=kewcorCat(p.kewcor);
         var surf=surfaceSVG(p);
         var surfHtml = surf ? ('<div class="pcl-surf">'+surf+'</div>') : '<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:30px 10px">No centerline surface data for this paddle yet.</div>';
-        return seriesBlockOpen(p, defaultKey)
+        return seriesBlockOpen(p)
           + '<div class="pr-card"><div class="pr-charts">'
             + '<div><div class="pr-cap">KewCOR Score</div><div>'+gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3)+'</div><div class="pr-gauge-legend">'+GAUGE_LEGEND_HTML+'</div></div>'
             + '<div><div class="pr-cap">Across-the-Face Curve</div><div>'+surfHtml+'</div></div>'
           + '</div></div></div>';
       }).join('');
     }
-    function feelSeriesHtml(shapes, PADDLES_LOCAL, defaultKey){
-      return shapes.map(function(p){
-        return seriesBlockOpen(p, defaultKey)
-          + '<div class="pr-card">'+feelColMarkup(p, PADDLES_LOCAL)+'</div></div>';
+    // One shared Feel Map chart with every shape's dot plotted and labeled (instead of a
+    // separate chart per shape) -- easier to compare shapes at a glance, and treats them as
+    // points on the same map rather than N parallel sections. Label defaults to p.shape (e.g.
+    // "R1"); falls back to the full paddle name if a shape field isn't set.
+    function feelSeriesChartHtml(shapes, PADDLES_LOCAL){
+      var placed = [];
+      var markers = shapes.map(function(p){
+        var f = feelEntryFor(p, PADDLES_LOCAL);
+        if(!f) return '';
+        placed.push(p);
+        var label = p.shape || p.paddle;
+        return '<div class="pclf-dot pclf-dot-multi" style="left:'+(50+(f.x/5)*40)+'%;top:'+(50-(f.y/5)*40)+'%" title="'+esc(p.paddle)+' ('+f.x.toFixed(2)+', '+f.y.toFixed(2)+')">'
+          + '<span class="pt"></span><span class="pclf-dot-label">'+esc(label)+'</span></div>';
       }).join('');
+      var body = placed.length ? markers : '<div class="pclf-empty">Not placed on the feel map yet.</div>';
+      var legend = placed.length ? ('<div class="pclf-multi-legend">'+placed.map(function(p){
+        return '<span><b>'+esc(p.shape||p.paddle)+'</b> '+esc(p.paddle)+'</span>';
+      }).join('')+'</div>') : '';
+      return '<div class="pclf-frame">'
+        +'<span class="pclf-edge t">STIFF</span><span class="pclf-edge b">SOFT</span>'
+        +'<span class="pclf-edge l">DENSE</span><span class="pclf-edge r">HOLLOW</span>'
+        +'<div class="pclf-map">'+FEEL_SVG
+        +'<div class="pclf-quad a">A</div><div class="pclf-quad b">B</div><div class="pclf-quad c">C</div><div class="pclf-quad d">D</div>'
+        +'<div class="pclf-markers">'+body+'</div></div>'
+        +'</div>'
+        + legend;
     }
-    function seriesHeroCard(p, defaultKey){
+    function seriesHeroCard(p){
       var cands=photoCandidates(p);
       var pr2=pricing(p);
       var priceMain = pr2.isSelkirk? money(p.price) : money(pr2.finalPrice);
       var strike = (!pr2.isSelkirk && pr2.savedAmt>0.005) ? '<span class="pr-strike">'+money(p.price)+'</span>' : '';
-      var featured = p.key.toLowerCase()===String(defaultKey||'').toLowerCase();
       var badges=[
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
         spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
       ].join('');
       var buyHtml = (p.link && /^https?:/i.test(p.link))
         ? '<a class="pr-buy" href="'+esc(p.link)+'" target="_blank" rel="noopener noreferrer">Buy Now →</a>' : '';
-      return '<div class="pr-shapehero'+(featured?' pr-shapehero-featured':'')+'">'
-        +(featured?'<div class="pr-shapehero-flag">Featured in this review</div>':'')
+      return '<div class="pr-shapehero">'
         +'<div class="pr-shapehero-photo"><img src="'+esc(cands[0])+'" alt="'+esc(p.company+' '+p.paddle)+'" loading="lazy" onerror="this.style.visibility=\'hidden\'"></div>'
         +'<div class="pr-shapehero-name">'+esc(p.paddle)+'</div>'
         +'<div class="pr-badges">'+badges+'</div>'
@@ -932,8 +953,8 @@ window.JKPaddleReview = (function(){
         + buyHtml
         +'</div>';
     }
-    function seriesHeroesHtml(shapes, defaultKey){
-      return '<div class="pr-shapeheroes">'+shapes.map(function(p){return seriesHeroCard(p, defaultKey);}).join('')+'</div>';
+    function seriesHeroesHtml(shapes){
+      return '<div class="pr-shapeheroes">'+shapes.map(function(p){return seriesHeroCard(p);}).join('')+'</div>';
     }
     function similarPaddlesSeriesHtml(shapes, PADDLES_LOCAL){
       // Candidates never include other shapes from the same series -- e.g. Tenon R1 shouldn't
@@ -984,7 +1005,6 @@ window.JKPaddleReview = (function(){
       document.getElementById('prBrand').textContent = p.company;
       document.getElementById('prName').textContent = p.paddle + ' Paddle Review';
       document.getElementById('prBadges').innerHTML = [
-        ytId ? '<span class="badge badge-reviewtype-full">Full Review</span>' : '<span class="badge badge-reviewtype-summary">Executive Summary</span>',
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
         p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
         spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
@@ -1002,11 +1022,8 @@ window.JKPaddleReview = (function(){
       document.getElementById('prSingleHero').hidden = isSeries;
       var seriesHeroEl = document.getElementById('prSeriesHero');
       if(isSeries){
-        document.getElementById('prSeriesBadges').innerHTML = ytId
-          ? '<span class="badge badge-reviewtype-full">Full Review</span>'
-          : '<span class="badge badge-reviewtype-summary">Executive Summary</span>';
         document.getElementById('prSeriesTitle').textContent = opts.seriesTitle || (p.company+' Series Paddle Review');
-        document.getElementById('prSeriesHeroes').innerHTML = seriesHeroesHtml(shapes, DEFAULT_KEY);
+        document.getElementById('prSeriesHeroes').innerHTML = seriesHeroesHtml(shapes);
         seriesHeroEl.hidden = false;
       } else {
         seriesHeroEl.hidden = true;
@@ -1057,7 +1074,7 @@ window.JKPaddleReview = (function(){
       document.getElementById('prSpecNote').innerHTML = R.specNote ? '<p>'+R.specNote+'</p>' : '';
       document.getElementById('prSpecsSingle').hidden = isSeries;
       var specsSeriesEl = document.getElementById('prSpecsSeries');
-      if(isSeries){ specsSeriesEl.innerHTML = specsSeriesHtml(shapes, DEFAULT_KEY); specsSeriesEl.hidden = false; }
+      if(isSeries){ specsSeriesEl.innerHTML = specsSeriesHtml(shapes); specsSeriesEl.hidden = false; }
       else { specsSeriesEl.hidden = true; specsSeriesEl.innerHTML = ''; }
 
       // construction
@@ -1082,7 +1099,7 @@ window.JKPaddleReview = (function(){
       document.getElementById('prMetricsNote').innerHTML = R.metricsNote ? '<p>'+R.metricsNote+'</p>' : '';
       document.getElementById('prMetricsSingle').hidden = isSeries;
       var metricsSeriesEl = document.getElementById('prMetricsSeries');
-      if(isSeries){ metricsSeriesEl.innerHTML = metricsSeriesHtml(shapes, DEFAULT_KEY); metricsSeriesEl.hidden = false; }
+      if(isSeries){ metricsSeriesEl.innerHTML = metricsSeriesHtml(shapes); metricsSeriesEl.hidden = false; }
       else { metricsSeriesEl.hidden = true; metricsSeriesEl.innerHTML = ''; }
 
       // kewcor
@@ -1093,19 +1110,23 @@ window.JKPaddleReview = (function(){
       refreshSurfaceChart(p);
       document.getElementById('prKewcorSingle').hidden = isSeries;
       var kewcorSeriesEl = document.getElementById('prKewcorSeries');
-      if(isSeries){ kewcorSeriesEl.innerHTML = kewcorSeriesHtml(shapes, DEFAULT_KEY); kewcorSeriesEl.hidden = false; }
+      if(isSeries){ kewcorSeriesEl.innerHTML = kewcorSeriesHtml(shapes); kewcorSeriesEl.hidden = false; }
       else { kewcorSeriesEl.hidden = true; kewcorSeriesEl.innerHTML = ''; }
 
       // spin durability
       document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
       document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? proseHtml(R.spinDurabilityNote) : '';
 
-      // feel map
+      // feel map -- series reviews plot every shape's dot on one shared chart instead of a
+      // separate chart per shape
       refreshFeelChart(p, PADDLES_LOCAL);
       document.getElementById('prFeelNote').innerHTML = R.feelNote ? proseHtml(R.feelNote) : '';
+      document.getElementById('prFeelSub').textContent = isSeries
+        ? 'Subjective feel — dense ↔ hollow (x-axis), stiff ↔ soft (y-axis). Every shape in this line is plotted and labeled below.'
+        : 'Subjective feel — dense ↔ hollow (x-axis), stiff ↔ soft (y-axis).';
       document.getElementById('prFeelSingle').hidden = isSeries;
       var feelSeriesEl = document.getElementById('prFeelSeries');
-      if(isSeries){ feelSeriesEl.innerHTML = feelSeriesHtml(shapes, PADDLES_LOCAL, DEFAULT_KEY); feelSeriesEl.hidden = false; }
+      if(isSeries){ feelSeriesEl.innerHTML = feelSeriesChartHtml(shapes, PADDLES_LOCAL); feelSeriesEl.hidden = false; }
       else { feelSeriesEl.hidden = true; feelSeriesEl.innerHTML = ''; }
 
       // similar paddles (data-driven, shown on both Executive Summary and Full Review) -- series
@@ -1143,9 +1164,27 @@ window.JKPaddleReview = (function(){
       // bottom purchase CTA -- repeats the header's price/discount/buy-link data (same `pr`,
       // `priceMain`, `strike` computed above) so a reader who scrolls straight to the verdict
       // still sees pricing without scrolling back up. Whole section hides if there's no link.
+      // Series reviews show one price row (same price across shapes, per John) but a Buy Now
+      // button per shape, since each shape has its own purchase link.
       var buySection = document.getElementById('prBuySection'), buyBoxBottom = document.getElementById('prBuyBoxBottom');
       if(buySection && buyBoxBottom){
-        if(p.link && /^https?:/i.test(p.link)){
+        if(isSeries){
+          var buyLinks = shapes.filter(function(s){ return s.link && /^https?:/i.test(s.link); });
+          if(buyLinks.length){
+            buyBoxBottom.innerHTML = '<div class="pr-price-row">'
+              + '<span class="pr-price">'+priceMain+'</span>'+strike
+              + (p.discountCode?('<span class="pr-code">'+esc(p.discountCode)+'</span>'
+                + '<button type="button" class="pr-copy-btn" onclick="JKPaddleReview.copyCode(this,\''+esc(p.discountCode).replace(/'/g,"&#39;")+'\')">Copy code</button>'):'')
+              + '</div>'
+              + '<div class="pr-buy-group">'+buyLinks.map(function(s){
+                  return '<a class="pr-buy" href="'+esc(s.link)+'" target="_blank" rel="noopener noreferrer">Buy '+esc(s.shape||s.paddle)+' →</a>';
+                }).join('')+'</div>';
+            buySection.hidden = false;
+          } else {
+            buySection.hidden = true;
+            buyBoxBottom.innerHTML = '';
+          }
+        } else if(p.link && /^https?:/i.test(p.link)){
           buyBoxBottom.innerHTML = '<div class="pr-price-row">'
             + '<span class="pr-price">'+priceMain+'</span>'+strike
             + (p.discountCode?('<span class="pr-code">'+esc(p.discountCode)+'</span>'
@@ -1198,7 +1237,7 @@ window.JKPaddleReview = (function(){
     function refreshFeelAndSimilar(p, PADDLES_LOCAL){
       var shapesNow = seriesShapes(opts.seriesKeys, PADDLES_LOCAL);
       if(shapesNow.length){
-        document.getElementById('prFeelSeries').innerHTML = feelSeriesHtml(shapesNow, PADDLES_LOCAL, DEFAULT_KEY);
+        document.getElementById('prFeelSeries').innerHTML = feelSeriesChartHtml(shapesNow, PADDLES_LOCAL);
         document.getElementById('prSimilarSeries').innerHTML = similarPaddlesSeriesHtml(shapesNow, PADDLES_LOCAL);
       } else {
         refreshFeelChart(p, PADDLES_LOCAL);
@@ -1225,7 +1264,7 @@ window.JKPaddleReview = (function(){
               var live=buildSurfaceMap(parseSurfaceRows(sres.data), PADDLES, targetKeys);
               for(var k in live) SURFACE_MAP[k]=live[k];
               refreshSurfaceChart(p);
-              if(shapesForSurface.length){ document.getElementById('prKewcorSeries').innerHTML = kewcorSeriesHtml(shapesForSurface, DEFAULT_KEY); }
+              if(shapesForSurface.length){ document.getElementById('prKewcorSeries').innerHTML = kewcorSeriesHtml(shapesForSurface); }
             }catch(e){}
           }
         },error:function(){}});

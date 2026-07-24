@@ -10,6 +10,13 @@
   [data-theme="dark"] .pr-page{--bg:#0b1622;--white:#101d2b;--text:#e6edf3;--border:#233246;--muted:#8fa3b8;--green-light:#0f2b20}
   .pr-page a{color:var(--green)}
   .pr-wrap{max-width:840px;margin:0 auto;padding:0 18px 80px}
+  /* Belt-and-suspenders fix: several elements below (.pr-hero, .pr-card, etc.) set `display`
+     directly via a class. Per the CSS cascade, an author-origin rule always beats the browser's
+     default user-agent [hidden]{display:none} rule regardless of selector specificity -- so
+     setting the `hidden` attribute on an element that also carries one of those classes was
+     silently NOT hiding it (e.g. the single-paddle hero stayed visible on series review pages
+     even with .hidden=true set in JS). Force it. */
+  .pr-page [hidden]{display:none!important}
 
   /* status */
   .pr-status{max-width:840px;margin:60px auto;text-align:center;color:var(--muted);font-size:15px}
@@ -58,10 +65,6 @@
   [data-theme="dark"] .pr-page .badge-tier-2{background:#16304d;color:#93c5fd}
   [data-theme="dark"] .pr-page .badge-tier-3{background:#3a2c14;color:#fcd34d}
   [data-theme="dark"] .pr-page .badge-tier-4{background:#3a1d1d;color:#fca5a5}
-  .badge-reviewtype-full{background:#ede9fe;color:#6d28d9}
-  .badge-reviewtype-summary{background:#eef2f7;color:#475569}
-  [data-theme="dark"] .pr-page .badge-reviewtype-full{background:#2a2247;color:#c4b5fd}
-  [data-theme="dark"] .pr-page .badge-reviewtype-summary{background:#1c2733;color:#94a3b8}
 
   /* full-review video card */
   .pr-video-card{display:flex;gap:14px;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;text-decoration:none;margin:14px 0 0}
@@ -97,8 +100,6 @@
   @media(max-width:560px){.pr-shapeheroes{grid-template-columns:1fr}}
   .pr-shapehero{position:relative;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--radius);padding:14px;background:var(--white)}
   [data-theme="dark"] .pr-page .pr-shapehero{background:var(--surface,#141d27)}
-  .pr-shapehero-featured{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
-  .pr-shapehero-flag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--green)}
   .pr-shapehero-photo{width:100%;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--bg,#f1f5f9);border:1px solid var(--border)}
   .pr-shapehero-photo img{width:100%;height:100%;object-fit:cover;display:block}
   .pr-shapehero-name{font-weight:800;font-size:15px;color:var(--navy)}
@@ -107,14 +108,24 @@
   .pr-shapehero .pr-price-row{margin-bottom:0}
   .pr-shapehero .pr-buy{align-self:flex-start}
 
-  /* per-shape sections (Specs, Performance Metrics, KewCOR, Feel Map, Similar Paddles groups)
-     for series reviews -- each shape gets its own full section, stacked, clearly labeled. */
+  /* per-shape sections (Specs, Performance Metrics, KewCOR, Similar Paddles groups) for series
+     reviews -- each shape gets its own full section, stacked, clearly labeled. All shapes are
+     equals; none is visually flagged. */
   .pr-seriesblock{margin-bottom:22px}
   .pr-seriesblock:last-child{margin-bottom:0}
   .pr-seriesblock-h3{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   [data-theme="dark"] .pr-page .pr-seriesblock-h3{color:var(--text)}
-  .pr-seriesblock-flag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--green);border:1px solid var(--green);border-radius:20px;padding:2px 8px}
-  .pr-seriesblock-featured .pr-card{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+
+  /* multiple dots on one shared Feel Map chart (series reviews) */
+  .pclf-dot-multi .pt{background:#2d9cdb}
+  .pclf-dot-label{position:absolute;left:100%;top:50%;transform:translate(5px,-50%);font-size:10px;font-weight:700;color:var(--navy);background:var(--white);border:1px solid var(--border);padding:1px 5px;border-radius:5px;white-space:nowrap;pointer-events:none}
+  [data-theme="dark"] .pr-page .pclf-dot-label{color:var(--text)}
+  .pclf-multi-legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin-top:14px;font-size:12px;color:var(--muted)}
+  .pclf-multi-legend b{color:var(--navy);font-family:'DM Mono',monospace;margin-right:4px}
+  [data-theme="dark"] .pr-page .pclf-multi-legend b{color:var(--text)}
+
+  /* multiple Buy Now buttons in the bottom purchase CTA (series reviews -- one per shape) */
+  .pr-buy-group{display:flex;flex-wrap:wrap;gap:10px}
 
   /* generic section chrome */
   .pr-h2{font-size:20px;font-weight:800;color:var(--navy);margin:38px 0 6px;letter-spacing:-.2px}
