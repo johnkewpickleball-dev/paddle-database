@@ -410,20 +410,23 @@ window.JKPaddleReview = (function(){
   /* ================= similar paddles (similarity score + spin durability match) =============
      A per-metric similarity score is a plain min/max ratio expressed as a percentage (e.g.
      reviewed=100, candidate=90 -> 90%). That only produces a sane number for metrics that are
-     always >0 on a shared scale, which is true of every ratio-based metric used here: the four
-     *Scaled fields and Firepower/Hand-Speed-Index are already 0-100 scaled scores (not raw +/-
-     Z-scores, which a min/max ratio would mangle), KewCOR and every physical dimension/weight
-     field are plain positive measurements. Dimensions and Weight/Balance are each an average of
-     4 sub-metrics rolled into one number -- individual sub-scores are intentionally not exposed,
-     per spec. Feel Profile is different: Feel Map x/y coordinates (dense<->hollow, soft<->stiff)
-     run -5..+5, so a ratio would mangle negative values -- it uses a distance-based formula
-     instead (axisSim: 100*(1-|a-b|/10), the two axes averaged), pulled from the same Feel Map
-     Google Sheet (FEEL_CSV) via feelEntryFor(), which also handles paddles that have multiple
-     thickness variants under one name. Overall score is the average of all 9 top-level metrics
-     (with Dimensions and Weight/Balance each counting once, already averaged). A candidate needs
-     ALL 9 top-level metrics present to be considered at all -- a paddle missing even one (e.g.
-     no Feel Profile data yet) is excluded outright rather than scored on partial data, so it
-     can't surface as a "similar paddle" off an incomplete comparison. Spin Durability Tier is
+     always >0 on a shared scale, which is true of every ratio-based metric used here: the
+     *Scaled fields are already 0-100 scaled scores (not raw +/- Z-scores, which a min/max ratio
+     would mangle), KewCOR and every physical dimension/weight field are plain positive
+     measurements. Dimensions and Weight/Balance are each an average of 4 sub-metrics rolled into
+     one number -- individual sub-scores are intentionally not exposed, per spec. Feel Profile is
+     different: Feel Map x/y coordinates (dense<->hollow, soft<->stiff) run -5..+5, so a ratio
+     would mangle negative values -- it uses a distance-based formula instead (axisSim:
+     100*(1-|a-b|/10), the two axes averaged), pulled from the same Feel Map Google Sheet
+     (FEEL_CSV) via feelEntryFor(), which also handles paddles that have multiple thickness
+     variants under one name. Firepower and Hand Speed Index are deliberately excluded from this
+     metric set: Firepower is itself an average of Power and Pop, and Hand Speed Index is derived
+     from the Weight/Balance figures, so both would double-count metrics already represented and
+     skew the overall score. Overall score is the average of all 7 top-level metrics (with
+     Dimensions and Weight/Balance each counting once, already averaged). A candidate needs ALL 7
+     top-level metrics present to be considered at all -- a paddle missing even one (e.g. no Feel
+     Profile data yet) is excluded outright rather than scored on partial data, so it can't
+     surface as a "similar paddle" off an incomplete comparison. Spin Durability Tier is
      categorical (Tier 1-4, or blank) so it gets a separate exact-match Yes/No box instead of a
      percentage. */
   var SIM_DIMENSION_KEYS=['length','width','thickness','handleLength'];
@@ -451,23 +454,26 @@ window.JKPaddleReview = (function(){
     return (xs+ys)/2;
   }
   function paddleSimilarity(p,q,PADDLES_LOCAL){
+    // Firepower and Hand Speed were dropped from this metric set (previously 9 metrics, now 7):
+    // Firepower is itself an average of Power and Pop, so keeping it double-counted those two
+    // metrics; Hand Speed Index is derived from the Weight/Balance figures, so it double-counted
+    // that metric too. Both were skewing the overall score toward whichever paddles matched on
+    // power/pop/weight, rather than reflecting a genuinely broader comparison.
     var m={
       spin:simRatio(p.spinScaled,q.spinScaled),
       dimensions:simAvg(p,q,SIM_DIMENSION_KEYS),
       weightBalance:simAvg(p,q,SIM_WEIGHT_KEYS),
-      handSpeed:simRatio(p.swingResist,q.swingResist),
       power:simRatio(p.powerScaled,q.powerScaled),
       pop:simRatio(p.popScaled,q.popScaled),
-      firepower:simRatio(p.firepower,q.firepower),
       kewcor:simRatio(p.kewcor,q.kewcor),
       feel:feelSim(p,q,PADDLES_LOCAL)
     };
-    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor','feel'];
+    var order=['spin','dimensions','weightBalance','power','pop','kewcor','feel'];
     var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
-    // A candidate must have every one of the 9 top-level metrics present to be considered at
+    // A candidate must have every one of the 7 top-level metrics present to be considered at
     // all -- partial data used to be allowed (60% threshold) but that let paddles missing Feel
     // Profile (or anything else) keep surfacing as "similar" off an incomplete comparison, which
-    // read as a data-quality bug rather than a real match. Require all 9, no partial credit.
+    // read as a data-quality bug rather than a real match. Require all 7, no partial credit.
     if(vals.length<order.length) return null;
     return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
   }
@@ -485,7 +491,7 @@ window.JKPaddleReview = (function(){
     scored.sort(function(a,b){return b.sim.overall-a.sim.overall;});
     return scored.slice(0,n||4);
   }
-  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR',feel:'Feel Profile'};
+  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',power:'Power',pop:'Pop',kewcor:'KewCOR',feel:'Feel Profile'};
   function simMetricRow(key,val){
     return '<div class="pr-simmetric"><span class="pr-simmetric-label">'+esc(SIM_METRIC_LABELS[key])+'</span>'
       +'<span class="pr-simmetric-val">'+(val==null?'—':Math.round(val)+'%')+'</span></div>';
@@ -760,7 +766,7 @@ window.JKPaddleReview = (function(){
   <div id="prFeelSeries" hidden></div>
 
   <div class="pr-h2">Similar Paddles</div>
-  <p class="pr-sub" id="prSimilarSub">The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, KewCOR, and feel profile.</p>
+  <p class="pr-sub" id="prSimilarSub">The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, power, pop, KewCOR, and feel profile.</p>
   <div class="pr-card" id="prSimilar"></div>
   <div id="prSimilarSeries" hidden></div>
 
@@ -859,6 +865,18 @@ window.JKPaddleReview = (function(){
     function seriesBlockOpen(p){
       return '<div class="pr-seriesblock"><div class="pr-seriesblock-h3">'+esc(p.paddle)+'</div>';
     }
+    // Short manufacturer shape/model code for a series shape (e.g. "R1" out of "Tenon R1.16"),
+    // used where the full paddle name would be redundant (Feel Map dots/legend, bottom Buy Now
+    // buttons). The Shape column holds a physical shape *category* (Elongated, Widebody, etc.),
+    // not this per-model code, so it can't be used here. Instead this pulls the first
+    // letter(s)+digits token out of the paddle name (matches "R1", "R2", "X3", etc. -- the
+    // common convention for numbered variants within a paddle line). Falls back to the full
+    // paddle name if no such token is found.
+    var SERIES_DOT_COLORS=['#ff8a00','#2d9cdb','#27ae60','#a855f7','#eb5757','#eab308'];
+    function seriesShapeLabel(p){
+      var m=String(p.paddle||'').match(/[A-Za-z]{1,4}\d+/);
+      return m ? m[0] : (p.paddle||'');
+    }
     function specsSeriesHtml(shapes){
       return shapes.map(function(p){
         var specsLeft=[
@@ -906,21 +924,24 @@ window.JKPaddleReview = (function(){
     }
     // One shared Feel Map chart with every shape's dot plotted and labeled (instead of a
     // separate chart per shape) -- easier to compare shapes at a glance, and treats them as
-    // points on the same map rather than N parallel sections. Label defaults to p.shape (e.g.
-    // "R1"); falls back to the full paddle name if a shape field isn't set.
+    // points on the same map rather than N parallel sections. Each shape gets its own dot color
+    // (cycled from SERIES_DOT_COLORS by its position in the series) with a matching swatch in
+    // the legend, and both the dot label and legend use the short manufacturer shape code
+    // (seriesShapeLabel), not the physical shape category.
     function feelSeriesChartHtml(shapes, PADDLES_LOCAL){
       var placed = [];
-      var markers = shapes.map(function(p){
+      var markers = shapes.map(function(p, i){
         var f = feelEntryFor(p, PADDLES_LOCAL);
         if(!f) return '';
-        placed.push(p);
-        var label = p.shape || p.paddle;
+        var color = SERIES_DOT_COLORS[i % SERIES_DOT_COLORS.length];
+        placed.push({p:p, color:color});
+        var label = seriesShapeLabel(p);
         return '<div class="pclf-dot pclf-dot-multi" style="left:'+(50+(f.x/5)*40)+'%;top:'+(50-(f.y/5)*40)+'%" title="'+esc(p.paddle)+' ('+f.x.toFixed(2)+', '+f.y.toFixed(2)+')">'
-          + '<span class="pt"></span><span class="pclf-dot-label">'+esc(label)+'</span></div>';
+          + '<span class="pt" style="background:'+color+'"></span><span class="pclf-dot-label">'+esc(label)+'</span></div>';
       }).join('');
       var body = placed.length ? markers : '<div class="pclf-empty">Not placed on the feel map yet.</div>';
-      var legend = placed.length ? ('<div class="pclf-multi-legend">'+placed.map(function(p){
-        return '<span><b>'+esc(p.shape||p.paddle)+'</b> '+esc(p.paddle)+'</span>';
+      var legend = placed.length ? ('<div class="pclf-multi-legend">'+placed.map(function(item){
+        return '<span><i class="pclf-legend-swatch" style="background:'+item.color+'"></i><b>'+esc(seriesShapeLabel(item.p))+'</b> '+esc(item.p.paddle)+'</span>';
       }).join('')+'</div>') : '';
       return '<div class="pclf-frame">'
         +'<span class="pclf-edge t">STIFF</span><span class="pclf-edge b">SOFT</span>'
@@ -1133,8 +1154,8 @@ window.JKPaddleReview = (function(){
       // reviews show the top 2 matches per shape (8 total) instead of the top 4 for one paddle,
       // and exclude other shapes in the same series from being suggested as "similar".
       document.getElementById('prSimilarSub').textContent = isSeries
-        ? 'The 2 paddles in the database with the closest overall performance profile to each shape (excluding the other shapes in this series), scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, KewCOR, and feel profile.'
-        : 'The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, KewCOR, and feel profile.';
+        ? 'The 2 paddles in the database with the closest overall performance profile to each shape (excluding the other shapes in this series), scored across spin, dimensions, weight/balance, power, pop, KewCOR, and feel profile.'
+        : 'The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, power, pop, KewCOR, and feel profile.';
       var similarEl = document.getElementById('prSimilar'), similarSeriesEl = document.getElementById('prSimilarSeries');
       if(isSeries){
         similarEl.hidden = true; similarEl.innerHTML = '';
@@ -1177,7 +1198,7 @@ window.JKPaddleReview = (function(){
                 + '<button type="button" class="pr-copy-btn" onclick="JKPaddleReview.copyCode(this,\''+esc(p.discountCode).replace(/'/g,"&#39;")+'\')">Copy code</button>'):'')
               + '</div>'
               + '<div class="pr-buy-group">'+buyLinks.map(function(s){
-                  return '<a class="pr-buy" href="'+esc(s.link)+'" target="_blank" rel="noopener noreferrer">Buy '+esc(s.shape||s.paddle)+' →</a>';
+                  return '<a class="pr-buy" href="'+esc(s.link)+'" target="_blank" rel="noopener noreferrer">Buy '+esc(seriesShapeLabel(s))+' →</a>';
                 }).join('')+'</div>';
             buySection.hidden = false;
           } else {

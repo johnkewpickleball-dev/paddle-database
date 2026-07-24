@@ -152,13 +152,14 @@
   .pr-seriesblock-h3{font-size:15px;font-weight:800;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   [data-theme="dark"] .pr-seriesblock-h3{color:var(--text)}
 
-  /* multiple dots on one shared Feel Map chart (series reviews) */
-  .pclf-dot-multi .pt{background:#2d9cdb}
+  /* multiple dots on one shared Feel Map chart (series reviews) -- each dot's color is set
+     inline per-shape (see feelSeriesChartHtml), so no shared background rule is needed here. */
   .pclf-dot-label{position:absolute;left:100%;top:50%;transform:translate(5px,-50%);font-size:10px;font-weight:700;color:var(--navy);background:var(--white);border:1px solid var(--border);padding:1px 5px;border-radius:5px;white-space:nowrap;pointer-events:none}
   [data-theme="dark"] .pclf-dot-label{color:var(--text)}
   .pclf-multi-legend{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;margin-top:14px;font-size:12px;color:var(--muted)}
   .pclf-multi-legend b{color:var(--navy);font-family:'DM Mono',monospace;margin-right:4px}
   [data-theme="dark"] .pclf-multi-legend b{color:var(--text)}
+  .pclf-legend-swatch{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;border:1px solid rgba(0,0,0,.15)}
 
   /* multiple Buy Now buttons in the bottom purchase CTA (series reviews -- one per shape) */
   .pr-buy-group{display:flex;flex-wrap:wrap;gap:10px}
@@ -393,7 +394,7 @@
   <div id="prFeelSeries" hidden></div>
 
   <div class="pr-h2">Similar Paddles</div>
-  <p class="pr-sub" id="prSimilarSub">The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, KewCOR, and feel profile.</p>
+  <p class="pr-sub" id="prSimilarSub">The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, power, pop, KewCOR, and feel profile.</p>
   <div class="pr-card" id="prSimilar"></div>
   <div id="prSimilarSeries" hidden></div>
 
@@ -826,22 +827,24 @@
     return (xs+ys)/2;
   }
   function paddleSimilarity(p,q,PADDLES_LOCAL){
+    // Firepower and Hand Speed were dropped from this metric set (previously 9 metrics, now 7):
+    // Firepower is itself an average of Power and Pop, and Hand Speed Index is derived from the
+    // Weight/Balance figures, so both double-counted metrics already represented and skewed the
+    // overall score.
     var m={
       spin:simRatio(p.spinScaled,q.spinScaled),
       dimensions:simAvg(p,q,SIM_DIMENSION_KEYS),
       weightBalance:simAvg(p,q,SIM_WEIGHT_KEYS),
-      handSpeed:simRatio(p.swingResist,q.swingResist),
       power:simRatio(p.powerScaled,q.powerScaled),
       pop:simRatio(p.popScaled,q.popScaled),
-      firepower:simRatio(p.firepower,q.firepower),
       kewcor:simRatio(p.kewcor,q.kewcor),
       feel:feelSim(p,q,PADDLES_LOCAL)
     };
-    var order=['spin','dimensions','weightBalance','handSpeed','power','pop','firepower','kewcor','feel'];
+    var order=['spin','dimensions','weightBalance','power','pop','kewcor','feel'];
     var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
-    // A candidate must have every one of the 9 top-level metrics present -- partial data (e.g.
+    // A candidate must have every one of the 7 top-level metrics present -- partial data (e.g.
     // missing Feel Profile) used to be allowed at a 60% threshold, but that let incomplete
-    // candidates keep surfacing as "similar." Require all 9, no partial credit.
+    // candidates keep surfacing as "similar." Require all 7, no partial credit.
     if(vals.length<order.length) return null;
     return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
   }
@@ -859,7 +862,7 @@
     scored.sort(function(a,b){return b.sim.overall-a.sim.overall;});
     return scored.slice(0,n||4);
   }
-  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',handSpeed:'Hand Speed',power:'Power',pop:'Pop',firepower:'Firepower',kewcor:'KewCOR',feel:'Feel Profile'};
+  var SIM_METRIC_LABELS={spin:'Spin',dimensions:'Dimensions',weightBalance:'Weight / Balance',power:'Power',pop:'Pop',kewcor:'KewCOR',feel:'Feel Profile'};
   function simMetricRow(key,val){
     return '<div class="pr-simmetric"><span class="pr-simmetric-label">'+esc(SIM_METRIC_LABELS[key])+'</span>'
       +'<span class="pr-simmetric-val">'+(val==null?'—':Math.round(val)+'%')+'</span></div>';
@@ -1066,6 +1069,18 @@
   function seriesBlockOpen(p){
     return '<div class="pr-seriesblock"><div class="pr-seriesblock-h3">'+esc(p.paddle)+'</div>';
   }
+  // Short manufacturer shape/model code for a series shape (e.g. "R1" out of "Tenon R1.16"),
+  // used where the full paddle name would be redundant (Feel Map dots/legend, bottom Buy Now
+  // buttons). The Shape column holds a physical shape *category* (Elongated, Widebody, etc.),
+  // not this per-model code, so it can't be used here. Instead this pulls the first
+  // letter(s)+digits token out of the paddle name (matches "R1", "R2", "X3", etc. -- the common
+  // convention for numbered variants within a paddle line). Falls back to the full paddle name
+  // if no such token is found.
+  var SERIES_DOT_COLORS=['#ff8a00','#2d9cdb','#27ae60','#a855f7','#eb5757','#eab308'];
+  function seriesShapeLabel(p){
+    var m=String(p.paddle||'').match(/[A-Za-z]{1,4}\d+/);
+    return m ? m[0] : (p.paddle||'');
+  }
   function specsSeriesHtml(shapes){
     return shapes.map(function(p){
       var specsLeft=[
@@ -1111,22 +1126,25 @@
         + '</div></div></div>';
     }).join('');
   }
-  // One shared Feel Map chart with every shape's dot plotted and labeled (instead of a
-  // separate chart per shape). Label defaults to p.shape (e.g. "R1"), falls back to the full
-  // paddle name if a shape field isn't set.
+  // One shared Feel Map chart with every shape's dot plotted and labeled (instead of a separate
+  // chart per shape). Each shape gets its own dot color (cycled from SERIES_DOT_COLORS by its
+  // position in the series) with a matching swatch in the legend, and both the dot label and
+  // legend use the short manufacturer shape code (seriesShapeLabel), not the physical shape
+  // category.
   function feelSeriesChartHtml(shapes, PADDLES_LOCAL){
     var placed = [];
-    var markers = shapes.map(function(p){
+    var markers = shapes.map(function(p, i){
       var f = feelEntryFor(p, PADDLES_LOCAL);
       if(!f) return '';
-      placed.push(p);
-      var label = p.shape || p.paddle;
+      var color = SERIES_DOT_COLORS[i % SERIES_DOT_COLORS.length];
+      placed.push({p:p, color:color});
+      var label = seriesShapeLabel(p);
       return '<div class="pclf-dot pclf-dot-multi" style="left:'+(50+(f.x/5)*40)+'%;top:'+(50-(f.y/5)*40)+'%" title="'+esc(p.paddle)+' ('+f.x.toFixed(2)+', '+f.y.toFixed(2)+')">'
-        + '<span class="pt"></span><span class="pclf-dot-label">'+esc(label)+'</span></div>';
+        + '<span class="pt" style="background:'+color+'"></span><span class="pclf-dot-label">'+esc(label)+'</span></div>';
     }).join('');
     var body = placed.length ? markers : '<div class="pclf-empty">Not placed on the feel map yet.</div>';
-    var legend = placed.length ? ('<div class="pclf-multi-legend">'+placed.map(function(p){
-      return '<span><b>'+esc(p.shape||p.paddle)+'</b> '+esc(p.paddle)+'</span>';
+    var legend = placed.length ? ('<div class="pclf-multi-legend">'+placed.map(function(item){
+      return '<span><i class="pclf-legend-swatch" style="background:'+item.color+'"></i><b>'+esc(seriesShapeLabel(item.p))+'</b> '+esc(item.p.paddle)+'</span>';
     }).join('')+'</div>') : '';
     return '<div class="pclf-frame">'
       +'<span class="pclf-edge t">STIFF</span><span class="pclf-edge b">SOFT</span>'
@@ -1326,8 +1344,8 @@
     // reviews show the top 2 matches per shape (8 total) instead of the top 4 for one paddle,
     // and exclude other shapes in the same series from being suggested as "similar".
     document.getElementById('prSimilarSub').textContent = isSeries
-      ? 'The 2 paddles in the database with the closest overall performance profile to each shape (excluding the other shapes in this series), scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, KewCOR, and feel profile.'
-      : 'The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, hand speed, power, pop, firepower, KewCOR, and feel profile.';
+      ? 'The 2 paddles in the database with the closest overall performance profile to each shape (excluding the other shapes in this series), scored across spin, dimensions, weight/balance, power, pop, KewCOR, and feel profile.'
+      : 'The 4 paddles in the database with the closest overall performance profile, scored across spin, dimensions, weight/balance, power, pop, KewCOR, and feel profile.';
     var similarEl = document.getElementById('prSimilar'), similarSeriesEl = document.getElementById('prSimilarSeries');
     if(isSeries){
       similarEl.hidden = true; similarEl.innerHTML = '';
@@ -1369,7 +1387,7 @@
             + (p.discountCode?'<span class="pr-code">'+esc(p.discountCode)+'</span>':'')
             + '</div>'
             + '<div class="pr-buy-group">'+buyLinks.map(function(s){
-                return '<a class="pr-buy" href="'+esc(s.link)+'" target="_blank" rel="noopener noreferrer">Buy '+esc(s.shape||s.paddle)+' →</a>';
+                return '<a class="pr-buy" href="'+esc(s.link)+'" target="_blank" rel="noopener noreferrer">Buy '+esc(seriesShapeLabel(s))+' →</a>';
               }).join('')+'</div>';
           buySection.hidden = false;
         } else {
