@@ -69,6 +69,10 @@
                  border-radius:9px;padding:9px 10px;font-size:13px}
   .fm-add button{background:var(--accent);color:#04141f;border:0;border-radius:9px;padding:0 14px;font-weight:800;cursor:pointer;font-size:13px}
   .fm-add button:disabled{opacity:.4;cursor:default}
+  .fm-search{width:100%;background:var(--panel2);color:var(--ink);border:1px solid var(--line2);
+             border-radius:9px;padding:8px 10px;font-size:12.5px;margin-bottom:8px;box-sizing:border-box}
+  .fm-search::placeholder{color:var(--muted)}
+  .fm-search:focus{outline:1px solid var(--accent)}
   .fm-status{font-size:12px;color:var(--muted);min-height:16px;margin:6px 2px 12px}
   .fm-status.warn{color:var(--warn)} .fm-status.ok{color:var(--accent2)}
 
@@ -139,12 +143,14 @@
 
     <div class="fm-panel">
       <h2>Add paddle</h2>
+      <input type="text" id="fmSelSearch" class="fm-search" placeholder="Search paddles…" autocomplete="off">
       <div class="fm-add">
         <select id="fmSelect"><option value="">Loading paddles…</option></select>
         <button id="fmAdd" disabled>Add</button>
       </div>
       <div class="fm-status" id="fmStatus"></div>
       <h2>On the map</h2>
+      <input type="text" id="fmListSearch" class="fm-search" placeholder="Search paddles already on the map…" autocomplete="off">
       <ul class="fm-list" id="fmList"><li class="fm-empty">No paddles yet.</li></ul>
       <p class="fm-hint">Toggle the eye to show/hide a paddle on the public Lab chart without losing its position. The × removes it from the sheet entirely.</p>
     </div>
@@ -186,9 +192,14 @@
   /* ============================ STATE ============================ */
   var paddles = [];     // {company,paddle} from DB
   var items = [];       // {company,paddle,x,y,on,color}
+  var listFilter = '';  // current "On the map" search text
   var elMap=document.getElementById('fmMap'), elMarkers=document.getElementById('fmMarkers'),
       elList=document.getElementById('fmList'), elSel=document.getElementById('fmSelect'),
-      elAdd=document.getElementById('fmAdd'), elStatus=document.getElementById('fmStatus');
+      elAdd=document.getElementById('fmAdd'), elStatus=document.getElementById('fmStatus'),
+      elSelSearch=document.getElementById('fmSelSearch'), elListSearch=document.getElementById('fmListSearch');
+
+  function matches(hay, q){ return norm2(hay).indexOf(norm2(q))>-1; }
+  function norm2(s){ return String(s==null?'':s).toLowerCase(); }
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function keyOf(c,p){return (c+'||'+p).toLowerCase().trim();}
@@ -232,6 +243,19 @@
   /* ============================ RENDER ============================ */
   function colorFor(i){ return PALETTE[i%PALETTE.length]; }
 
+  // Rebuilds the "Add paddle" <option> list from the full paddles[] array,
+  // filtered by search text. option value stays the paddle's real index into
+  // paddles[] (not the filtered position), so addPaddle() keeps working.
+  function renderSelect(filterText){
+    var q=(filterText||'').trim();
+    var rows = paddles.map(function(p,i){ return {p:p, i:i}; });
+    if(q) rows = rows.filter(function(r){ return matches(r.p.company+' '+r.p.paddle, q); });
+    if(!rows.length){ elSel.innerHTML='<option value="">No matches</option>'; return; }
+    elSel.innerHTML='<option value="">Select a paddle…</option>'+rows.map(function(r){
+      var multi=r.p.thicks.length>1?' · '+r.p.thicks.length+' thicknesses':'';
+      return '<option value="'+r.i+'">'+esc(r.p.company+' — '+r.p.paddle+multi)+'</option>';}).join('');
+  }
+
   function render(){
     // markers
     elMarkers.innerHTML='';
@@ -244,10 +268,17 @@
       elMarkers.appendChild(d);
       attachDrag(d, idx);
     });
-    // list
+    // list — alphabetized by paddle name, optionally filtered by search text.
+    // idx always refers to the item's real position in items[], so eye/del/drag
+    // keep working regardless of the on-screen sort/filter order.
     if(!items.length){ elList.innerHTML='<li class="fm-empty">No paddles yet.</li>'; return; }
-    elList.innerHTML = items.map(function(it,idx){
-      return '<li class="fm-li'+(it.on?'':' off')+'">'
+    var rows = items.map(function(it,idx){ return {it:it, idx:idx}; });
+    if(listFilter) rows = rows.filter(function(r){ return matches(r.it.company+' '+r.it.paddle, listFilter); });
+    rows.sort(function(a,b){ return a.it.paddle.localeCompare(b.it.paddle,undefined,{sensitivity:'base',numeric:true}); });
+    if(!rows.length){ elList.innerHTML='<li class="fm-empty">No matches.</li>'; return; }
+    elList.innerHTML = rows.map(function(r){
+      var it=r.it, idx=r.idx;
+      return '<li class="fm-li'+(it.on?'':' off')+'" data-idx="'+idx+'">'
         + '<span class="sw" style="background:'+it.color+'"></span>'
         + '<span class="lbl" title="'+esc(it.company+' — '+it.paddle)+'">'+esc(it.paddle)+'</span>'
         + '<span class="xy">'+fmt(it.x)+', '+fmt(it.y)+'</span>'
@@ -261,7 +292,7 @@
     var it=items[idx];
     var dot=elMarkers.querySelector('.fm-dot[data-idx="'+idx+'"]');
     if(dot){ dot.style.left=xPct(it.x)+'%'; dot.style.top=yPct(it.y)+'%'; }
-    var li=elList.children[idx]; if(li){ var xy=li.querySelector('.xy'); if(xy) xy.textContent=fmt(it.x)+', '+fmt(it.y); }
+    var li=elList.querySelector('.fm-li[data-idx="'+idx+'"]'); if(li){ var xy=li.querySelector('.xy'); if(xy) xy.textContent=fmt(it.x)+', '+fmt(it.y); }
   }
 
   /* ============================ DRAG ============================ */
@@ -325,6 +356,8 @@
     if(eye) toggle(+eye.dataset.idx);
     else if(del) remove(+del.dataset.idx);
   });
+  elSelSearch.addEventListener('input', function(){ renderSelect(elSelSearch.value); });
+  elListSearch.addEventListener('input', function(){ listFilter=elListSearch.value; render(); });
 
   /* ============================ OVERLAY ============================ */
   var ov=document.getElementById('fmOv'), box=document.getElementById('fmBox');
@@ -368,9 +401,7 @@
       paddles=Object.keys(gmap).map(function(k){ var g=gmap[k];
         return {company:g.company,paddle:g.paddle,thicks:Object.keys(g.thicks).map(Number).sort(function(a,b){return b-a;})};})
         .sort(function(a,b){return (a.company+' '+a.paddle).localeCompare(b.company+' '+b.paddle,undefined,{sensitivity:'base'});});
-      elSel.innerHTML='<option value="">Select a paddle…</option>'+paddles.map(function(p,i){
-        var multi=p.thicks.length>1?' · '+p.thicks.length+' thicknesses':'';
-        return '<option value="'+i+'">'+esc(p.company+' — '+p.paddle+multi)+'</option>';}).join('');
+      renderSelect(elSelSearch.value);
       elAdd.disabled=false;
     },error:function(){ if(fb) loadDB(fb,null); else elSel.innerHTML='<option value="">Could not load paddles</option>'; }});
   }
