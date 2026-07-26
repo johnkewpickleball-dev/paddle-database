@@ -50,6 +50,19 @@ window.JKPaddleReview = (function(){
   }
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  // Byline date suffix -- ", published <date>" plus an optional " (edited <date>)" tacked on
+  // whenever the review text changes after first publishing (either John editing the Google Doc
+  // directly, or an AI-drafted edit he pastes in). Works the same for Doc-backed reviews
+  // (publishedDate/editedDate come from the PUBLISHED/EDITED doc sections) and inline
+  // review:{...} objects (same two string properties, set directly). Returns '' -- no visible
+  // comma or text -- if a review hasn't set a publishedDate yet, so older/in-progress reviews
+  // degrade gracefully instead of showing "By John Kew, published undefined".
+  function bylineDateSuffix(R){
+    if(!R || !R.publishedDate) return '';
+    var s = ', published '+esc(R.publishedDate);
+    if(R.editedDate) s += ' (edited '+esc(R.editedDate)+')';
+    return s;
+  }
   // [[IMAGE: url]] or [[IMAGE: url | caption]] anywhere inside a prose field becomes an inline
   // figure. Applied uniformly to every prose field at render time, so it works the same way
   // whether the text came from an inline review:{} object or a review Doc.
@@ -564,6 +577,17 @@ window.JKPaddleReview = (function(){
          Executive Summary to Full Review is just adding these three sections to its existing
          Doc once the video is live; nothing else needs to change.
 
+       PUBLISHED
+       (one line, e.g. "July 24, 2026" -- renders in the byline as "By John Kew, published
+       July 24, 2026". Optional; omit entirely and the byline just reads "By John Kew" with no
+       date, same as before this section existed.)
+
+       EDITED
+       (one line, e.g. "July 28, 2026" -- set/update this any time the review text changes after
+       first publishing, whether John edits the Doc directly or pastes in an AI-drafted edit.
+       Renders as "(edited July 28, 2026)" tacked onto the published date. Optional; has no
+       effect without a PUBLISHED date already set.)
+
        QUICK TAKE
        (one bullet per line)
 
@@ -592,6 +616,8 @@ window.JKPaddleReview = (function(){
        (prose each)
   */
   var DOC_SECTIONS = [
+    {key:'publishedDate',      match:/^published$/i,                          single:true},
+    {key:'editedDate',         match:/^edited$/i,                             single:true},
     {key:'quickTake',          match:/^quick take$/i,                         list:true},
     {key:'videoUrl',           match:/^video$/i,                              single:true},
     {key:'constructionNote',   match:/^construction( ?&? ?build)?$/i,          list:false},
@@ -693,7 +719,7 @@ window.JKPaddleReview = (function(){
     <div class="pr-head-main">
       <div class="pr-brand" id="prBrand"></div>
       <div class="pr-name" id="prName"></div>
-      <div class="pr-byline"><img class="pr-author-pic" src="${AUTHOR_PHOTO}" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
+      <div class="pr-byline"><img class="pr-author-pic" src="${AUTHOR_PHOTO}" alt="John Kew" onerror="this.style.display='none'">By John Kew<span id="prPubDate"></span></div>
       <div class="pr-badges" id="prBadges"></div>
       <div class="pr-price-row" id="prPriceRow"></div>
       <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
@@ -702,7 +728,7 @@ window.JKPaddleReview = (function(){
 
   <div id="prSeriesHero" hidden>
     <div class="pr-name" id="prSeriesTitle"></div>
-    <div class="pr-byline"><img class="pr-author-pic" src="${AUTHOR_PHOTO}" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
+    <div class="pr-byline"><img class="pr-author-pic" src="${AUTHOR_PHOTO}" alt="John Kew" onerror="this.style.display='none'">By John Kew<span id="prSeriesPubDate"></span></div>
     <div id="prSeriesHeroes"></div>
   </div>
 
@@ -1025,6 +1051,7 @@ window.JKPaddleReview = (function(){
 
       document.getElementById('prBrand').textContent = p.company;
       document.getElementById('prName').textContent = p.paddle + ' Paddle Review';
+      document.getElementById('prPubDate').innerHTML = bylineDateSuffix(R);
       document.getElementById('prBadges').innerHTML = [
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
         p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
@@ -1044,6 +1071,7 @@ window.JKPaddleReview = (function(){
       var seriesHeroEl = document.getElementById('prSeriesHero');
       if(isSeries){
         document.getElementById('prSeriesTitle').textContent = opts.seriesTitle || (p.company+' Series Paddle Review');
+        document.getElementById('prSeriesPubDate').innerHTML = bylineDateSuffix(R);
         document.getElementById('prSeriesHeroes').innerHTML = seriesHeroesHtml(shapes);
         seriesHeroEl.hidden = false;
       } else {

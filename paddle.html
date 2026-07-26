@@ -88,8 +88,8 @@
   .pr-brand{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--green);margin-bottom:4px}
   .pr-name{font-size:clamp(24px,4vw,32px);font-weight:800;color:var(--navy);letter-spacing:-.4px;line-height:1.15;margin-bottom:6px}
   [data-theme="dark"] .pr-name{color:var(--text)}
-  .pr-byline{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--muted);margin-bottom:14px}
-  .pr-author-pic{width:22px;height:22px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)}
+  .pr-byline{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-bottom:14px;flex-wrap:wrap}
+  .pr-author-pic{width:28px;height:28px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--border)}
   .pr-badges{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
   .badge{font-size:10.5px;padding:3px 9px;border-radius:12px;font-weight:600}
   .badge-shape{background:#eff6ff;color:#1d4ed8}
@@ -323,7 +323,7 @@
     <div class="pr-head-main">
       <div class="pr-brand" id="prBrand"></div>
       <div class="pr-name" id="prName"></div>
-      <div class="pr-byline"><img class="pr-author-pic" src="https://johnkewpickleball-dev.github.io/paddle-database/images/john-kew-author.png" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
+      <div class="pr-byline"><img class="pr-author-pic" src="https://johnkewpickleball-dev.github.io/paddle-database/images/john-kew-author.png" alt="John Kew" onerror="this.style.display='none'">By John Kew<span id="prPubDate"></span></div>
       <div class="pr-badges" id="prBadges"></div>
       <div class="pr-price-row" id="prPriceRow"></div>
       <a class="pr-buy" id="prBuyBtn" href="#" target="_blank" rel="noopener noreferrer">Buy Now →</a>
@@ -332,7 +332,7 @@
 
   <div id="prSeriesHero" hidden>
     <div class="pr-name" id="prSeriesTitle"></div>
-    <div class="pr-byline"><img class="pr-author-pic" src="https://johnkewpickleball-dev.github.io/paddle-database/images/john-kew-author.png" alt="John Kew" onerror="this.style.display='none'">By John Kew</div>
+    <div class="pr-byline"><img class="pr-author-pic" src="https://johnkewpickleball-dev.github.io/paddle-database/images/john-kew-author.png" alt="John Kew" onerror="this.style.display='none'">By John Kew<span id="prSeriesPubDate"></span></div>
     <div id="prSeriesHeroes"></div>
   </div>
 
@@ -453,6 +453,15 @@
   var PHOTO_URLS={};
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  // Byline date suffix -- ", published <date>" plus an optional " (edited <date>)" -- see
+  // paddle-review-engine.js for the full rationale. Same behavior here: reads publishedDate/
+  // editedDate directly off the REVIEWS entry, returns '' if publishedDate isn't set.
+  function bylineDateSuffix(R){
+    if(!R || !R.publishedDate) return '';
+    var s = ', published '+esc(R.publishedDate);
+    if(R.editedDate) s += ' (edited '+esc(R.editedDate)+')';
+    return s;
+  }
   function renderImageMarkers(html){
     if(!html) return html;
     return String(html).replace(/\[\[\s*IMAGE:\s*([^|\]]+?)\s*(?:\|\s*([^\]]+?)\s*)?\]\]/gi, function(m, url, cap){
@@ -1224,6 +1233,7 @@
 
     document.getElementById('prBrand').textContent = p.company;
     document.getElementById('prName').textContent = p.paddle + ' Paddle Review';
+    document.getElementById('prPubDate').innerHTML = bylineDateSuffix(R);
     document.getElementById('prBadges').innerHTML = [
       p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
       p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
@@ -1242,6 +1252,7 @@
     var seriesHeroEl = document.getElementById('prSeriesHero');
     if(isSeries){
       document.getElementById('prSeriesTitle').textContent = SERIES_TITLE || (p.company+' Series Paddle Review');
+      document.getElementById('prSeriesPubDate').innerHTML = bylineDateSuffix(R);
       document.getElementById('prSeriesHeroes').innerHTML = seriesHeroesHtml(shapes);
       seriesHeroEl.hidden = false;
     } else {
