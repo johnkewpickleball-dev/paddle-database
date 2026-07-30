@@ -1369,12 +1369,12 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + bar
       + '</div>';
   }
-  function toggleSpecInfo(btn){
+  window.toggleSpecInfo = function(btn){
     var pop=btn.nextElementSibling, wasOpen = pop && pop.classList.contains('show');
     document.querySelectorAll('.spec-info-pop.show').forEach(function(p){ p.classList.remove('show'); });
     document.querySelectorAll('.spec-info-btn[aria-expanded="true"]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
     if(pop && !wasOpen){ pop.classList.add('show'); btn.setAttribute('aria-expanded','true'); }
-  }
+  };
   document.addEventListener('click', function(e){
     if(e.target.closest('.spec-info-btn') || e.target.closest('.spec-info-pop')) return;
     document.querySelectorAll('.spec-info-pop.show').forEach(function(p){ p.classList.remove('show'); });
