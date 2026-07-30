@@ -345,8 +345,17 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .perf-label{font-size:10px;color:var(--muted)}
   .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
   .spec-item{background:var(--bg);border-radius:7px;padding:9px 11px}
-  .spec-label{font-size:11px;color:var(--muted);margin-bottom:2px}
+  .spec-label{font-size:11px;color:var(--muted);margin-bottom:2px;position:relative}
   .spec-value{font-size:13px;font-weight:500}
+  .spec-info-btn{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-left:5px;
+    border-radius:50%;border:1px solid var(--muted);background:transparent;color:var(--muted);font-size:9px;font-weight:700;
+    font-style:italic;font-family:Georgia,'Times New Roman',serif;line-height:1;cursor:pointer;padding:0;vertical-align:middle}
+  .spec-info-btn:hover,.spec-info-btn[aria-expanded="true"]{background:var(--muted);color:#fff;border-color:var(--muted)}
+  .spec-info-pop{display:none;position:absolute;z-index:40;top:calc(100% + 6px);left:0;width:220px;max-width:70vw;
+    background:#0d1f2d;color:#f5f7fa;font-size:11px;font-weight:400;line-height:1.45;padding:8px 10px;border-radius:8px;
+    box-shadow:0 6px 18px rgba(0,0,0,.28)}
+  .spec-info-pop.show{display:block}
+  [data-theme="dark"] .spec-info-pop{background:#1c2f3d;box-shadow:0 6px 18px rgba(0,0,0,.5)}
   .facearea-cat{margin-left:6px;font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:8px;letter-spacing:.2px}
   .facearea-cat-blue{background:#dbeafe;color:#1d4ed8}
   .facearea-cat-teal{background:#ccfbf1;color:#0f766e}
@@ -577,6 +586,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     warranty:['warranty'], surfaceTexture:['surfacetexture','texture'],
     surfaceLayup:['surfacelayup','layup'], coreType:['coretype','core'],
     thickness:['corethicknessmm','corethickness','thickness'],
+    deflection:['deflectionlbs','deflection'],
     spinRPM:['spinrpm','rpm'], serveSpeed:['servespeedmphpower','servespeed','servemph'],
     punchVolley:['punchvolleyspeedmphpop','punchvolley','volley'],
     firepower:['firepower'], swingResist:['handspeedindex0100','handspeedindex','swingresistance0100','swingresistance','swingresist'],
@@ -754,6 +764,13 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       FACE_AREA_MAP=m; render();
     },error:function(){}});
   }
+
+  /* ---- Deflection (lbs) -- added to the main sheet 2026-07-27, UPA-A standard test.
+     Comes straight off the main paddle row (p.deflection), no separate tab/join needed.
+     Band edges are the 33rd/66th percentile of the 217 currently-measured paddles --
+     update these if the dataset changes meaningfully. */
+  var DEFLECTION_RANGE={min:13.85,max:90.89,p33:47.29,p66:56.93};
+  function deflectionCat(v){ if(v==null) return null; if(v<DEFLECTION_RANGE.p33) return {label:'Low',cls:'blue'}; if(v<DEFLECTION_RANGE.p66) return {label:'Medium',cls:'teal'}; return {label:'High',cls:'orange'}; }
   var EYE_SVG='<svg class="eng-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
   var SCALE_SVG='<svg class="eng-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M7 21h10M3 8h18M6 8l-3 6a3 3 0 0 0 6 0L6 8zm15 0l-3 6a3 3 0 0 0 6 0l-3-6z"/></svg>';
   var TUP_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10v11M2 13v6a2 2 0 0 0 2 2h13.5a2 2 0 0 0 2-1.7l1.2-7A2 2 0 0 0 19.7 10H14V5a2.5 2.5 0 0 0-5 0c0 2-2 3.5-2 5z"/></svg>';
@@ -1275,6 +1292,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       ['Surface',p.surfaceTexture||'—'],['Core Type',p.coreType||'—']
     ].map(function(s){return specItem(s[0],s[1]);}).join('');
     var layup = p.surfaceLayup?'<div class="spec-item" style="margin-top:8px"><div class="spec-label">Surface Layup</div><div class="spec-value">'+esc(p.surfaceLayup)+'</div></div>':'';
+    var deflectionHTML = deflectionSpecHTML(p);
     var faceAreaHTML = faceAreaSpecHTML(p);
     var details=[['Certification',p.cert||'—'],['Warranty',p.warranty||'—'],['Build',p.build||'—'],['Condition',p.condition||'—']].map(function(s){return specItem(s[0],s[1]);}).join('');
     var buy = (p.link && /^https?:/i.test(p.link))
@@ -1289,7 +1307,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         + (p.process?'<span class="badge badge-proc" title="Manufacturing Process">'+esc(p.process)+'</span>':'')
         + spinBadge(p.spinCategory)+durTierBadge(p)+certBadge(p.cert)+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Performance</div><div class="perf-grid">'+perf+'</div></div>'
-      + '<div class="modal-section"><div class="modal-section-title">Specifications</div><div class="spec-grid">'+specs+'</div>'+faceAreaHTML+layup+'</div>'
+      + '<div class="modal-section"><div class="modal-section-title">Specifications</div><div class="spec-grid">'+specs+'</div>'+deflectionHTML+faceAreaHTML+layup+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Details</div><div class="spec-grid">'+details+'</div></div>'
       + '<div class="pcl-buy">'+priceLine+buy+'</div>'
       + '</div>';
@@ -1324,6 +1342,44 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + bar
       + '</div>';
   }
+  function deflectionSpecHTML(p){
+    var v=p.deflection, r=DEFLECTION_RANGE, cat=deflectionCat(v);
+    var pctOf=function(x){ return Math.min(100,Math.max(0,(x-r.min)/(r.max-r.min)*100)); };
+    var lowEnd=pctOf(r.p33), medEnd=pctOf(r.p66);
+    var valueText = v==null ? '—' : fmt(v,1)+' lbs';
+    var catBadge = cat ? '<span class="facearea-cat facearea-cat-'+cat.cls+'">'+esc(cat.label)+'</span>' : '';
+    var bar = v==null ? '' :
+        '<div class="facearea-bar-wrap">'
+      +   '<div class="facearea-band facearea-band-blue" style="left:0%;width:'+lowEnd.toFixed(1)+'%"></div>'
+      +   '<div class="facearea-band facearea-band-teal" style="left:'+lowEnd.toFixed(1)+'%;width:'+(medEnd-lowEnd).toFixed(1)+'%"></div>'
+      +   '<div class="facearea-band facearea-band-orange" style="left:'+medEnd.toFixed(1)+'%;width:'+(100-medEnd).toFixed(1)+'%"></div>'
+      +   '<div class="facearea-marker" style="left:'+pctOf(v).toFixed(1)+'%" title="'+fmt(v,1)+' lbs"></div>'
+      + '</div>'
+      + '<div class="pcl-gauge-legend" style="justify-content:flex-start">'
+      +   '<span class="pcl-gl-item"><i class="gauge-blue"></i>Low</span>'
+      +   '<span class="pcl-gl-item"><i class="gauge-teal"></i>Medium</span>'
+      +   '<span class="pcl-gl-item"><i class="gauge-orange"></i>High</span>'
+      + '</div>';
+    return '<div class="spec-item" style="grid-column:1/-1;margin-top:8px">'
+      + '<div class="spec-label">Deflection (lbs)'+catBadge
+      +   '<button type="button" class="spec-info-btn" onclick="event.stopPropagation();toggleSpecInfo(this)" aria-expanded="false" aria-label="What is Deflection?">i</button>'
+      +   '<span class="spec-info-pop">Amount of force in pounds required to deflect the paddle surface to a depth of 1/16th of an inch (UPA-A standards)</span>'
+      + '</div>'
+      + '<div class="spec-value">'+esc(valueText)+'</div>'
+      + bar
+      + '</div>';
+  }
+  function toggleSpecInfo(btn){
+    var pop=btn.nextElementSibling, wasOpen = pop && pop.classList.contains('show');
+    document.querySelectorAll('.spec-info-pop.show').forEach(function(p){ p.classList.remove('show'); });
+    document.querySelectorAll('.spec-info-btn[aria-expanded="true"]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+    if(pop && !wasOpen){ pop.classList.add('show'); btn.setAttribute('aria-expanded','true'); }
+  }
+  document.addEventListener('click', function(e){
+    if(e.target.closest('.spec-info-btn') || e.target.closest('.spec-info-pop')) return;
+    document.querySelectorAll('.spec-info-pop.show').forEach(function(p){ p.classList.remove('show'); });
+    document.querySelectorAll('.spec-info-btn[aria-expanded="true"]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+  });
 
   /* ---- render ---- */
   var elSlots=document.getElementById('pclSlots'), elCompare=document.getElementById('pclCompare'),
