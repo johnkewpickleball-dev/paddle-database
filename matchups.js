@@ -2,6 +2,20 @@
 /* Edit with the admin dashboard, then commit this file to paddle-database/matchups.js */
 window.PADDLE_MATCHUPS = [
   {
+    "slug": "selkirk-boomstik-vs-omni-elongated",
+    "title": "Selkirk Boomstik vs Selkirk OMNI (Elongated)",
+    "teaser": "Two premium Selkirk elongated paddles from the same build family, tuned in opposite directions: the Boomstik is a firepower monster, the OMNI is more forgiving and controlled.",
+    "chips": [
+      "Both Elongated",
+      "$333 vs $300",
+      "Power vs Control"
+    ],
+    "date": "2026-08-01",
+    "search": "selkirk boomstik labs project omni elongated widebody power control firepower carbon epp premium",
+    "imgA": "selkirk-labs-project-boomstik-elongated",
+    "imgB": "selkirk-omni-elongated"
+  },
+  {
     "slug": "spartus-spitfire-vs-pakle-fuse",
     "title": "Spartus Spitfire vs PAKLE Fuse",
     "teaser": "Two near-identical budget power paddles. It comes down to spin (Spitfire) versus a touch more pop (Fuse).",
