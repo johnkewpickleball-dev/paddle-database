@@ -2,6 +2,20 @@
 /* Edit with the admin dashboard, then commit this file to paddle-database/matchups.js */
 window.PADDLE_MATCHUPS = [
   {
+    "slug": "spartus-spitfire-vs-pakle-fuse",
+    "title": "Spartus Spitfire vs PAKLE Fuse",
+    "teaser": "Two near-identical budget power paddles. It comes down to spin (Spitfire) versus a touch more pop (Fuse).",
+    "chips": [
+      "Both Elongated",
+      "$99 vs $107",
+      "Spin vs Power"
+    ],
+    "date": "2026-08-01",
+    "search": "spartus spitfire pakle fuse budget elongated power spin tier 3 tier 4 value",
+    "imgA": "spartus-spitfire",
+    "imgB": "pakle-fuse"
+  },
+  {
     "slug": "11six24-ultre-jelly-bean-2-vs-six-zero-coral-pro-hybrid",
     "title": "11SIX24 Ultré Jelly Bean 2 vs Six Zero Coral Pro Hybrid",
     "teaser": "Two Tier 1 spin hybrids. The spin is a near-tie, so it comes down to power, feel, and price.",
