@@ -18,7 +18,11 @@ window.JKPaddleReview = (function(){
 
 
   /* ================= data sources (same sheets the live site reads) ================= */
-  var CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
+  // Switched 2026-07-31 from the "Publish to web" pub CSV snapshot (which requires
+  // a manual republish and was found stale by weeks/months on multiple occasions)
+  // to the same live worker-proxied feed the Paddle Comparison Lab already uses.
+  // This reads straight off the live sheet, no manual publish step needed.
+  var CSV_URL='https://bot-defense-1.johnkewpickleball.workers.dev/csv/paddles';
   var FEEL_CSV='https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
   var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
