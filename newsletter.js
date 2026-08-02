@@ -2,6 +2,20 @@
 /* Add a new issue by PREPENDING an object, then commit this file to paddle-database/newsletter.js */
 window.PADDLE_NEWSLETTER = [
   {
+    "slug": "ranking-every-tier-1-spin-paddle-spartus-spitfire",
+    "title": "Ranking Every Tier 1 Spin Paddle + Spartus Spitfire Launch",
+    "teaser": "Finding the best Tier 1 spin paddle, new Selkirk shoes, and the numbers behind the grit.",
+    "chips": [
+      "Tier 1 spin ranking",
+      "Spartus launch",
+      "Ball cannon"
+    ],
+    "date": "2026-07-25",
+    "readtime": "11 min read",
+    "search": "ranking tier 1 spin paddle spartus spitfire p1 six zero coral pro honolulu j6cr blue grit 11six24 ultre power 2 hexgrit permagrit diamond tough surface area selkirk courtstrike pop n treasure evergrit launch angle",
+    "beehiiv": "https://johnkewpickleball.beehiiv.com/p/johnkew-newsletter-ranking-every-tier-1-spin-paddle-spartus-spitfire-launch"
+  },
+  {
     "slug": "joola-patent-grab-pakle-fuse-verdict",
     "title": "JOOLA's Patent Grab + The PAKLE Fuse Verdict",
     "teaser": "JOOLA files for the fully floating core, three hyped paddles get their spin durability verdicts, and 22,000 pro shots reveal how points are actually won.",
