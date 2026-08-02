@@ -2,6 +2,20 @@
 /* Edit with the admin dashboard, then commit this file to paddle-database/matchups.js */
 window.PADDLE_MATCHUPS = [
   {
+    "slug": "joola-kosmos-pro-v-vs-11six24-ultre-power-2",
+    "title": "JOOLA Kosmos Pro V vs 11SIX24 Ultré Power 2",
+    "teaser": "Two premium thermoformed hybrids. The Ultré Power 2 spins and hits harder for about a hundred dollars less, while the Kosmos Pro V is dual certified for USAP play.",
+    "chips": [
+      "Both Hybrid",
+      "$299.95 vs $199.99",
+      "Value vs Certification"
+    ],
+    "date": "2026-08-02",
+    "search": "joola kosmos pro v 11six24 ultre ultré power 2 hybrid elite spin tier 1 power usap upa-a certification value",
+    "imgA": "joola-kosmos-pro-v",
+    "imgB": "11six24-ultr-power-2"
+  },
+  {
     "slug": "selkirk-boomstik-vs-omni-elongated",
     "title": "Selkirk Boomstik vs Selkirk OMNI (Elongated)",
     "teaser": "Two premium Selkirk elongated paddles from the same build family, tuned in opposite directions: the Boomstik is a firepower monster, the OMNI is more forgiving and controlled.",
