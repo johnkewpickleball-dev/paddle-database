@@ -1306,7 +1306,7 @@ function openModal(idx){
         <div style="font-size:18px;font-weight:600">${fmtPrice(!isSelkirk&&savedAmt>0.005?finalPrice:p.price)}${!isSelkirk&&savedAmt>0.005?` <span style="font-size:13px;font-weight:400;color:var(--muted);text-decoration:line-through">${fmtPrice(p.price)}</span>`:''}</div>
         ${hasDiscount?`<div style="font-size:13px;color:var(--green)">${isSelkirk?'Receive $'+selkirkGift+' digital gift card':discountLabel} with code ${p.link&&p.link.startsWith('http')?`<a href="${p.link}" target="_blank" rel="noopener" style="font-family:'DM Mono',monospace;background:var(--green-light);padding:1px 5px;border-radius:3px;color:var(--green);text-decoration:none;font-weight:600">${p.discountCode} ↗</a>`:`<span style="font-family:'DM Mono',monospace;background:var(--green-light);padding:1px 5px;border-radius:3px">${p.discountCode}</span>`}</div>`:''}
       </div>
-      ${p.link&&p.link.startsWith('http')?`<a class="btn-primary" href="${p.link}" target="_blank" rel="noopener">Buy Now ↗</a>`:`<span style="font-size:13px;color:var(--muted)">No purchase link available</span>`}
+      ${p.link&&p.link.startsWith('http')?`<a class="btn-primary" href="${p.link}" target="_blank" rel="noopener">Buy Now ↗</a>${(Date.now()<new Date(2026,7,20).getTime())&&/jelly bean 2/i.test((p.company||'')+' '+(p.paddle||''))?`<div style="font-size:13px;font-weight:700;color:#b45309;margin-top:6px">To Be Released Aug. 21, 2026</div>`:``}`:`<span style="font-size:13px;color:var(--muted)">No purchase link available</span>`}
       <button class="btn-secondary" onclick="closeModal()">Close</button>
     </div>
   `;
