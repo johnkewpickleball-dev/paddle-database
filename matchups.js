@@ -2,6 +2,20 @@
 /* Edit with the admin dashboard, then commit this file to paddle-database/matchups.js */
 window.PADDLE_MATCHUPS = [
   {
+    "slug": "honolulu-j6fc-plus-vs-hurache-x-jelly-bean-2",
+    "title": "Honolulu J6FC+ vs 11SIX24 Hurache-X Jelly Bean 2",
+    "teaser": "Two 2026 elongated foam paddles at a similar price. The Hurache-X Jelly Bean 2 wins spin and Tier 1 spin durability; the J6FC+ answers with more forgiveness and USAP certification.",
+    "chips": [
+      "Both Elongated",
+      "$175.50 vs $159.99",
+      "Spin vs Forgiveness"
+    ],
+    "date": "2026-08-02",
+    "search": "honolulu j6fc j6fc+ 11six24 hurache-x jelly bean 2 elongated foam gen 4 usap upa-a spin tier 1 tier 4 forgiveness twist weight power all-court",
+    "imgA": "honolulu-pickleball-co-j6fc-plus",
+    "imgB": "11six24-hurache-x-jelly-bean-2"
+  },
+  {
     "slug": "joola-kosmos-pro-v-vs-11six24-ultre-power-2",
     "title": "JOOLA Kosmos Pro V vs 11SIX24 Ultré Power 2",
     "teaser": "Two premium thermoformed hybrids. The Ultré Power 2 spins and hits harder for about a hundred dollars less, while the Kosmos Pro V is dual certified for USAP play.",
