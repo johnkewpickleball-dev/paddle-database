@@ -329,6 +329,22 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .badge-tier-3{background:#3a2c14;color:#fcd34d}
 [data-theme="dark"] .badge-tier-4{background:#3a1d1d;color:#fca5a5}
 [data-theme="dark"] .mf-thumb.down.chosen{background:#3a1d1d;border-color:#a94442;color:#fca5a5}
+  /* interactive star ratings */
+  .mf-stars{display:inline-flex;align-items:center;gap:7px;line-height:1;vertical-align:middle;}
+  .mf-stars-track{position:relative;display:inline-block;font-size:17px;letter-spacing:2px;white-space:nowrap;}
+  .mf-stars-base{color:#d7dee8;}
+  .mf-stars-fill{position:absolute;top:0;left:0;overflow:hidden;white-space:nowrap;color:#f5a623;width:0;transition:width .08s ease;}
+  .mf-stars-hit{position:absolute;inset:0;display:flex;}
+  .mf-stars-hit button{flex:1 1 0;height:100%;padding:0;margin:0;border:0;background:transparent;cursor:pointer;}
+  .mf-stars.done .mf-stars-hit{pointer-events:none;}
+  .mf-stars.done .mf-stars-track{cursor:default;}
+  .mf-stars-num{font-weight:800;font-size:13px;color:#0d1f2d;}
+  .mf-stars-cnt{font-size:11px;color:#64748b;}
+  .mf-stars.empty .mf-stars-base{color:#e3e8ef;}
+  .mf-stars.empty .mf-stars-cnt{font-style:italic;}
+  [data-theme="dark"] .mf-stars-base{color:#3a4c5e;}
+  [data-theme="dark"] .mf-stars.empty .mf-stars-base{color:#2b3a48;}
+  [data-theme="dark"] .mf-stars-num{color:#e5e7eb;}
 </style>
 <script>
 // Apply theme before paint: saved choice, else the visitor's device setting.
@@ -906,6 +922,36 @@ function votePaddle(idx, dir){
   document.querySelectorAll('#modalContent .mf-thumb').forEach(b=>{ b.disabled=true; b.classList.toggle('chosen', b.getAttribute('data-vote')===dir); });
   ensureIP(ip=>statsPost({action:'vote',company:p.company,paddle:p.paddle,vote:dir,ip:ip}));
 }
+function starAvg(s){
+  if(s && s.starOverride!=null && isFinite(s.starOverride)) return {avg:Math.max(0,Math.min(5,+s.starOverride)),cnt:+s.starCount||0,seeded:true};
+  if(s && (+s.starCount)>0) return {avg:(+s.starSum||0)/(+s.starCount),cnt:+s.starCount,seeded:true};
+  return {avg:0,cnt:0,seeded:false};
+}
+function starKey_(p){ return 'star_'+statsKey(p); }
+function hasStarred(p){ try{ return !!localStorage.getItem(starKey_(p)); }catch(e){ return false; } }
+function starWidget(p, s, idx){
+  const a=starAvg(s), pct=(a.avg/5*100), done=hasStarred(p);
+  let btns=''; for(let n=1;n<=5;n++){ btns+=`<button type="button" onmouseenter="starHover(this,${n})" onclick="starRate(this,${idx},${n})" aria-label="Rate ${n} star${n>1?'s':''}"></button>`; }
+  return `<span class="mf-stars${a.seeded?'':' empty'}${done?' done':''}" data-avg="${a.avg}" onmouseleave="starLeave(this)" title="${a.seeded?`Average rating ${a.avg.toFixed(1)} from ${a.cnt} ratings. Click to add yours.`:'Be the first to rate this paddle'}">`
+    + `<span class="mf-stars-track" role="img" aria-label="${a.seeded?a.avg.toFixed(1)+' out of 5':'No ratings yet'}"><span class="mf-stars-base">★★★★★</span><span class="mf-stars-fill" style="width:${pct.toFixed(1)}%">★★★★★</span><span class="mf-stars-hit">${btns}</span></span>`
+    + `<span class="mf-stars-num">${a.seeded?a.avg.toFixed(1):''}</span>`
+    + `<span class="mf-stars-cnt">${a.seeded?`(${a.cnt})`:'Be the first'}</span></span>`;
+}
+window.starHover=function(btn,n){ const w=btn.closest('.mf-stars'); if(!w||w.classList.contains('done'))return; const f=w.querySelector('.mf-stars-fill'); if(f)f.style.width=(n*20)+'%'; };
+window.starLeave=function(w){ const f=w.querySelector('.mf-stars-fill'); if(!f)return; const avg=parseFloat(w.getAttribute('data-avg'))||0; f.style.width=(avg/5*100)+'%'; };
+window.starRate=function(btn, idx, n){
+  const p=PADDLES[idx]; if(!p||hasStarred(p))return;
+  const w=btn.closest('.mf-stars');
+  try{ localStorage.setItem(starKey_(p),String(n)); }catch(e){}
+  const s=ensureStat(p); s.starSum=(+s.starSum||0)+n; s.starCount=(+s.starCount||0)+1;
+  const a=starAvg(s);
+  if(w){ w.classList.remove('empty'); w.classList.add('done'); w.setAttribute('data-avg',a.avg);
+    const f=w.querySelector('.mf-stars-fill'); if(f)f.style.width=(a.avg/5*100)+'%';
+    const num=w.querySelector('.mf-stars-num'); if(num)num.textContent=a.avg.toFixed(1);
+    const cnt=w.querySelector('.mf-stars-cnt'); if(cnt){cnt.textContent='('+a.cnt+')'; cnt.style.fontStyle='normal';}
+  }
+  ensureIP(ip=>statsPost({action:'starvote',company:p.company,paddle:p.paddle,stars:n,ip:ip}));
+};
 function feedbackRow(p, idx){
   const s=statOf(p), voted=hasVoted(p), vd=voted?localStorage.getItem(votedKey(p)):'';
   return `<div class="modal-feedback">
@@ -913,7 +959,7 @@ function feedbackRow(p, idx){
       <span class="mf-vote">
         <span class="mf-q">Like/dislike this paddle?</span>
         <button class="mf-thumb up${voted&&vd==='up'?' chosen':''}" data-vote="up"${voted?' disabled':''} onclick="votePaddle(${idx},'up')" aria-label="Thumbs up">${thumbUpSvg()}<b class="mf-up">${s.up||0}</b></button>
-        <button class="mf-thumb down${voted&&vd==='down'?' chosen':''}" data-vote="down"${voted?' disabled':''} onclick="votePaddle(${idx},'down')" aria-label="Thumbs down">${thumbDownSvg()}<b class="mf-down">${s.down||0}</b></button>
+        <button class="mf-thumb down${voted&&vd==='down'?' chosen':''}" data-vote="down"${voted?' disabled':''} onclick="votePaddle(${idx},'down')" aria-label="Thumbs down">${thumbDownSvg()}<b class="mf-down">${s.down||0}</b></button>${starWidget(p,s,idx)}
       </span>
     </div>`;
 }
@@ -1669,11 +1715,11 @@ applyPaddleDeepLink();
     Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
       var rows=res.data||[]; if(rows.length<1) return;
       var head=rows[0].map(function(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');});
-      var ci={company:head.indexOf('company'),paddle:head.indexOf('paddle'),views:head.indexOf('views'),labadds:head.indexOf('labadds'),up:head.indexOf('thumbsup'),down:head.indexOf('thumbsdown')};
+      var ci={company:head.indexOf('company'),paddle:head.indexOf('paddle'),views:head.indexOf('views'),labadds:head.indexOf('labadds'),up:head.indexOf('thumbsup'),down:head.indexOf('thumbsdown'),starsum:head.indexOf('starsum'),starcount:head.indexOf('starcount'),staroverride:head.indexOf('staroverride')};
       if(ci.company<0||ci.paddle<0) return;
       var m={};
       for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue; var c=r[ci.company],pd=r[ci.paddle]; if(!c||!pd) continue;
-        m[(String(c)+'||'+String(pd)).toLowerCase().trim()]={views:+r[ci.views]||0,labAdds:+r[ci.labadds]||0,up:+r[ci.up]||0,down:+r[ci.down]||0}; }
+        m[(String(c)+'||'+String(pd)).toLowerCase().trim()]={views:+r[ci.views]||0,labAdds:+r[ci.labadds]||0,up:+r[ci.up]||0,down:+r[ci.down]||0,starSum:+r[ci.starsum]||0,starCount:+r[ci.starcount]||0,starOverride:(ci.staroverride>=0&&String(r[ci.staroverride]).trim()!=='')?(+r[ci.staroverride]):null}; }
       STATS_MAP=m; refreshStatViews();
       if(typeof applyFilters==='function') applyFilters();   // re-sort once popularity data is in
       if(typeof applyPaddleDeepLink==='function') applyPaddleDeepLink();
