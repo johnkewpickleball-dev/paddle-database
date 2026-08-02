@@ -22,7 +22,9 @@
   Johnkew Pickleball — "Trending Paddles" (homepage section)
   Self-contained page. Pulls the SAME live paddle Google Sheet as the Paddle Database,
   plus the engagement Stats sheet's Votes + ViewsLog tabs (both timestamped) to compute
-  REAL rolling-window trending — top 4 paddles in the Past 24 Hours / Past Week / Past Month.
+  REAL rolling-window trending. Single row, defaults to Past 24 Hours; a dropdown switches
+  to Past Week / Past Month. Shows the top 4 paddles in the visible row, with the list
+  extended to 10 reachable by scrolling right (desktop) or down (mobile).
 
   ADD TO SQUARESPACE: on the homepage (johnkewpickleball.com/), add a Code block wherever
   you want this section to appear, paste this whole snippet (Display Source OFF), save.
@@ -58,18 +60,29 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   <div class="trend__status" id="trendStatus">Loading trending paddles…</div>
 
   <div class="trend__body" id="trendBody" hidden>
-    <section class="trend__window">
-      <h3 class="trend__wtitle">Past 24 Hours</h3>
-      <div class="trend-grid" id="trendGrid24"></div>
-    </section>
-    <section class="trend__window">
-      <h3 class="trend__wtitle">Past Week</h3>
-      <div class="trend-grid" id="trendGridWeek"></div>
-    </section>
-    <section class="trend__window">
-      <h3 class="trend__wtitle">Past Month</h3>
-      <div class="trend-grid" id="trendGridMonth"></div>
-    </section>
+    <div class="trend__controls">
+      <label class="trend__windowlabel" for="trendWindowSel">Show trending from</label>
+      <div class="trend__selwrap">
+        <select class="trend__windowsel" id="trendWindowSel">
+          <option value="day" selected>Past 24 Hours</option>
+          <option value="week">Past Week</option>
+          <option value="month">Past Month</option>
+        </select>
+      </div>
+    </div>
+    <div class="trend-scroller" id="trendScroller">
+      <button class="trend-scroll-btn left" id="trendBtnLeft" type="button" aria-label="Scroll left" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="trend-row" id="trendGrid"></div>
+      <div class="trend-fade left" id="trendFadeLeft" aria-hidden="true"></div>
+      <div class="trend-fade right" id="trendFadeRight" aria-hidden="true"></div>
+      <div class="trend-fade bottom" id="trendFadeBottom" aria-hidden="true"></div>
+      <button class="trend-scroll-btn right" id="trendBtnRight" type="button" aria-label="Scroll right">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+    <p class="trend__scrollhint" id="trendScrollHint">Scroll for more trending paddles →</p>
   </div>
 </div>
 
@@ -102,14 +115,46 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .trend__lead{color:var(--muted);font-size:14.5px;margin-top:8px}
   .trend__status{max-width:1180px;margin:36px auto;text-align:center;color:var(--muted);font-size:15px}
   .trend__body{max-width:1180px;margin:0 auto}
-  .trend__window{margin-top:26px}
-  .trend__window:first-child{margin-top:22px}
-  .trend__wtitle{color:var(--navy);font-size:16px;font-weight:700;letter-spacing:-.2px;margin-bottom:12px;
-    display:flex;align-items:center;gap:8px}
-  .trend__wtitle::before{content:'';width:4px;height:16px;border-radius:2px;background:var(--green)}
-  .trend-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
-  .trend-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13.5px;padding:24px 10px;
+
+  /* time-window dropdown */
+  .trend__controls{display:flex;align-items:center;justify-content:center;gap:10px;margin:20px auto 22px;flex-wrap:wrap}
+  .trend__windowlabel{font-size:13px;color:var(--muted);font-weight:600}
+  .trend__selwrap{position:relative;display:inline-block}
+  .trend__selwrap::after{content:'';position:absolute;right:13px;top:50%;width:8px;height:8px;pointer-events:none;
+    border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-65%) rotate(45deg)}
+  .trend__windowsel{appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    border:1.5px solid var(--border);border-radius:9px;background:var(--white);
+    padding:10px 36px 10px 14px;font-size:14px;font-weight:700;font-family:inherit;color:var(--navy);
+    cursor:pointer;transition:.15s;min-width:170px}
+  .trend__windowsel:hover{border-color:var(--green-mid)}
+  .trend__windowsel:focus{outline:none;border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(45,156,95,.15)}
+
+  /* single scrollable row */
+  .trend-scroller{position:relative}
+  .trend-row{display:flex;gap:14px;overflow-x:auto;overflow-y:hidden;scroll-behavior:smooth;
+    scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding:2px 2px 8px}
+  .trend-row::-webkit-scrollbar{height:7px}
+  .trend-row::-webkit-scrollbar-track{background:transparent}
+  .trend-row::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  .trend-row .trend-card{flex:0 0 calc((100% - (var(--trend-cols,4) - 1)*14px)/var(--trend-cols,4));
+    min-width:190px;scroll-snap-align:start}
+  .trend-empty{flex:1 1 100%;text-align:center;color:var(--muted);font-size:13.5px;padding:24px 10px;
     border:1px dashed var(--border);border-radius:var(--radius)}
+  .trend__scrollhint{text-align:center;color:var(--muted);font-size:12px;margin-top:2px}
+
+  /* scroll buttons (desktop) */
+  .trend-scroll-btn{position:absolute;top:calc(50% - 4px);transform:translateY(-50%);width:38px;height:38px;
+    border-radius:50%;border:1px solid var(--border);background:var(--white);box-shadow:var(--shadow);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--navy);z-index:6;transition:.15s}
+  .trend-scroll-btn:hover:not([disabled]){border-color:var(--green-mid);color:var(--green-mid)}
+  .trend-scroll-btn[disabled]{opacity:0;pointer-events:none}
+  .trend-scroll-btn svg{width:18px;height:18px}
+  .trend-scroll-btn.left{left:-16px}
+  .trend-scroll-btn.right{right:-16px}
+  .trend-fade{position:absolute;top:0;bottom:8px;width:44px;pointer-events:none;z-index:4;transition:opacity .15s}
+  .trend-fade.right{right:0;background:linear-gradient(to right,transparent,var(--bg))}
+  .trend-fade.left{left:0;background:linear-gradient(to left,transparent,var(--bg));opacity:0}
+  .trend-fade.bottom{display:none}
 
   /* theme toggle */
   .trend-theme-toggle{position:absolute;top:0;right:0;width:38px;height:38px;border-radius:9px;border:1px solid var(--border);background:var(--white);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s}
@@ -170,6 +215,21 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .trend-dur-info-close{background:none;border:none;font-size:22px;line-height:1;color:#64748b;cursor:pointer;padding:2px 4px;flex-shrink:0}
   .trend-dur-info-close:hover{color:#1a2535}
 
+  /* mobile: swap the row from horizontal-scroll to a bounded vertical-scroll column.
+     .trend-row's max-height is set in JS to ~4 cards' worth so the "top 4, scroll for
+     more" behavior holds on mobile too, just scrolling down instead of right. */
+  @media(max-width:820px){
+    .trend-row{flex-direction:column;overflow-x:hidden;overflow-y:auto;scroll-snap-type:y proximity}
+    .trend-row .trend-card{flex:0 0 auto;width:100%;min-width:0;scroll-snap-align:start}
+    .trend-scroll-btn{display:none}
+    .trend-fade.left,.trend-fade.right{display:none}
+    .trend-fade.bottom{display:block;left:0;right:0;top:auto;bottom:0;height:36px;width:auto;
+      background:linear-gradient(to bottom,transparent,var(--bg))}
+  }
+  @media(min-width:821px){
+    .trend__scrollhint{display:none}
+  }
+
   @media(max-width:640px){
     .trend{padding:24px 12px 34px}
     .trend__head{padding:0 44px}
@@ -183,8 +243,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     --muted:#96a7b8;--border:#2a3a49;--bg:#0e1621;--white:#17222e;--text:#e6edf3;
     --shadow:0 1px 3px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4);
   }
-  [data-theme="dark"] .trend__title,
-  [data-theme="dark"] .trend__wtitle{color:var(--text)}
+  [data-theme="dark"] .trend__title{color:var(--text)}
+  [data-theme="dark"] .trend__windowsel{background-color:var(--white);color:var(--text);border-color:var(--border)}
+  [data-theme="dark"] .trend__selwrap::after{border-color:var(--muted)}
+  [data-theme="dark"] .trend-scroll-btn{background:var(--white);color:var(--text);border-color:var(--border)}
   [data-theme="dark"] .trend-card-photo{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
   [data-theme="dark"] .trend-badge-shape{background:#16304d;color:#8ab4f8}
   [data-theme="dark"] .trend-badge-build{background:#2a2247;color:#c4b5fd}
@@ -422,13 +484,103 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     if(!list.length){ el.innerHTML='<div class="trend-empty">Not enough recent activity yet — check back soon.</div>'; return; }
     el.innerHTML=list.map(function(x){ return cardHTML(x.p, x.views, windowLabel); }).join('');
   }
+
+  /* ---- single-row layout: top 4 visible, extends to 10 via scroll (right on desktop,
+     down on mobile). Lists for all 3 windows are computed once on load; the dropdown just
+     swaps which pre-computed list is shown, no re-fetch/re-score needed. ---- */
+  var LISTS = null;
+  var CURRENT_WINDOW = 'day';
+  var WINDOW_LABEL = { day:'in the past 24 hours', week:'in the past week', month:'in the past month' };
+
+  function isMobileTrend(){ return window.matchMedia('(max-width:820px)').matches; }
+
+  function applyTrendCols(){
+    var grid=document.getElementById('trendGrid');
+    var count=grid.querySelectorAll('.trend-card').length;
+    grid.style.setProperty('--trend-cols', Math.max(1, Math.min(4, count||4)));
+  }
+
+  function applyMobileHeightCap(){
+    var grid=document.getElementById('trendGrid');
+    if(!isMobileTrend()){ grid.style.maxHeight=''; return; }
+    var cards=[].slice.call(grid.querySelectorAll('.trend-card'));
+    if(!cards.length){ grid.style.maxHeight=''; return; }
+    var n=Math.min(4,cards.length), gap=14, total=0;
+    for(var i=0;i<n;i++){ total+=cards[i].offsetHeight; }
+    total += gap*Math.max(0,n-1);
+    grid.style.maxHeight = total+'px';
+  }
+
+  function updateScrollUI(){
+    var grid=document.getElementById('trendGrid');
+    var btnL=document.getElementById('trendBtnLeft'), btnR=document.getElementById('trendBtnRight');
+    var fadeL=document.getElementById('trendFadeLeft'), fadeR=document.getElementById('trendFadeRight');
+    var fadeB=document.getElementById('trendFadeBottom'), hint=document.getElementById('trendScrollHint');
+    var hasOverflow;
+    if(isMobileTrend()){
+      btnL.style.display='none'; btnR.style.display='none';
+      fadeL.style.display='none'; fadeR.style.display='none';
+      hasOverflow = grid.scrollHeight - grid.clientHeight > 4;
+      if(fadeB) fadeB.style.opacity = (hasOverflow && grid.scrollTop < grid.scrollHeight-grid.clientHeight-4) ? '1' : '0';
+      if(hint) hint.style.visibility = hasOverflow ? 'visible' : 'hidden';
+      return;
+    }
+    if(hint) hint.style.visibility='hidden';
+    var maxScroll = grid.scrollWidth - grid.clientWidth;
+    hasOverflow = maxScroll > 4;
+    btnL.style.display = hasOverflow ? '' : 'none';
+    btnR.style.display = hasOverflow ? '' : 'none';
+    fadeL.style.display = hasOverflow ? '' : 'none';
+    fadeR.style.display = hasOverflow ? '' : 'none';
+    if(!hasOverflow) return;
+    btnL.disabled = grid.scrollLeft <= 2;
+    btnR.disabled = grid.scrollLeft >= maxScroll - 2;
+    fadeL.style.opacity = btnL.disabled ? '0' : '1';
+    fadeR.style.opacity = btnR.disabled ? '0' : '1';
+  }
+
+  function scrollTrendBy(dir){
+    var grid=document.getElementById('trendGrid');
+    if(isMobileTrend()){
+      grid.scrollBy({top: dir*grid.clientHeight*0.85, behavior:'smooth'});
+      return;
+    }
+    var card=grid.querySelector('.trend-card');
+    var step = card ? card.getBoundingClientRect().width+14 : grid.clientWidth*0.8;
+    grid.scrollBy({left: dir*step, behavior:'smooth'});
+  }
+
+  function renderCurrentWindow(){
+    if(!LISTS) return;
+    renderGrid('trendGrid', LISTS[CURRENT_WINDOW], WINDOW_LABEL[CURRENT_WINDOW]);
+    var grid=document.getElementById('trendGrid');
+    grid.scrollLeft=0; grid.scrollTop=0;
+    requestAnimationFrame(function(){
+      applyTrendCols();
+      applyMobileHeightCap();
+      updateScrollUI();
+    });
+  }
+
   function render(){
-    renderGrid('trendGrid24', topN(DAY,4), 'in the past 24 hours');
-    renderGrid('trendGridWeek', topN(7*DAY,4), 'in the past week');
-    renderGrid('trendGridMonth', topN(30*DAY,4), 'in the past month');
+    LISTS = { day: topN(DAY,10), week: topN(7*DAY,10), month: topN(30*DAY,10) };
     document.getElementById('trendStatus').hidden=true;
     document.getElementById('trendBody').hidden=false;
+    renderCurrentWindow();
   }
+
+  function debounceTrend(fn,ms){ var t; return function(){ var a=arguments; clearTimeout(t); t=setTimeout(function(){ fn.apply(null,a); },ms); }; }
+
+  (function wireTrendControls(){
+    var sel=document.getElementById('trendWindowSel');
+    if(sel) sel.addEventListener('change', function(){ CURRENT_WINDOW=this.value; renderCurrentWindow(); });
+    var grid=document.getElementById('trendGrid');
+    if(grid) grid.addEventListener('scroll', debounceTrend(updateScrollUI,40));
+    var btnL=document.getElementById('trendBtnLeft'), btnR=document.getElementById('trendBtnRight');
+    if(btnL) btnL.addEventListener('click', function(){ scrollTrendBy(-1); });
+    if(btnR) btnR.addEventListener('click', function(){ scrollTrendBy(1); });
+    window.addEventListener('resize', debounceTrend(function(){ applyMobileHeightCap(); updateScrollUI(); },150));
+  })();
 
   window.openTrendDurInfo=function(){ document.getElementById('trendDurInfoOverlay').classList.add('open'); };
   window.closeTrendDurInfo=function(){ document.getElementById('trendDurInfoOverlay').classList.remove('open'); };
