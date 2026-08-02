@@ -6,15 +6,14 @@
 // select all > paste this file's contents > Save > Deploy > Manage deployments > New Version.
 // Requires the APPS_SCRIPT_URL environment variable to already be set (Settings > Variables).
 //
-// Two jobs:
+// Three jobs:
 //  1. CSV proxy (GET) — fetches the three published Google Sheet CSVs server-side and returns
-//     them, so the raw Sheet URLs never appear in the site's page source (they can't be found
-//     and subscribed to independently of the app). Routes are fixed/hardcoded below — this is
-//     intentionally NOT a generic "?url=" open proxy; it will only ever fetch these three URLs.
-//     Responses are cached at the edge for CACHE_SECONDS to cut Google Sheets quota risk and
-//     speed up repeat loads.
-//  2. Stats/votes proxy (POST) — unchanged from before: forwards view/labadd/vote calls to the
-//     Apps Script backend, stamping the real Cloudflare-verified client IP onto the payload.
+//     them, so the raw Sheet URLs never appear in the site's page source. Edge-cached.
+//  2. YouTube feed proxy (GET /youtube) — fetches the channel's RSS feed server-side and returns
+//     it CORS-enabled + edge-cached, so the homepage "Latest Videos" column can read it from the
+//     browser (YouTube's feed sends no CORS headers, so a page can't fetch it directly).
+//  3. Stats/votes proxy (POST) — forwards view/labadd/vote/starvote calls to the Apps Script
+//     backend, stamping the real Cloudflare-verified client IP onto the payload.
 
 const CSV_SOURCES = {
   '/csv/paddles': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv',
@@ -22,6 +21,10 @@ const CSV_SOURCES = {
   '/csv/feel':    'https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv',
 };
 const CACHE_SECONDS = 60;
+
+// YouTube channel RSS feed (latest ~15 uploads). channel_id for @johnkewpickleball.
+const YT_FEED = 'https://www.youtube.com/feeds/videos.xml?channel_id=UCIZfb6Kaorky0xrb_v7Yt4g';
+const YT_CACHE_SECONDS = 1800;   // 30 min — plenty fresh for a "latest videos" strip
 
 export default {
   async fetch(request, env, ctx) {
@@ -48,7 +51,30 @@ export default {
       return resp;
     }
 
-    // ---- 2) Stats/votes proxy (unchanged) ----
+    // ---- 2) YouTube feed proxy ----
+    if (request.method === 'GET' && url.pathname === '/youtube') {
+      const cache = caches.default;
+      const cacheKey = new Request(url.toString(), request);
+      const cached = await cache.match(cacheKey);
+      if (cached) return cached;
+
+      const upstream = await fetch(YT_FEED, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; JohnKewPickleball/1.0; +https://www.johnkewpickleball.com)' },
+      });
+      const body = await upstream.text();
+      const resp = new Response(body, {
+        status: upstream.status,
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+          'Cache-Control': `public, max-age=${YT_CACHE_SECONDS}`,
+        },
+      });
+      if (upstream.ok) ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+      return resp;
+    }
+
+    // ---- 3) Stats/votes proxy (unchanged) ----
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
     }
