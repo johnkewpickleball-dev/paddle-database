@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "honolulu-j3cr-blue-grit-review",
+    "title": "Honolulu J3CR Blue Grit Review",
+    "teaser": "The Widebody piece of Honolulu's Core Reactor lineup, and the highest-firepower Widebody they've built: Tier 1 Elite spin durability and KewCOR 0.416, without sacrificing hand speed.",
+    "chips": ["Widebody", "Tier 1 Elite Spin", "$175.50 with code"],
+    "date": "2026-08-02",
+    "search": "honolulu j3cr blue grit widebody core reactor crystal blue endurance surface tier 1 elite spin power",
+    "img": "honolulu-pickleball-co-j3cr-blue-grit"
+  },
+  {
     "slug": "11six24-ultre-jelly-bean-2-review",
     "title": "11SIX24 Ultré Jelly Bean 2 Review",
     "teaser": "The first sub-Power 2 option 11SIX24 has ever offered in the Ultré shape: Tier 1 spin durability and Elite spin at $159.99, a genuinely new price tier, not a refresh.",
