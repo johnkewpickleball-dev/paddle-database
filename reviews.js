@@ -2,6 +2,24 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "thrive-ignite-pro-elongated-arc-review",
+    "title": "Thrive Ignite Pro Elongated Arc Review",
+    "teaser": "The hand-speed pick of Thrive's two Ignite Pro Elongated builds: trimmed top corners for the fastest swing of the pair, with a smaller sweet spot as the tradeoff.",
+    "chips": ["Elongated", "Elite Spin", "$197.99 with code"],
+    "date": "2026-08-02",
+    "search": "thrive ignite pro elongated arc hand speed power tier 3 elite spin",
+    "img": "thrive-ignite-pro-elongated-arc"
+  },
+  {
+    "slug": "thrive-ignite-pro-elongated-review",
+    "title": "Thrive Ignite Pro Elongated Review",
+    "teaser": "The forgiveness pick of Thrive's two Ignite Pro Elongated builds: the biggest sweet spot of the pair, with a swing that's not as easy to bring around as the tradeoff.",
+    "chips": ["Elongated", "Elite Spin", "$197.99 with code"],
+    "date": "2026-08-02",
+    "search": "thrive ignite pro elongated forgiveness sweet spot power tier 3 elite spin",
+    "img": "thrive-ignite-pro-elongated"
+  },
+  {
     "slug": "honolulu-j3cr-blue-grit-review",
     "title": "Honolulu J3CR Blue Grit Review",
     "teaser": "The Widebody piece of Honolulu's Core Reactor lineup, and the highest-firepower Widebody they've built: Tier 1 Elite spin durability and KewCOR 0.416, without sacrificing hand speed.",
