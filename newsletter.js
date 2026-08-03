@@ -2,6 +2,20 @@
 /* Add a new issue by PREPENDING an object, then commit this file to paddle-database/newsletter.js */
 window.PADDLE_NEWSLETTER = [
   {
+    "slug": "dwell-myth-busted-rpm-punches-back-at-joola",
+    "title": "The Dwell Myth Is Busted + RPM Punches Back at JOOLA",
+    "teaser": "The lab data that kills dwell time as a spin factor, RPM's aggressive answer to the JOOLA patent suit, and whether durable grit really changes how a paddle feels.",
+    "chips": [
+      "Dwell debunked",
+      "RPM vs JOOLA",
+      "The Dink review"
+    ],
+    "date": "2026-08-03",
+    "readtime": "14 min read",
+    "search": "dwell myth deflection pocketing launch angle spin correlation diadem vice hush rpm joola patent lawsuit kaitlyn christian proton luzz glider chris haworth honolulu j6cr j2cr durable grit the dink movie",
+    "beehiiv": "https://johnkewpickleball.beehiiv.com/p/johnkew-newsletter-the-dwell-myth-is-busted-rpm-punches-back-at-joola"
+  },
+  {
     "slug": "ranking-every-tier-1-spin-paddle-spartus-spitfire",
     "title": "Ranking Every Tier 1 Spin Paddle + Spartus Spitfire Launch",
     "teaser": "Finding the best Tier 1 spin paddle, new Selkirk shoes, and the numbers behind the grit.",
