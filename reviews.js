@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "thrive-ignite-pro-hybrid-review",
+    "title": "Thrive Ignite Pro Hybrid Review",
+    "teaser": "The original shape in Thrive's Ignite Pro lineup: a classic Gen-3 honeycomb-style feel, Lifetime warranty, and hand speed that splits the difference between the two newer Elongated builds.",
+    "chips": ["Hybrid", "Good Spin", "$197.99 with code"],
+    "date": "2026-08-04",
+    "search": "thrive ignite pro hybrid gen-3 honeycomb feel power tier 3 good spin lifetime warranty",
+    "img": "thrive-ignite-pro-hybrid"
+  },
+  {
     "slug": "thrive-ignite-pro-elongated-arc-review",
     "title": "Thrive Ignite Pro Elongated Arc Review",
     "teaser": "The hand-speed pick of Thrive's two Ignite Pro Elongated builds: trimmed top corners for the fastest swing of the pair, with a smaller sweet spot as the tradeoff.",
