@@ -2,6 +2,20 @@
 /* Edit with the admin dashboard, then commit this file to paddle-database/matchups.js */
 window.PADDLE_MATCHUPS = [
   {
+    "slug": "honolulu-j2cr-blue-grit-vs-six-zero-coral-pro-hybrid",
+    "title": "Honolulu J2CR Blue Grit vs Six Zero Coral Pro Hybrid",
+    "teaser": "Two premium Gen-4 foam Hybrids, both rare Tier 1 Elite-spin paddles with near-identical power. The J2CR is faster in the hand, crisper, and cheaper; the Coral Pro is more forgiving and softer.",
+    "chips": [
+      "Both Hybrid",
+      "$175.50 vs $198",
+      "Both Tier 1 spin"
+    ],
+    "date": "2026-08-02",
+    "search": "honolulu j2cr long handle blue grit crystal blue endurance surface six zero coral pro hybrid tier 1 elite spin power kewcor forgiveness hand speed value",
+    "imgA": "honolulu-pickleball-co-j2cr-long-handle-blue-grit",
+    "imgB": "six-zero-coral-pro-hybrid"
+  },
+  {
     "slug": "honolulu-j6fc-plus-vs-hurache-x-jelly-bean-2",
     "title": "Honolulu J6FC+ vs 11SIX24 Hurache-X Jelly Bean 2",
     "teaser": "Two 2026 elongated foam paddles at a similar price. The Hurache-X Jelly Bean 2 wins spin and Tier 1 spin durability; the J6FC+ answers with more forgiveness and USAP certification.",
