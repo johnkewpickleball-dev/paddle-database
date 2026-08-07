@@ -706,6 +706,8 @@ const CORE_MATERIAL_PROPS = {
               notes:'Extremely compliant; primarily used for thermal insulation rather than structural support.' },
   eva:      { name:'EVA (Ethylene-Vinyl Acetate)', stiffness:2, icon:'foam',
               notes:'Soft, highly damped foam with excellent vibration absorption.' },
+  ema:      { name:'EMA (Ethylene Methyl Acrylate)', stiffness:3, icon:'foam',
+              notes:'Soft, compliant closed-cell foam — more structurally supportive than EVA, but expected to deform more readily than EPP or MPP. New to paddle cores; placement is a provisional engineering estimate rather than a measured value for this specific formulation.' },
   epe:      { name:'EPE (Expanded Polyethylene)', stiffness:3, icon:'foam',
               notes:'Soft bead foam with lower recovery and lower compressive stiffness than EPP.' },
   epp:      { name:'EPP (Expanded Polypropylene)', stiffness:5, icon:'foam',
@@ -799,6 +801,7 @@ const CORE_TYPE_MATERIAL_MAP = {
   'full foam (epp + scf + expanding foam)': { materials:['epp','scf','expandingFoam'] },
   'full foam (epp + tpe + expanding foam)': { materials:['epp','tpeFoam','expandingFoam'] },
   'full foam (mpp + eva + expanding foam)': { materials:['mpp','eva','expandingFoam'] },
+  'full foam (ema + eva + expanding foam)': { materials:['ema','eva','expandingFoam'] },
   'full foam (mpp + tpe + expanding foam)': { materials:['mpp','tpeFoam','expandingFoam'] },
   'full foam (mpp center with eva inserts)': { materials:['mpp','eva'], note:'MPP forms the center block; EVA fills insert regions rather than being blended throughout.' },
   'full foam (microcellular + eva)': { materials:['microcellular','eva'] },
@@ -813,7 +816,7 @@ function parseCoreMaterialsGeneric(raw){
   if(paren) s = paren[1];
   s = s.replace(/^full[- ]foam\s*/i,'');
   const tokens = s.split(/[+&]/).map(t=>t.trim()).filter(Boolean);
-  const ALIAS = { epp:'epp', mpp:'mpp', eva:'eva', tpu:'tpu', tpe:'tpeFoam', scf:'scf', pu:'pu',
+  const ALIAS = { epp:'epp', mpp:'mpp', eva:'eva', ema:'ema', tpu:'tpu', tpe:'tpeFoam', scf:'scf', pu:'pu',
     'expanding foam':'expandingFoam', 'edge foam':'expandingFoam', unknown:'unknownMaterial',
     'honeycomb polypropylene':'honeycombPP', 'carbon fiber':'carbonFiber', 'kevlar honeycomb':'kevlarHoneycomb',
     'aluminum honeycomb':'aluminumHoneycomb', wood:'wood', microcellular:'microcellular' };
