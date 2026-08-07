@@ -2,6 +2,20 @@
 /* Edit with the admin dashboard, then commit this file to paddle-database/matchups.js */
 window.PADDLE_MATCHUPS = [
   {
+    "slug": "spartus-spitfire-vs-enhance-mpp-turbo",
+    "title": "Spartus Spitfire vs Enhance MPP Turbo",
+    "teaser": "Two budget power paddles around $99 that punch above their price. The Turbo hits hotter and more consistently across the face; the Spitfire has more spin and more control.",
+    "chips": [
+      "Both Elongated",
+      "Both about $99",
+      "Power vs Control"
+    ],
+    "date": "2026-08-02",
+    "search": "spartus spitfire enhance mpp turbo budget elongated power hollow feel elite spin tier 3 tier 4 pop kewcor control value 99",
+    "imgA": "spartus-spitfire",
+    "imgB": "enhance-mpp-turbo"
+  },
+  {
     "slug": "honolulu-j2cr-blue-grit-vs-six-zero-coral-pro-hybrid",
     "title": "Honolulu J2CR Blue Grit vs Six Zero Coral Pro Hybrid",
     "teaser": "Two premium Gen-4 foam Hybrids, both rare Tier 1 Elite-spin paddles with near-identical power. The J2CR is faster in the hand, crisper, and cheaper; the Coral Pro is more forgiving and softer.",
