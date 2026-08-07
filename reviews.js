@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "friday-aura-pro-elongated-review",
+    "title": "Friday Aura Pro Elongated Review",
+    "teaser": "Friday's first full-foam paddle: an EPP core, EVA band, rubber Elastech layer, and a blow-molded T700 carbon frame that add up to a generous sweet spot and excellent spin for $159.",
+    "chips": ["Elongated", "Good Spin", "$159 with code"],
+    "date": "2026-08-07",
+    "search": "friday aura pro elongated full foam epp eva elastech blow molded carbon fiber tier 4 good spin power",
+    "img": "friday-aura-pro-elongated"
+  },
+  {
     "slug": "thrive-ignite-pro-hybrid-review",
     "title": "Thrive Ignite Pro Hybrid Review",
     "teaser": "The original shape in Thrive's Ignite Pro lineup: a classic Gen-3 honeycomb-style feel, Lifetime warranty, and hand speed that splits the difference between the two newer Elongated builds.",
