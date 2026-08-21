@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Paddle Game Log</title>
+
+<!-- iOS "Add to Home Screen" support: makes this launch full-screen, app-like, no Safari chrome. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paddle Log">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0e1621">
+<link rel="apple-touch-icon" href="game-tracker-icon.png">
+<link rel="icon" href="game-tracker-icon.png">
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --green:#2fae6b;--green-light:#123726;--green-mid:#3ac47c;
+  --muted:#96a7b8;--border:#2a3a49;--bg:#0e1621;--card:#17222e;--text:#e6edf3;
+  --red:#e0555a;--red-light:#3a1c1e;
+  --shadow:0 1px 3px rgba(0,0,0,.45),0 6px 18px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh; min-height:100dvh;
+  padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:520px;margin:0 auto;padding:18px 16px 90px}
+
+header{display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-top:6px}
+.logo-icon{width:38px;height:38px;background:var(--green-mid);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.logo-icon svg{width:22px;height:22px}
+h1{font-size:19px;font-weight:600;margin:0;line-height:1.2}
+header .sub{font-size:12px;color:var(--muted);margin-top:1px}
+
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 12px}
+
+label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+
+/* Paddle combobox */
+.combo{position:relative}
+.combo input[type=text]{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;
+  padding:12px 14px;font-size:15px;color:var(--text);font-family:inherit;outline:none;transition:.15s;
+}
+.combo input[type=text]:focus{border-color:var(--green-mid);background:rgba(255,255,255,.09)}
+.combo input[type=text]::placeholder{color:var(--muted)}
+.combo-list{
+  position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:40;
+  background:#1c2836;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);
+  max-height:260px;overflow-y:auto;display:none;-webkit-overflow-scrolling:touch;
+}
+.combo-list.open{display:block}
+.combo-opt{padding:11px 14px;font-size:14.5px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.05)}
+.combo-opt:last-child{border-bottom:none}
+.combo-opt:active,.combo-opt.hi{background:var(--green-light);color:#5fe0a0}
+.combo-opt .co{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.combo-empty{padding:14px;font-size:13px;color:var(--muted);text-align:center}
+.combo-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:24px;height:24px;border:none;background:none;color:var(--muted);cursor:pointer;display:none;align-items:center;justify-content:center;border-radius:50%}
+.combo-clear.show{display:flex}
+.combo-clear:active{background:rgba(255,255,255,.1)}
+.data-status{font-size:11px;color:var(--muted);margin-top:6px;display:flex;align-items:center;gap:5px}
+.data-status .dot{width:6px;height:6px;border-radius:50%;background:var(--green-mid);flex-shrink:0}
+.data-status.stale .dot{background:#e8b339}
+
+/* Stepper */
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper button{
+  width:44px;height:44px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.06);
+  color:var(--text);font-size:20px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-family:inherit;line-height:1;flex-shrink:0;
+}
+.stepper button:active{background:var(--green-light);border-color:var(--green-mid);color:#5fe0a0}
+.stepper input{
+  flex:1;text-align:center;font-size:20px;font-weight:600;background:rgba(255,255,255,.06);
+  border:1px solid var(--border);border-radius:10px;padding:11px 8px;color:var(--text);font-family:inherit;outline:none;
+}
+.stepper input:focus{border-color:var(--green-mid)}
+
+input[type=date]{
+  width:100%;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:10px;
+  padding:11px 14px;font-size:15px;color:var(--text);font-family:inherit;outline:none;color-scheme:dark;
+}
+input[type=date]:focus{border-color:var(--green-mid)}
+
+/* Segmented toggle (indoor/outdoor) */
+.seg{display:flex;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.seg button{
+  flex:1;padding:11px 8px;background:rgba(255,255,255,.04);border:none;color:var(--muted);font-size:14px;
+  font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;
+  border-right:1px solid var(--border);
+}
+.seg button:last-child{border-right:none}
+.seg button.active{background:var(--green-light);color:#5fe0a0}
+
+.submit-btn{
+  width:100%;padding:14px;border:none;border-radius:12px;background:var(--green-mid);color:#0a1a12;
+  font-size:15.5px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:16px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.submit-btn:active{background:var(--green)}
+.submit-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+.submit-btn svg{width:17px;height:17px}
+
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(10px);opacity:0;
+  background:var(--green-mid);color:#0a1a12;font-weight:600;font-size:13.5px;padding:10px 18px;border-radius:30px;
+  box-shadow:var(--shadow);transition:.22s;pointer-events:none;z-index:200;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* Summary */
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.summary-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center}
+.summary-box .num{font-size:22px;font-weight:700;color:#5fe0a0;font-family:'DM Mono',monospace}
+.summary-box .lbl{font-size:10.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+
+.by-paddle{margin-top:14px}
+.bp-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13.5px}
+.bp-row:last-child{border-bottom:none}
+.bp-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px}
+.bp-name .co{color:var(--muted);font-size:11px;display:block}
+.bp-count{font-family:'DM Mono',monospace;font-weight:600;color:#5fe0a0;flex-shrink:0}
+
+/* History */
+.hist-toolbar{display:flex;gap:8px;margin-bottom:10px}
+.hist-filter{
+  flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-size:13px;font-family:inherit;padding:8px 10px;outline:none;
+}
+.export-btn{
+  background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:8px;color:var(--muted);
+  font-size:12.5px;font-family:inherit;padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:5px;flex-shrink:0;
+}
+.export-btn:active{border-color:var(--green-mid);color:#5fe0a0}
+.export-btn svg{width:14px;height:14px}
+
+.entry{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.entry:last-child{border-bottom:none}
+.entry-loc{
+  width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:var(--green-light);color:#5fe0a0;
+}
+.entry-loc.outdoor{background:#2a2513;color:#e8c85f}
+.entry-loc svg{width:17px;height:17px}
+.entry-main{flex:1;min-width:0}
+.entry-paddle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-meta{font-size:12px;color:var(--muted);margin-top:1px}
+.entry-games{font-family:'DM Mono',monospace;font-weight:700;font-size:16px;color:#5fe0a0;flex-shrink:0;padding:0 4px}
+.entry-del{
+  width:30px;height:30px;border:none;background:none;color:var(--muted);cursor:pointer;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;border-radius:50%;
+}
+.entry-del:active{background:var(--red-light);color:var(--red)}
+.entry-del svg{width:15px;height:15px}
+
+.empty-state{text-align:center;padding:30px 10px;color:var(--muted);font-size:13.5px}
+.empty-state svg{width:34px;height:34px;margin-bottom:10px;opacity:.5}
+
+footer{text-align:center;font-size:11px;color:var(--muted);margin-top:8px;line-height:1.6}
+footer button{background:none;border:none;color:var(--muted);text-decoration:underline;font-size:11px;cursor:pointer;font-family:inherit;padding:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="7" y="2.5" width="10" height="12" rx="4.5" fill="#0a1a12"/><rect x="10.3" y="14" width="3.4" height="7.5" rx="1.5" fill="#0a1a12"/></svg>
+    </div>
+    <div>
+      <h1>Paddle Game Log</h1>
+      <div class="sub">Track games played, by paddle</div>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>Log Games</h2>
+    <div class="field combo" id="paddleCombo">
+      <label for="paddleInput">Paddle (brand / model)</label>
+      <input type="text" id="paddleInput" placeholder="Search your paddle database…" autocomplete="off" autocapitalize="words">
+      <button class="combo-clear" id="paddleClear" aria-label="Clear">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <div class="combo-list" id="paddleList"></div>
+      <div class="data-status" id="dataStatus"><span class="dot"></span><span id="dataStatusText">Loading paddle list…</span></div>
+    </div>
+
+    <div class="field">
+      <label for="gamesInput">Number of games</label>
+      <div class="stepper">
+        <button type="button" id="gamesDown" aria-label="Decrease">−</button>
+        <input type="number" id="gamesInput" value="1" min="1" max="99" inputmode="numeric">
+        <button type="button" id="gamesUp" aria-label="Increase">+</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="dateInput">Date</label>
+      <input type="date" id="dateInput">
+    </div>
+
+    <div class="field">
+      <label>Location</label>
+      <div class="seg" id="locSeg">
+        <button type="button" data-loc="indoor" class="active">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+          Indoor
+        </button>
+        <button type="button" data-loc="outdoor">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+          Outdoor
+        </button>
+      </div>
+    </div>
+
+    <button class="submit-btn" id="submitBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      Log Games
+    </button>
+  </div>
+
+  <div class="card" id="summaryCard" style="display:none">
+    <h2>Summary</h2>
+    <div class="summary-grid">
+      <div class="summary-box"><div class="num" id="sumTotalGames">0</div><div class="lbl">Total Games</div></div>
+      <div class="summary-box"><div class="num" id="sumTotalSessions">0</div><div class="lbl">Sessions</div></div>
+      <div class="summary-box"><div class="num" id="sumTotalPaddles">0</div><div class="lbl">Paddles</div></div>
+    </div>
+    <div class="by-paddle" id="byPaddle"></div>
+  </div>
+
+  <div class="card">
+    <h2>History</h2>
+    <div class="hist-toolbar">
+      <input type="text" class="hist-filter" id="histFilter" placeholder="Filter by paddle…">
+      <button class="export-btn" id="exportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v13m0 0-4-4m4 4 4-4M4 20h16"/></svg>
+        Export
+      </button>
+    </div>
+    <div id="entryListWrap">
+      <div class="empty-state" id="emptyState">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>
+        No games logged yet — fill out the form above to get started.
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Stored on this device only. <button id="clearAllBtn">Clear all data</button>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+const LS_LOG    = 'jk_game_log_v1';
+const LS_PADDLES= 'jk_game_log_paddle_cache_v1';
+const WORKER_BASE = 'https://bot-defense-1.johnkewpickleball.workers.dev';
+const CSV_URL   = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
+
+// ---------- storage ----------
+function loadLog(){ try{ return JSON.parse(localStorage.getItem(LS_LOG)) || []; }catch(e){ return []; } }
+function saveLog(entries){ try{ localStorage.setItem(LS_LOG, JSON.stringify(entries)); }catch(e){} }
+let ENTRIES = loadLog();
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ---------- toast ----------
+let toastTimer;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+// ---------- paddle list (search source) ----------
+let PADDLE_OPTIONS = []; // [{company, paddle, label}]
+let selectedPaddle = null; // {company, paddle}
+
+function setDataStatus(text, stale){
+  document.getElementById('dataStatusText').textContent = text;
+  document.getElementById('dataStatus').classList.toggle('stale', !!stale);
+}
+
+function buildOptionsFromRows(rows){
+  const seen = new Set(); const opts = [];
+  rows.forEach(r=>{
+    const c = (r.company||'').trim(), p = (r.paddle||'').trim();
+    if(!c || !p) return;
+    const key = (c+'||'+p).toLowerCase();
+    if(seen.has(key)) return; seen.add(key);
+    opts.push({ company:c, paddle:p, label:c+' — '+p });
+  });
+  opts.sort((a,b)=> a.label.localeCompare(b.label));
+  return opts;
+}
+
+function loadPapaParse(cb){
+  if(window.Papa){ cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js';
+  s.onload = cb; s.onerror = ()=>cb();
+  document.head.appendChild(s);
+}
+
+function normalizeRow(raw, headerMap){
+  const out = {};
+  Object.keys(headerMap).forEach(k=>{ out[k] = raw[headerMap[k]]; });
+  return out;
+}
+
+function fetchPaddles(url, fallbackUrl){
+  Papa.parse(url, {
+    download:true, skipEmptyLines:true,
+    complete:function(res){
+      const rows = res.data || [];
+      if(rows.length < 3){ if(fallbackUrl) return fetchPaddles(fallbackUrl, null); return onPaddlesFailed(); }
+      const head = rows[0].map(h=>String(h).toLowerCase().replace(/[^a-z0-9]/g,''));
+      const ci = { company: head.findIndex(h=>h==='company'||h==='brand'), paddle: head.findIndex(h=>h==='paddle'||h==='model'||h==='name') };
+      if(ci.company < 0 || ci.paddle < 0){ if(fallbackUrl) return fetchPaddles(fallbackUrl, null); return onPaddlesFailed(); }
+      const objs = [];
+      for(let i=1;i<rows.length;i++){ const r=rows[i]; if(!r) continue; objs.push({ company:r[ci.company], paddle:r[ci.paddle] }); }
+      const opts = buildOptionsFromRows(objs);
+      if(!opts.length){ if(fallbackUrl) return fetchPaddles(fallbackUrl, null); return onPaddlesFailed(); }
+      PADDLE_OPTIONS = opts;
+      try{ localStorage.setItem(LS_PADDLES, JSON.stringify({ opts, ts: Date.now() })); }catch(e){}
+      setDataStatus(opts.length + ' paddles loaded', false);
+    },
+    error:function(){ if(fallbackUrl) fetchPaddles(fallbackUrl, null); else onPaddlesFailed(); }
+  });
+}
+
+function onPaddlesFailed(){
+  if(PADDLE_OPTIONS.length){ setDataStatus(PADDLE_OPTIONS.length + ' paddles (cached, offline)', true); }
+  else{ setDataStatus('Couldn’t load paddle list — type a name manually', true); }
+}
+
+function initPaddleData(){
+  try{
+    const cached = JSON.parse(localStorage.getItem(LS_PADDLES));
+    if(cached && cached.opts && cached.opts.length){
+      PADDLE_OPTIONS = cached.opts;
+      const ageMin = Math.round((Date.now()-cached.ts)/60000);
+      setDataStatus(PADDLE_OPTIONS.length + ' paddles (cached ' + (ageMin<1?'just now':ageMin+'m ago') + ')', false);
+    }
+  }catch(e){}
+  loadPapaParse(function(){ fetchPaddles(WORKER_BASE+'/csv/paddles', CSV_URL); });
+}
+
+// ---------- combobox ----------
+const paddleInput = document.getElementById('paddleInput');
+const paddleList  = document.getElementById('paddleList');
+const paddleClear = document.getElementById('paddleClear');
+let hiIndex = -1, currentMatches = [];
+
+function renderMatches(query){
+  const q = query.trim().toLowerCase();
+  currentMatches = !q ? PADDLE_OPTIONS.slice(0,40) : PADDLE_OPTIONS.filter(o=>o.label.toLowerCase().includes(q)).slice(0,40);
+  hiIndex = -1;
+  if(!currentMatches.length){
+    paddleList.innerHTML = '<div class="combo-empty">' + (PADDLE_OPTIONS.length ? 'No matches — you can still type a custom name and log it.' : 'No paddle list loaded yet.') + '</div>';
+  } else {
+    paddleList.innerHTML = currentMatches.map((o,i)=>
+      '<div class="combo-opt" data-i="'+i+'"><span class="co">'+escapeHtml(o.company)+'</span>'+escapeHtml(o.paddle)+'</div>'
+    ).join('');
+  }
+  paddleList.classList.add('open');
+}
+function closeList(){ paddleList.classList.remove('open'); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+paddleInput.addEventListener('focus', ()=> renderMatches(paddleInput.value));
+paddleInput.addEventListener('input', ()=>{
+  selectedPaddle = null;
+  paddleClear.classList.toggle('show', !!paddleInput.value);
+  renderMatches(paddleInput.value);
+});
+paddleInput.addEventListener('keydown', (e)=>{
+  if(!paddleList.classList.contains('open')) return;
+  if(e.key==='ArrowDown'){ e.preventDefault(); hiIndex = Math.min(hiIndex+1, currentMatches.length-1); highlight(); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); hiIndex = Math.max(hiIndex-1, 0); highlight(); }
+  else if(e.key==='Enter'){ e.preventDefault(); if(hiIndex>=0 && currentMatches[hiIndex]) pick(currentMatches[hiIndex]); else closeList(); }
+  else if(e.key==='Escape'){ closeList(); paddleInput.blur(); }
+});
+function highlight(){
+  [...paddleList.children].forEach((el,i)=>el.classList.toggle('hi', i===hiIndex));
+  const el = paddleList.children[hiIndex]; if(el) el.scrollIntoView({block:'nearest'});
+}
+paddleList.addEventListener('click', (e)=>{
+  const opt = e.target.closest('.combo-opt'); if(!opt) return;
+  const i = +opt.dataset.i; pick(currentMatches[i]);
+});
+function pick(o){
+  selectedPaddle = { company:o.company, paddle:o.paddle };
+  paddleInput.value = o.label;
+  paddleClear.classList.add('show');
+  closeList();
+}
+paddleClear.addEventListener('click', ()=>{
+  paddleInput.value=''; selectedPaddle=null; paddleClear.classList.remove('show'); paddleInput.focus(); renderMatches('');
+});
+document.addEventListener('click', (e)=>{
+  if(!document.getElementById('paddleCombo').contains(e.target)) closeList();
+});
+
+// ---------- games stepper ----------
+const gamesInput = document.getElementById('gamesInput');
+document.getElementById('gamesDown').addEventListener('click', ()=>{ gamesInput.value = Math.max(1, (+gamesInput.value||1)-1); });
+document.getElementById('gamesUp').addEventListener('click', ()=>{ gamesInput.value = Math.min(99, (+gamesInput.value||1)+1); });
+
+// ---------- date default ----------
+const dateInput = document.getElementById('dateInput');
+function todayStr(){ const d=new Date(); const tz=d.getTimezoneOffset(); const local=new Date(d.getTime()-tz*60000); return local.toISOString().slice(0,10); }
+dateInput.value = todayStr();
+
+// ---------- location segmented control ----------
+let selectedLoc = 'indoor';
+document.getElementById('locSeg').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-loc]'); if(!btn) return;
+  selectedLoc = btn.dataset.loc;
+  [...document.querySelectorAll('#locSeg button')].forEach(b=>b.classList.toggle('active', b===btn));
+});
+
+// ---------- submit ----------
+document.getElementById('submitBtn').addEventListener('click', ()=>{
+  let company, paddle;
+  if(selectedPaddle){ company = selectedPaddle.company; paddle = selectedPaddle.paddle; }
+  else {
+    const typed = paddleInput.value.trim();
+    if(!typed){ toast('Enter or pick a paddle first'); paddleInput.focus(); return; }
+    // allow "Company — Model" free text, or just treat whole thing as the paddle name
+    const parts = typed.split(/—|-{1,2}(?!\w)/).map(s=>s.trim()).filter(Boolean);
+    if(parts.length>=2){ company = parts[0]; paddle = parts.slice(1).join(' - '); }
+    else { company=''; paddle = typed; }
+  }
+  const games = Math.max(1, Math.min(99, +gamesInput.value || 1));
+  const date = dateInput.value || todayStr();
+  const entry = { id: uid(), company, paddle, games, date, location: selectedLoc, loggedAt: Date.now() };
+  ENTRIES.unshift(entry);
+  saveLog(ENTRIES);
+  toast('Logged ' + games + ' game' + (games===1?'':'s'));
+  render();
+  // reset just the games count + keep paddle/date/location for fast repeat entries
+  gamesInput.value = 1;
+});
+
+// ---------- delete / clear ----------
+function deleteEntry(id){
+  ENTRIES = ENTRIES.filter(e=>e.id!==id);
+  saveLog(ENTRIES);
+  render();
+}
+document.getElementById('clearAllBtn').addEventListener('click', ()=>{
+  if(!ENTRIES.length){ toast('Nothing to clear'); return; }
+  if(confirm('Delete all logged games from this device? This can’t be undone.')){
+    ENTRIES = []; saveLog(ENTRIES); render(); toast('Cleared');
+  }
+});
+
+// ---------- export ----------
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  if(!ENTRIES.length){ toast('No entries to export'); return; }
+  const rows = [['Company','Paddle','Games','Date','Location','Logged At']];
+  ENTRIES.slice().reverse().forEach(e=> rows.push([e.company, e.paddle, e.games, e.date, e.location, new Date(e.loggedAt).toISOString()]));
+  const csv = rows.map(r=> r.map(v=>{
+    const s = String(v==null?'':v);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'paddle-game-log-' + todayStr() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  toast('CSV downloaded');
+});
+
+// ---------- render ----------
+const histFilter = document.getElementById('histFilter');
+histFilter.addEventListener('input', render);
+
+function render(){
+  // summary
+  const summaryCard = document.getElementById('summaryCard');
+  if(!ENTRIES.length){ summaryCard.style.display='none'; }
+  else{
+    summaryCard.style.display='';
+    const totalGames = ENTRIES.reduce((s,e)=>s+(+e.games||0),0);
+    const byKey = {};
+    ENTRIES.forEach(e=>{
+      const key = (e.company?e.company+' — ':'')+e.paddle;
+      byKey[key] = byKey[key] || { company:e.company, paddle:e.paddle, games:0 };
+      byKey[key].games += (+e.games||0);
+    });
+    document.getElementById('sumTotalGames').textContent = totalGames;
+    document.getElementById('sumTotalSessions').textContent = ENTRIES.length;
+    document.getElementById('sumTotalPaddles').textContent = Object.keys(byKey).length;
+    const rows = Object.values(byKey).sort((a,b)=>b.games-a.games);
+    document.getElementById('byPaddle').innerHTML = rows.map(r=>
+      '<div class="bp-row"><div class="bp-name">'+(r.company?'<span class="co">'+escapeHtml(r.company)+'</span>':'')+escapeHtml(r.paddle)+'</div><div class="bp-count">'+r.games+'</div></div>'
+    ).join('');
+  }
+
+  // history
+  const q = histFilter.value.trim().toLowerCase();
+  const list = ENTRIES.filter(e=> !q || (e.paddle+' '+e.company).toLowerCase().includes(q));
+  const wrap = document.getElementById('entryListWrap');
+  if(!ENTRIES.length){
+    wrap.innerHTML = '<div class="empty-state" id="emptyState"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h5"/></svg>No games logged yet — fill out the form above to get started.</div>';
+    return;
+  }
+  if(!list.length){
+    wrap.innerHTML = '<div class="empty-state">No entries match “'+escapeHtml(histFilter.value)+'”.</div>';
+    return;
+  }
+  wrap.innerHTML = list.map(e=>{
+    const d = new Date(e.date+'T00:00:00');
+    const dateStr = isNaN(d) ? e.date : d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+    const isOutdoor = e.location==='outdoor';
+    const icon = isOutdoor
+      ? '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4.5"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>'
+      : '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>';
+    return '<div class="entry">'
+      + '<div class="entry-loc'+(isOutdoor?' outdoor':'')+'">'+icon+'</div>'
+      + '<div class="entry-main"><div class="entry-paddle">'+(e.company?escapeHtml(e.company)+' — ':'')+escapeHtml(e.paddle)+'</div>'
+      + '<div class="entry-meta">'+dateStr+' &middot; '+(isOutdoor?'Outdoor':'Indoor')+'</div></div>'
+      + '<div class="entry-games">'+e.games+'</div>'
+      + '<button class="entry-del" data-id="'+e.id+'" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>'
+      + '</div>';
+  }).join('');
+  [...wrap.querySelectorAll('.entry-del')].forEach(btn=>{
+    btn.addEventListener('click', ()=> deleteEntry(btn.dataset.id));
+  });
+}
+
+initPaddleData();
+render();
+})();
+</script>
+</body>
+</html>
