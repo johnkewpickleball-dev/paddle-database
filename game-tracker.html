@@ -125,11 +125,13 @@ input[type=date]:focus{border-color:var(--green-mid)}
 .summary-box .lbl{font-size:10.5px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
 
 .by-paddle{margin-top:14px}
-.bp-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:13.5px}
+.bp-row{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;margin:0 -4px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13.5px;border-radius:8px;cursor:pointer;transition:.12s}
 .bp-row:last-child{border-bottom:none}
+.bp-row:active{background:var(--green-light)}
 .bp-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px}
 .bp-name .co{color:var(--muted);font-size:11px;display:block}
-.bp-count{font-family:'DM Mono',monospace;font-weight:600;color:#5fe0a0;flex-shrink:0}
+.bp-count{font-family:'DM Mono',monospace;font-weight:600;color:#5fe0a0;flex-shrink:0;display:flex;align-items:center;gap:6px}
+.bp-count svg{width:13px;height:13px;opacity:.55}
 
 /* History */
 .hist-toolbar{display:flex;gap:8px;margin-bottom:10px}
@@ -416,6 +418,19 @@ function pick(o){
 paddleClear.addEventListener('click', ()=>{
   paddleInput.value=''; selectedPaddle=null; paddleClear.classList.remove('show'); paddleInput.focus(); renderMatches('');
 });
+
+// Tapping a paddle in the Summary "by paddle" list pre-fills the form with that paddle,
+// so logging another session for the same paddle doesn't require re-searching.
+function quickSelectPaddle(company, paddle){
+  selectedPaddle = { company: company||'', paddle: paddle||'' };
+  paddleInput.value = (company ? company+' — ' : '') + paddle;
+  paddleClear.classList.add('show');
+  closeList();
+  document.querySelector('.card').scrollIntoView({ behavior:'smooth', block:'start' });
+  gamesInput.focus();
+  gamesInput.select();
+  toast('Selected ' + paddle + ' — add games below');
+}
 document.addEventListener('click', (e)=>{
   if(!document.getElementById('paddleCombo').contains(e.target)) closeList();
 });
@@ -513,9 +528,14 @@ function render(){
     document.getElementById('sumTotalSessions').textContent = ENTRIES.length;
     document.getElementById('sumTotalPaddles').textContent = Object.keys(byKey).length;
     const rows = Object.values(byKey).sort((a,b)=>b.games-a.games);
-    document.getElementById('byPaddle').innerHTML = rows.map(r=>
-      '<div class="bp-row"><div class="bp-name">'+(r.company?'<span class="co">'+escapeHtml(r.company)+'</span>':'')+escapeHtml(r.paddle)+'</div><div class="bp-count">'+r.games+'</div></div>'
+    const byPaddleEl = document.getElementById('byPaddle');
+    byPaddleEl.innerHTML = rows.map(r=>
+      '<div class="bp-row" data-company="'+escapeHtml(r.company)+'" data-paddle="'+escapeHtml(r.paddle)+'"><div class="bp-name">'+(r.company?'<span class="co">'+escapeHtml(r.company)+'</span>':'')+escapeHtml(r.paddle)+'</div><div class="bp-count">'+r.games
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div></div>'
     ).join('');
+    [...byPaddleEl.querySelectorAll('.bp-row')].forEach(row=>{
+      row.addEventListener('click', ()=> quickSelectPaddle(row.dataset.company, row.dataset.paddle));
+    });
   }
 
   // history
