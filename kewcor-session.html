@@ -1,0 +1,1415 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<!-- Same per-bot block the public pages carry. This one is noindex to everybody
+     anyway, so these are belt and braces — but the page describes the method in
+     detail and there is no reason for it to end up in a training set. -->
+<meta name="GPTBot" content="noindex, nofollow">
+<meta name="ChatGPT-User" content="noindex, nofollow">
+<meta name="Google-Extended" content="noindex, nofollow">
+<meta name="Applebot-Extended" content="noindex, nofollow">
+<meta name="CCBot" content="noindex, nofollow">
+<meta name="ClaudeBot" content="noindex, nofollow">
+<meta name="anthropic-ai" content="noindex, nofollow">
+<meta name="Bytespider" content="noindex, nofollow">
+<meta name="PerplexityBot" content="noindex, nofollow">
+<meta name="Amazonbot" content="noindex, nofollow">
+<meta name="Diffbot" content="noindex, nofollow">
+<meta name="cohere-ai" content="noindex, nofollow">
+<meta name="omgili" content="noindex, nofollow">
+<title>KewCOR Session Runner</title>
+<style>
+  :root{
+    --navy:#1f3864; --ink:#1a1f2b; --muted:#6b7280; --line:#e3e7ee; --bg:#f6f7fa;
+    --card:#fff; --amber:#b45309; --amberbg:#fef3c7; --red:#b91c1c; --redbg:#fee2e2;
+    --ok:#1e40af; --okbg:#dbeafe; --paste:#fde3c8; --calc:#f3f4f6;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+       color:var(--ink);background:var(--bg)}
+  header{background:var(--navy);color:#fff;padding:14px 22px;display:flex;align-items:baseline;gap:14px}
+  header h1{margin:0;font-size:19px;letter-spacing:.2px}
+  header .sub{opacity:.72;font-size:13px}
+  .wrap{display:grid;grid-template-columns:224px 1fr;gap:0;min-height:calc(100vh - 52px)}
+  /* step rail */
+  nav{background:#fff;border-right:1px solid var(--line);padding:16px 0}
+  .step{display:flex;gap:10px;align-items:flex-start;padding:9px 16px;cursor:pointer;border-left:3px solid transparent}
+  .step:hover{background:#fafbfd}
+  .step.on{border-left-color:var(--navy);background:#f4f7fd}
+  .step.done .dot{background:var(--navy);color:#fff;border-color:var(--navy)}
+  .step.locked{opacity:.42;cursor:not-allowed}
+  .dot{flex:0 0 22px;height:22px;border-radius:50%;border:1.5px solid #c3cad8;display:grid;
+       place-items:center;font-size:11px;font-weight:700;color:#8892a6;background:#fff}
+  .step b{display:block;font-size:13.5px;font-weight:600}
+  .step span{display:block;font-size:11.5px;color:var(--muted)}
+  main{padding:22px 26px 60px;max-width:1080px}
+  h2{margin:0 0 3px;font-size:20px;color:var(--navy)}
+  .lede{color:var(--muted);margin:0 0 18px;font-size:13.5px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:9px;padding:16px 18px;margin-bottom:14px}
+  .card h3{margin:0 0 12px;font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--navy)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+  input,select,textarea{width:100%;padding:7px 9px;border:1px solid #cfd6e2;border-radius:6px;
+       font:inherit;font-size:14px;background:#fff}
+  input:focus,select:focus,textarea:focus{outline:2px solid #9db4e0;border-color:#9db4e0}
+  input.paste,textarea.paste{background:var(--paste)}
+  textarea{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;min-height:112px;resize:vertical}
+  .out{background:var(--calc);border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-variant-numeric:tabular-nums}
+  button{font:inherit;padding:9px 17px;border-radius:7px;border:1px solid var(--navy);
+       background:var(--navy);color:#fff;cursor:pointer;font-weight:600}
+  button.ghost{background:#fff;color:var(--navy)}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  th{background:var(--navy);color:#fff;font-weight:600;padding:6px 7px;text-align:center;font-size:11.5px}
+  td{padding:5px 7px;border-bottom:1px solid #eef1f6;text-align:center}
+  td.l{text-align:left}
+  tr.rej td{color:#9aa3b2}
+  tr.bad td{background:var(--redbg)}
+  .status{display:inline-block;padding:1px 7px;border-radius:20px;font-size:11px;font-weight:600}
+  .s-use{background:var(--okbg);color:var(--ok)} .s-rej{background:var(--amberbg);color:var(--amber)}
+  .s-bad{background:var(--redbg);color:var(--red)}
+  .banner{border-radius:7px;padding:11px 14px;margin-bottom:13px;font-size:13.5px;display:flex;gap:9px}
+  .b-ok{background:var(--okbg);color:#173a7a} .b-warn{background:var(--amberbg);color:#7c3f06}
+  .b-bad{background:var(--redbg);color:#8c1616} .b-mute{background:#eef0f4;color:#4b5563}
+  .kpi{display:flex;gap:26px;flex-wrap:wrap}
+  .kpi div{min-width:96px} .kpi b{display:block;font-size:22px;color:var(--navy);font-variant-numeric:tabular-nums}
+  .kpi span{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  /* info bubbles — the walls of text live in here now */
+  .i{display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;
+     background:#dbe3f1;color:var(--navy);font-size:11px;font-weight:700;cursor:pointer;
+     margin-left:5px;vertical-align:middle;border:0;padding:0;font-family:Georgia,serif}
+  .i:hover{background:var(--navy);color:#fff}
+  dialog{border:0;border-radius:11px;padding:0;max-width:620px;width:92vw;box-shadow:0 18px 50px rgba(16,24,40,.24)}
+  dialog::backdrop{background:rgba(16,24,40,.42)}
+  dialog .dh{background:var(--navy);color:#fff;padding:13px 18px;font-weight:600;font-size:14.5px}
+  dialog .db{padding:16px 18px;font-size:13.5px;line-height:1.62;white-space:pre-wrap}
+  dialog .df{padding:0 18px 16px;text-align:right}
+  .muted{color:var(--muted);font-size:12.5px}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#eef0f4;color:#4b5563}
+  .pill.use{background:var(--okbg);color:var(--ok)} .pill.warn{background:var(--amberbg);color:var(--amber)}
+  .pill.bad{background:var(--redbg);color:var(--red)}
+  /* mode switch — the session flow and the shelf are the two halves of the job */
+  header .modes{margin-left:auto;display:flex;gap:6px}
+  header .modes button{padding:5px 14px;font-size:13px;border-radius:20px;font-weight:600;
+       border:1px solid rgba(255,255,255,.42);background:transparent;color:#fff}
+  header .modes button.on{background:#fff;color:var(--navy);border-color:#fff}
+  /* the step rail belongs to the session. On the shelf there are no steps. */
+  .wrap.solo{grid-template-columns:1fr}
+  .wrap.solo nav{display:none}
+  .secret{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.06em}
+  td.l{text-align:left}
+  tr.dim td{color:#9aa3b2}
+</style>
+</head>
+<body>
+<header>
+  <h1>KewCOR</h1>
+  <div class="sub" id="hdrsub">prototype — the arithmetic is checked against the workbook</div>
+  <div class="modes" id="modes"></div>
+</header>
+
+<div class="wrap">
+  <nav id="rail"></nav>
+  <main id="main"></main>
+</div>
+
+<dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
+  <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
+
+<script src="kewcor-core.js"></script>
+<script>
+'use strict';
+const K = window.KewCOR;
+
+/* ── the explanatory text, out of the way until asked for ─────────────────── */
+const NOTES = {
+  anchor: ["The anchor paddle",
+    "ANCHOR 2 (TFG-4) is the working control. ANCHOR 3 (TFW-3) is the spare and sits on the same published scale, so switching needs no adjustment.\n\nANCHOR 1 (TFG-1) is RETIRED — reference only. Its face is worn and its P_ref no longer describes it. Pick it only to re-run a paddle entered before the changeover.\n\nP_ref is a CONSTANT for each paddle, never recomputed. Anchors 2 and 3 were derived from Anchor 1 by direct crossover, which is what puts all three on one scale."],
+  prior: ["Prior impacts and the @70 box",
+    "Two boxes, on purpose. On the left, impacts this ball has taken at 50 mph — the running total from the registry. On the right, shots from an accelerated wear phase at 70 mph.\n\nA 70 mph wear shot counts as 0.44 of a 50 mph impact — LESS, not more. The wear rig clamps the paddle at 30 degrees so it can throw the spin-off durability testing records, so those are glancing blows. Only the square-on component of the closing speed compresses the core, and at 30 degrees that is 35 mph.\n\nSo a standard 100-shot wear phase leaves a ball around 44 effective impacts old: still on the steep part of the wear curve."],
+  deflection: ["Deflection — the anchor monitor",
+    "Takes a minute, costs no shots, and is the tripwire for the anchor going soft.\n\nPress the gauge at the SAME spot every time, and as near the crosshair as the rig allows. The anchor's wear is uniquely concentrated — twenty-odd shots a session at one point, where a test paddle spreads them over four — so a reading taken at the geometric center can be blind to exactly the damage you are watching for.\n\nAcross 211 paddles, 1 lb of deflection is worth about 0.0012 of KewCOR, so the 0.005 that matters is roughly 4 lbs. That conversion is cross-sectional and provisional: it says how deflection and KewCOR vary BETWEEN designs, not how they move together within one paddle over time."],
+  paste: ["Pasting gate data",
+    "DO NOT SORT IT. The rows must stay in the order you fired them.\n\nEvery shot is placed in the ball's life by its position in the block, and the correction each location gets is taken at the moment that block was actually fired. Sorting scrambles that, and the damage is silent — the numbers still look reasonable, they are just wrong.\n\nDo not remove the bad shots either. The ball felt every one of them and the wear accounting needs the real count.\n\nThree columns: Inbound, Outbound, COR. Tabs, commas or spaces all work."],
+  window: ["Why ±7 mph is safe",
+    "The cannon runs an inbound sd of 4.29 mph. At ±3 you keep half your shots; at ±7 you keep about 90%.\n\nIt is only safe because every shot is corrected to 50 mph BEFORE anything is averaged, using a slope of −0.00451 PBCoR per mph measured on these paddles at this location over two sessions."],
+  mid: ["The MID block",
+    "A third control reading, shot between paddles 2 and 3.\n\nBall COR decays exponentially, so the correction between PRE and POST follows a curve, not a straight line. The ramp already bends to that curve using a decay constant borrowed from LT-15. The MID block is what makes that borrowing unnecessary: with a third reading the ramp is anchored on measurements in both halves of the session.\n\nIt is asked for when the ball is under 190 effective impacts and the session runs more than about 90 paddle impacts — in practice, a ball's first session or two after its wear phase, and almost never after that.\n\nIf you decide to stop after two paddles, this block becomes the POST block. Nothing is wasted."],
+  drift: ["POOLED or RAMP",
+    "PRE and POST are a FAILURE DETECTOR before they are a drift meter.\n\nOn a settled ball the true drift across a session is about 0.001, while each block carries a standard error near 0.005. Most sessions the difference you measure is noise, and ramping on noise adds error to every paddle instead of removing it. So AUTO ramps only when PRE and POST differ by more than two standard errors.\n\nOn a ball fresh off its wear phase, expect RAMP — that one really is still breaking in. On an old ball, RAMP means something mechanical happened: go and look at the seam."],
+  block: ["One correction per location block",
+    "The ball keeps decaying while a paddle is being shot. Because locations are shot in blocks from the top of the face downward, that decay would land as a GRADIENT across the face map — top reading hot, bottom cold — if the whole paddle shared one correction.\n\nSo each block gets its own D, taken at the moment that block was actually fired. On paddle 1 of a ball fresh off the wear phase that is worth about 0.004 across the face; by paddle 4, or on a settled ball, it is nothing.\n\nIn POOLED mode all the blocks fall back to the same figure, which is correct: there is no measured drift to distribute."],
+  kewcor: ["KewCOR",
+    "KewCOR = SQRT(PBCoR@50² + D), where D = P_ref² − P_ctrl².\n\nThe correction is applied to the LOCATION MEAN, not shot by shot, so a noisy individual shot cannot leak in through the square root.\n\nPeak location is read off the measured values, never off the curve on the chart — that curve is a smoothed spline through four or five points and can bulge slightly past the highest one."],
+  axis: ["The vertical axis",
+    "Locked to a 0.07 window, the same span the KewCOR curve uses on the website, and centered on this paddle's own values so the shape fills the frame.\n\nIf a paddle's range is wider than 0.07 the window opens to fit it, with 0.01 of headroom above and below. The span is printed under the chart so you can always see which of the two you are looking at."]
+};
+function bubble(k){ const [h,b]=NOTES[k]; ih.textContent=h; ib.textContent=b; info.showModal(); }
+
+/* ── session state, with a local draft so a refresh cannot cost you the day ── */
+const LOC_ALL = [3,4,5,6,7];
+const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',pmNote:'',pmWarn:'',use7:false,shots:{}});
+const DEFAULT = {
+  regBall:null,
+  date:new Date().toISOString().slice(0,10), person:'', temp:'',
+  anchor:'Anchor 2', ballId:'LT-89', prior:133, wear:100, deflection:'',
+  paddles:[blankPaddle(),blankPaddle()],
+  pre:'', mid:'', post:'', mirror:'', midAfter:2, endedEarly:false,
+  registryUrl:'', step:0, mode:'session',
+  // What has already reached the registry, kept in the draft so that a refresh — or a
+  // second click on a button that already worked — cannot produce a second row.
+  sent:{session:null, anchor:null}
+};
+const DRAFT='kewcor.draft.v1';
+let S = (()=>{ try{ const j=JSON.parse(localStorage.getItem(DRAFT)); if(j&&j.paddles) return Object.assign({},DEFAULT,j);}catch(e){} return JSON.parse(JSON.stringify(DEFAULT)); })();
+let saveTimer=null;
+function save(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{
+  try{ localStorage.setItem(DRAFT, JSON.stringify(S)); }catch(e){} },250); }
+function resetAll(){ if(!confirm('Clear this session and start a new one? The draft is deleted.')) return;
+  try{ localStorage.removeItem(DRAFT); }catch(e){}
+  S=JSON.parse(JSON.stringify(DEFAULT)); S.paddles=[blankPaddle(),blankPaddle()]; render(); }
+
+const STEPS = [
+  {t:'Session',  s:'ball, anchor, paddles'},
+  {t:'PRE',      s:'10 control shots'},
+  {t:'Paddle 1', s:'by location'},
+  {t:'Paddle 2', s:'by location'},
+  {t:'MID',      s:'when asked'},
+  {t:'Paddle 3', s:'optional'},
+  {t:'Paddle 4', s:'optional'},
+  {t:'POST',     s:'10 control shots'},
+  {t:'Results',  s:'read and send'}
+];
+
+/* ── Paddle Metrics, live ─────────────────────────────────────────────────── */
+const PM_SHEET='1LyJMxNydRdoCbguGYDE6b77hz6_pBsPMI6IF3oolBcg', PM_TAB='Source Entry';
+const PM_COL={name:1, date:2, swing:5, length:10, mfr:23};   // Setup C38-C43
+let PM={rows:[], state:'idle', msg:''};
+function csv(text){
+  const out=[]; let row=[], f='', q=false;
+  for(let i=0;i<text.length;i++){ const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ row.push(f); f=''; }
+    else if(c==='\n'){ row.push(f); out.push(row); row=[]; f=''; }
+    else if(c!=='\r') f+=c;
+  }
+  if(f||row.length){ row.push(f); out.push(row); }
+  return out;
+}
+/* ── The Ball Registry, live ───────────────────────────────────────────────
+ * Shelf!A15:N75 — the same range the calculator's IMPORTRANGE pulls. Row 15 is the
+ * header, so gviz's range parameter lines the columns up for us.
+ *
+ * The registry's id is NOT hardcoded. The workbook keeps it in Setup C56 because it
+ * is a thing John pastes once, and doing the same here means this file never has to
+ * be edited to point at a different registry.                                    */
+const REG_KEY='kewcor.registry.v1', REG_TAB='Shelf', REG_RANGE='A15:S75';
+const REG_COL={id:1, since:2, wear:3, otherPrior:4, status:5, sessions:6,
+               logged:7, age:8, stage:9, room:10, paddles:11, lastUsed:12,
+               lastPre:13, agrees:14,
+               // out to S, because the retire form writes into this half and the
+               // registry's own "RETIRED WITHOUT A REASON" check reads it
+               retiredOn:15, why:16, crackAt:17, notes:18, record:19};
+const BALL_STATUS = ['IN ROTATION','RESERVED','RETIRED','CRACKED'];
+const BALL_WHY    = ['WORN OUT','SEAM CRACK','OTHER DAMAGE','LOST','END OF STUDY'];
+let REGID = (()=>{ try{ return localStorage.getItem(REG_KEY)||''; }catch(e){ return ''; } })();
+let RG={rows:[], state:REGID?'idle':'unset', msg:''};
+
+// Accepts a full Google Sheets URL or a bare id — whichever is on the clipboard.
+function sheetId(v){
+  const m=String(v||'').match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]{20,})/);
+  return m ? m[1] : (/^[a-zA-Z0-9_-]{20,}$/.test(String(v||'').trim()) ? String(v).trim() : '');
+}
+function setRegistry(v){
+  const id=sheetId(v);
+  if(!id){ RG={rows:[],state:'badurl',msg:'That does not look like a Google Sheets link. '
+      + 'Open the registry and copy the whole URL from the address bar.'}; return render(); }
+  REGID=id; try{ localStorage.setItem(REG_KEY,id); }catch(e){}
+  loadShelf();
+}
+function forgetRegistry(){
+  REGID=''; try{ localStorage.removeItem(REG_KEY); }catch(e){}
+  RG={rows:[],state:'unset',msg:''}; render();
+}
+
+/* ── the write endpoint ────────────────────────────────────────────────────
+ * The URL and the secret are kept on THIS MACHINE, not in this file. Two reasons,
+ * and the second is the real one:
+ *
+ *   - the file can be published without editing it, the way the registry id already is;
+ *   - the published page then carries NO SECRET AT ALL. Anyone who finds the unlisted
+ *     page can read it and cannot write to it.
+ *
+ * The registry's Apps Script tab still describes the secret as "obfuscation, not
+ * security", which was true when the plan was to bake it into the page. It is a
+ * stronger claim than that now, though still not a lock: anyone at this keyboard has it.
+ *
+ * text/plain, deliberately. A JSON content type makes the browser send a CORS preflight
+ * that Apps Script does not answer; text/plain is on the safelist, so the POST goes
+ * straight out and the reply — which does carry Access-Control-Allow-Origin — is
+ * readable. That is what lets a write report the row it landed on instead of vanishing
+ * into no-cors and being taken on trust.                                              */
+const EP_KEY='kewcor.endpoint.v1';
+let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
+    JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
+let WR = {busy:'', msg:'', tone:'', detail:''};
+
+function setEndpoint(url, secret){
+  const u=(url||'').trim();
+  if(u && !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(u)){
+    WR={busy:'',tone:'bad',msg:'That is not the /exec URL.',
+        detail:'It should look like https://script.google.com/macros/s/AKfy…/exec — '
+             + 'the Deploy dialog gives it to you. A /dev URL only works while you are '
+             + 'signed in to the script editor, which is not the same thing.'};
+    return render();
+  }
+  EP={url:u, secret:(secret||'').trim()};
+  try{ localStorage.setItem(EP_KEY, JSON.stringify(EP)); }catch(e){}
+  WR={busy:'',tone:'',msg:'',detail:''};
+  if(EP.url) pingEndpoint(); else render();
+}
+function forgetEndpoint(){
+  EP={url:'',secret:''};
+  try{ localStorage.removeItem(EP_KEY); }catch(e){}
+  WR={busy:'',tone:'',msg:'',detail:''}; render();
+}
+
+function post(op, payload){
+  if(!EP.url) return Promise.reject(new Error(
+    'No write endpoint set. Open the Ball registry tab and paste the /exec URL and the secret.'));
+  const body=JSON.stringify(Object.assign({op, secret:EP.secret}, payload||{}));
+  return fetch(EP.url, {method:'POST', body, redirect:'follow',
+                        headers:{'Content-Type':'text/plain;charset=utf-8'}})
+    .then(r=>r.text().then(t=>({status:r.status, t})))
+    .then(({status,t})=>{
+      let j;
+      try{ j=JSON.parse(t); }
+      catch(e){
+        throw new Error(/<(!doctype|html)/i.test(t)
+          ? 'The endpoint answered with a web page instead of JSON (HTTP '+status+'). '
+          + 'That is almost always the deployment being set to anything other than '
+          + '"Execute as: Me, Who has access: Anyone".'
+          : 'The endpoint answered with something that is not JSON: '+t.slice(0,200));
+      }
+      if(!j.ok) throw Object.assign(new Error(j.message||j.error||'the write was refused'), {res:j});
+      return j;
+    })
+    .catch(e=>{
+      // A CORS or offline failure rejects with a bare TypeError and no detail at all,
+      // so say the two things it is actually likely to be rather than echo "Failed to fetch".
+      if(e instanceof TypeError) throw new Error(location.protocol==='file:'
+        ? 'Opened from disk, so the browser blocks the request before sending it. '
+        + 'Serve the folder and reload from http://localhost:8000/.'
+        : 'Could not reach the endpoint. Either there is no network at the rig, or the '
+        + 'deployment has been replaced and this URL now points at nothing — open it in '
+        + 'a tab and see whether it answers.');
+      throw e;
+    });
+}
+
+function pingEndpoint(){
+  WRSCOPE='endpoint';
+  WR={busy:'ping', msg:'', tone:'', detail:''}; render();
+  post('ping').then(j=>{
+    WR={busy:'', tone:'ok', msg:'Endpoint answered'+(j.version?' — build '+j.version:'')+'.',
+        detail: j.version===2 ? '' :
+          'This deployment is an older build of the script. Sessions will not be checked '
+          + 'for duplicates and anchor readings will append a new row instead of updating '
+          + 'the day\'s row. Re-copy the script from the registry\'s Apps Script tab and '
+          + 'redeploy.'};
+    render();
+  }).catch(e=>{ WR={busy:'', tone:'bad', msg:'No.', detail:e.message}; render(); });
+}
+
+/* ── read-back ─────────────────────────────────────────────────────────────
+ * A write is not done because the endpoint said so. It is done because the sheet says
+ * so. Every write is followed by a read of the row it claims to have written, and only
+ * that read is allowed to mark it sent.                                              */
+function readRow(tab, headerRow, row, lastCol){
+  const url=`https://docs.google.com/spreadsheets/d/${REGID}/gviz/tq?tqx=out:csv&sheet=`
+      + encodeURIComponent(tab) + `&range=A${headerRow}:${lastCol}${row}&cb=` + Date.now();
+  return fetch(url).then(r=>r.text()).then(t=>{
+    if(/^\s*</.test(t)) throw new Error(
+      'The write went through, but reading it back got a Google sign-in page. Set the '
+      + 'registry to "Anyone with the link · Viewer" and check row '+row+' by eye.');
+    const rows=csv(t);
+    if(rows.length<2) throw new Error(
+      'The write went through, but row '+row+' came back empty. Check it by eye.');
+    return rows[rows.length-1];
+  });
+}
+// Dates make the round trip as text and come back in whatever the cell's format says.
+// Compare the digits, not the punctuation.
+const sameDate = (a,b) => String(a||'').replace(/\D/g,'') === String(b||'').replace(/\D/g,'');
+
+function loadShelf(){
+  if(!REGID){ RG={rows:[],state:'unset',msg:''}; return render(); }
+  RG.state='loading'; RG.msg=''; render();
+  const url=`https://docs.google.com/spreadsheets/d/${REGID}/gviz/tq?tqx=out:csv&sheet=`
+          + encodeURIComponent(REG_TAB) + '&range=' + REG_RANGE + '&cb=' + Date.now();
+  RG.url=url;
+  // RETURNS the promise: adding or retiring a ball is only finished once the shelf has
+  // been read again and the change is visible in what came back.
+  return fetch(url).then(r=>r.text().then(t=>({ok:r.ok,status:r.status,t})))
+   .then(({ok,status,t})=>{
+      if(/^\s*</.test(t)){
+        RG={rows:[],state:'private',url,
+            msg:'Google returned a sign-in page. The registry is not readable by link — '
+              + 'set it to "Anyone with the link · Viewer".'};
+        return render();
+      }
+      if(!ok) throw new Error('HTTP '+status);
+      const num=v=>{ const x=parseFloat(String(v||'').replace(/[^0-9.\-]/g,'')); return isFinite(x)?x:0; };
+      const rows=csv(t).slice(1).map(r=>({
+        id:(r[REG_COL.id-1]||'').trim(),
+        wear:num(r[REG_COL.wear-1]),
+        otherPrior:num(r[REG_COL.otherPrior-1]),
+        status:(r[REG_COL.status-1]||'').trim(),
+        logged:num(r[REG_COL.logged-1]),
+        age:num(r[REG_COL.age-1]),
+        stage:(r[REG_COL.stage-1]||'').trim(),
+        room:num(r[REG_COL.room-1]),
+        paddles:num(r[REG_COL.paddles-1]),
+        lastUsed:(r[REG_COL.lastUsed-1]||'').trim(),
+        since:(r[REG_COL.since-1]||'').trim(),
+        retiredOn:(r[REG_COL.retiredOn-1]||'').trim(),
+        why:(r[REG_COL.why-1]||'').trim(),
+        crackAt:(r[REG_COL.crackAt-1]||'').trim(),
+        notes:(r[REG_COL.notes-1]||'').trim(),
+        record:(r[REG_COL.record-1]||'').trim()
+      })).filter(x=>x.id);
+      RG = rows.length
+        ? {rows, state:'ok', url, msg:`${rows.length} ball${rows.length===1?'':'s'} on the shelf`}
+        : {rows:[], state:'empty', url,
+           msg:'The registry answered but no balls came back. Check the Shelf tab still '
+             + 'starts its table at row 15.'};
+      // if the chosen ball is on the shelf, take its figures now
+      if(RG.state==='ok' && S.ballId){ const hit=RG.rows.find(b=>b.id===S.ballId); if(hit) applyBall(hit,true); }
+      render();
+   })
+   .catch(e=>{
+      RG={rows:[], state:'fail', url,
+        msg:(location.protocol==='file:'
+          ? 'Opened from disk — see the red banner at the top of the page.'
+          : 'Could not reach the registry: '+e.message)};
+      render(); });
+}
+
+// PRIOR IMPACTS AT 50 IS "other prior" PLUS "impacts logged" — the registry keeps
+// those in two columns because one is typed once and the other is counted from the
+// Sessions archive. The @70 wear shots stay separate, as they do in the workbook.
+function applyBall(b, quiet){
+  S.ballId=b.id;
+  S.prior=Math.round(b.otherPrior + b.logged);
+  S.wear=b.wear;
+  S.regBall=b;
+  if(!quiet) render();
+}
+function loadPaddles(){
+  PM.state='loading'; PM.msg=''; render();
+  const url=`https://docs.google.com/spreadsheets/d/${PM_SHEET}/gviz/tq?tqx=out:csv&sheet=`
+          + encodeURIComponent(PM_TAB) + '&cb=' + Date.now();
+  PM.url=url;
+  fetch(url).then(r=>r.text().then(t=>({ok:r.ok,status:r.status,t})))
+   .then(({ok,status,t})=>{
+      // gviz answers an unauthorised read with a Google sign-in PAGE, not an error.
+      // Parsing that as CSV yields nonsense rows, so catch it explicitly.
+      if(/^\s*</.test(t)){
+        PM={rows:[],state:'private',url,
+            msg:'Google returned a sign-in page instead of data. Paddle Metrics is not '
+              + 'readable by link — gviz reads it as an anonymous visitor. Set it to '
+              + '"Anyone with the link · Viewer" and try again.'};
+        return render();
+      }
+      if(!ok) throw new Error('HTTP '+status);
+      const rows=csv(t).slice(1)
+        .map(r=>({name:(r[PM_COL.name-1]||'').trim(),
+                  date:(r[PM_COL.date-1]||'').trim(),
+                  when:pmDate(r[PM_COL.date-1]),
+                  sw:parseFloat(r[PM_COL.swing-1]), len:parseFloat(r[PM_COL.length-1]),
+                  mfr:(r[PM_COL.mfr-1]||'').trim()}))
+        .filter(x=>x.name);
+      PM = rows.length
+        ? {rows, state:'ok', url, msg:`${rows.length} paddles`}
+        : {rows:[], state:'empty', url,
+           msg:'The sheet answered but no paddle names came back. Check the tab is still '
+             + 'called "'+PM_TAB+'" and that column '+PM_COL.name+' holds the name.'};
+      render();
+   })
+   .catch(e=>{
+      PM={rows:[], state:'fail', url,
+        msg:(location.protocol==='file:'
+          ? 'This page was opened straight off the disk, so it has no origin and the '
+          + 'browser refuses the request before it is even sent. Serve the folder — '
+          + 'python3 -m http.server 8000 — and reload from http://localhost:8000/. '
+          + 'Everything else on this page works fine from the disk.'
+          : 'Could not reach Paddle Metrics: '+e.message+'. Open the CSV link below in a '
+          + 'tab — if you get a sign-in page the sheet is not readable by link.')};
+      render(); });
+}
+// Paddle Metrics dates are M-D-YYYY. Anything unparseable sorts oldest.
+function pmDate(v){
+  const m=String(v||'').trim().match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);
+  return m ? new Date(+m[3], +m[1]-1, +m[2]).getTime() : 0;
+}
+
+// SOME PADDLES APPEAR TWICE, and they are retests rather than mistakes — the F+B
+// Runout models and the Avoura Rivelle each have two entries months apart with
+// different swing weights and different published KewCOR. Matching on name alone
+// took whichever came first in the sheet, which is the OLDER measurement. Take the
+// most recent entry and say so, so the choice is visible rather than silent.
+function pmOptions(){
+  const seen=new Set(), out=[];
+  for(const r of PM.rows){ if(seen.has(r.name)) continue; seen.add(r.name);
+    out.push(`<option value="${esc(r.name)}">`); }
+  return out.join('');
+}
+function pickPaddle(i,name){
+  const p=S.paddles[i]; p.name=name; p.pmNote=''; p.pmWarn='';
+  const hits=PM.rows.filter(r=>r.name===name);
+  if(!hits.length){ render(); return; }
+  const hit=hits.slice().sort((a,b)=>b.when-a.when)[0];
+  if(isFinite(hit.sw)) p.sw=hit.sw; else p.pmWarn='no swing weight on file — type it';
+  if(isFinite(hit.len)) p.len=hit.len;
+  else p.pmWarn=(p.pmWarn?p.pmWarn+'; ':'')+'no length on file — type it';
+  p.mfr=hit.mfr||'';
+  if(hits.length>1){
+    const older=hits.filter(h=>h!==hit).map(h=>h.date||'undated').join(', ');
+    p.pmNote=`${hits.length} entries for this name — using the ${hit.date||'undated'} `
+           + `measurement. Older: ${older}.`;
+  }
+  render();
+}
+
+/* ── parsing, and the shape of the session ────────────────────────────────── */
+function parseShots(txt){
+  return String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
+    const p=line.split(/[\t,;]+|\s+/).map(x=>x.trim()).filter(x=>x!=='').map(Number);
+    return {vin:p[0], vout:p[1], gateCor:p.length>2?p[2]:null};
+  }).filter(s=>isFinite(s.vin));
+}
+const A = () => K.ANCHORS[S.anchor];
+const ctrlBlock = txt => K.summarize(parseShots(txt), A().swingWt, K.controlQ());
+const effAge = () => K.effectiveAge(parseFloat(S.prior)||0, parseFloat(S.wear)||0);
+const locsFor = p => p.use7 ? LOC_ALL : LOC_ALL.slice(0,4);
+const groupsFor = p => locsFor(p).map(l=>parseShots(p.shots[l]||''));
+const STD_RUN = K.C.perLoc * 4;
+function paddleShotCounts(){
+  return S.paddles.map(p=>{
+    const n=groupsFor(p).reduce((a,g)=>a+g.length,0);
+    return n || (p.name ? (p.use7?STD_RUN+K.C.perLoc:STD_RUN) : 0);
+  });
+}
+function timeline(){
+  const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
+  return K.ballTimeline({prior:parseFloat(S.prior)||0, wearShots:parseFloat(S.wear)||0,
+    preFired:pre.fired, midFired:mid.fired, postFired:post.fired,
+    paddleShots:paddleShotCounts(), midAfterPaddle:mid.fired?S.midAfter:0});
+}
+
+/* ── little builders ──────────────────────────────────────────────────────── */
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f = (v,d=4) => v==null||!isFinite(v) ? '—' : (+v).toFixed(d);
+const ib_ = k => `<button class="i" onclick="bubble('${k}')" title="Explain">i</button>`;
+function field(lbl,key,type,note,attrs){
+  const num = type==='number';
+  return `<div><label>${lbl}${note?ib_(note):''}</label>
+    <input id="f-${key}" ${attrs||''} type="text" ${num?'inputmode="decimal" autocomplete="off"':''}
+      value="${esc(S[key])}" oninput="S['${key}']=this.value;render()"></div>`;
+}
+function pfield(i,lbl,k,attrs){
+  return `<div><label>${lbl}</label><input id="p${i}-${k}" type="text" inputmode="decimal"
+    autocomplete="off" ${attrs||''} value="${esc(S.paddles[i][k])}"
+    oninput="S.paddles[${i}]['${k}']=this.value;render()"></div>`;
+}
+function shotTable(sum){
+  if(!sum.rows.length) return '<p class="muted">Nothing pasted yet.</p>';
+  const cls={'USE':'s-use','REJECT vel':'s-rej','MISSING Vout':'s-bad','PASTE MISALIGNED':'s-bad'};
+  return `<table><thead><tr><th>#</th><th>Inbound</th><th>Outbound</th><th>Gate COR</th>
+    <th>PBCoR raw</th><th>PBCoR @50</th><th>Status</th></tr></thead><tbody>`+
+    sum.rows.map((r,i)=>`<tr class="${r.status==='USE'?'':(r.status==='REJECT vel'?'rej':'bad')}">
+      <td>${i+1}</td><td>${f(r.vin,2)}</td><td>${f(r.vout,2)}</td><td>${f(r.gateCor,3)}</td>
+      <td>${f(r.pRaw)}</td><td>${f(r.p50)}</td>
+      <td><span class="status ${cls[r.status]||''}">${r.status}</span></td></tr>`).join('')+
+    `</tbody></table>`;
+}
+function ctrlPanel(sum,title){
+  return `<div class="card"><h3>${title}</h3><div class="kpi">
+    <div><b>${sum.n}</b><span>shots used</span></div>
+    <div><b>${sum.fired}</b><span>fired</span></div>
+    <div><b>${f(sum.meanVin,1)}</b><span>mean inbound</span></div>
+    <div><b>${f(sum.mean)}</b><span>P_ctrl @50</span></div>
+    <div><b>${f(sum.se)}</b><span>se</span></div>
+    <div><b>${f(K.D(A().pRef,sum.mean),5)}</b><span>D</span></div></div></div>`;
+}
+const NOSORT = `<div class="banner b-warn"><b>DO NOT SORT.</b>
+  Paste in the order you fired, bad shots included. Every location is corrected at the
+  moment its block was actually shot, so a sorted paste is silently wrong — the numbers
+  still look reasonable.${ib_('paste')}</div>`;
+
+// Sits directly under DO NOT SORT. Blue rather than amber on purpose: this one is
+// reassurance, not a warning — a shot outside the window is normal and expected, and
+// the point is that you paste it anyway rather than tidying it away.
+const WINDOW_NOTE = n => `<div class="banner b-ok"><div>` +
+  `<b>The window is ${K.C.target} ± ${K.C.window} mph ` +
+  `(${K.C.target - K.C.window} to ${K.C.target + K.C.window}).</b>` + `
+  Anything outside it is marked REJECT vel and left out of the average — but
+  <b>paste all ${n} shots regardless</b>. A rejected shot still hit the ball, so it still
+  counts toward wear, and dropping it before you paste makes the ball look younger than
+  it is. Expect to lose about one in ten.${ib_('window')}</div></div>`;
+
+/* ── the two rows ──────────────────────────────────────────────────────────
+ * Six decimals. Past anything either tab displays, short of float noise, and the same
+ * numbers go to the clipboard and to the wire — built here once so they cannot differ.
+ * Empty means empty: a session with no MID block sends nothing for those columns rather
+ * than a zero, because zero is a measurement and blank is not.                        */
+const n6 = v => (v==null || !isFinite(v)) ? '' : Math.round(v*1e6)/1e6;
+const numOrBlank = v => (v===''||v==null||!isFinite(+v)) ? '' : +v;
+
+function sessionRowValues(){
+  const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid), tl=timeline();
+  const fired = pre.fired + post.fired + mid.fired
+              + paddleShotCounts().reduce((a,b)=>a+b,0);
+  return [
+    S.date, S.ballId, S.anchor, numOrBlank(S.temp),
+    pre.n||'',  pre.n?n6(pre.mean):'',  pre.n?n6(pre.se):'',
+    post.n||'', post.n?n6(post.mean):'', post.n?n6(post.se):'',
+    n6(K.pooledD(A().pRef, pre, post.n?post:null)),
+    Math.round(tl.ageAfter), fired,
+    mid.n||'',  mid.n?n6(mid.mean):'',  mid.n?n6(mid.se):'',
+    mid.n?Math.round(tl.ageMid):'',
+    'LIVE'
+  ];
+}
+
+/* Column K is the sheet's own crosshair-minus-mirror and column L is cumulative anchor
+   hits, which this page has no way to know — both are left out rather than guessed at.
+   The crosshair block is the PRE block; it is never typed twice. */
+function anchorRowValues(){
+  const pre=ctrlBlock(S.pre), mir=ctrlBlock(S.mirror);
+  return [
+    S.date, S.anchor, numOrBlank(S.deflection), numOrBlank(S.temp),
+    mir.n||'', mir.n?n6(mir.mean):'', mir.n?n6(mir.se):'',
+    pre.n||'', pre.n?n6(pre.mean):'', pre.n?n6(pre.se):'',
+    '', '',
+    S.ballId, S.person ? ('logged by '+S.person) : ''
+  ];
+}
+const anchorHasSomething = () =>
+  S.deflection!=='' || ctrlBlock(S.mirror).n || ctrlBlock(S.pre).n;
+
+/* ── the writes ────────────────────────────────────────────────────────────
+ * Each one is: post, read the row back, and only then say it is done. The read is the
+ * part that matters. An endpoint that answers {ok:true} is telling you what it believes;
+ * the sheet is the only thing that can tell you what happened.                        */
+function needRegistry(){
+  if(REGID) return false;
+  WR={busy:'', tone:'bad', msg:'The registry is not connected.',
+      detail:'Paste its Google Sheets URL on the Ball registry tab first — the write goes '
+           + 'through the endpoint, but reading it back to confirm goes through the sheet.'};
+  render(); return true;
+}
+function wrFail(e){
+  const dup = e.res && e.res.error==='duplicate';
+  const stale = e.res && e.res.error==='stale';
+  WR={busy:'', tone: dup?'warn':'bad', dup:!!dup, stale:!!stale,
+      msg: dup ? 'Already logged.' : stale ? 'The shelf moved under you.' : 'It did not go.',
+      detail: e.message};
+  render();
+}
+
+function sendSession(allowDuplicate){
+  WRSCOPE='session';
+  if(needRegistry()) return;
+  const row=sessionRowValues();
+  WR={busy:'session', msg:'', tone:'', detail:''}; render();
+  post('session', {row, allowDuplicate: !!allowDuplicate})
+    .then(j=>readRow('Sessions', 5, j.row, 'B').then(back=>({j, back})))
+    .then(({j, back})=>{
+      if(!sameDate(back[0], row[0]) || String(back[1]||'').trim() !== String(row[1]).trim())
+        throw new Error('The endpoint said row '+j.row+', but that row reads "'
+          + back[0]+' / '+back[1]+'" instead of "'+row[0]+' / '+row[1]+'". Something else '
+          + 'is writing to this tab. Open the registry and look before sending again.');
+      S.sent.session={row:j.row, date:row[0], ball:row[1]};
+      WR={busy:'', tone:'ok', msg:'Logged to Sessions row '+j.row+' — and read back.',
+          detail: refusedNote(j)};
+      loadShelf();
+    })
+    .catch(wrFail);
+}
+
+function sendAnchor(){
+  WRSCOPE='anchor';
+  if(needRegistry()) return;
+  if(!anchorHasSomething()){
+    WR={busy:'', tone:'warn', msg:'Nothing to log yet.',
+        detail:'An anchor row needs at least a deflection reading. Take one before the '
+             + 'first shot — it costs a minute and no ball life.'};
+    return render();
+  }
+  const row=anchorRowValues();
+  WR={busy:'anchor', msg:'', tone:'', detail:''}; render();
+  post('anchor', {row})
+    .then(j=>readRow('Anchors', 31, j.row, 'C').then(back=>({j, back})))
+    .then(({j, back})=>{
+      if(!sameDate(back[0], row[0]) || String(back[1]||'').trim() !== String(row[1]).trim())
+        throw new Error('The endpoint said row '+j.row+', but that row reads "'
+          + back[0]+' / '+back[1]+'". Open the registry and look before sending again.');
+      S.sent.anchor={row:j.row, date:row[0], anchor:row[1]};
+      WR={busy:'', tone:'ok',
+          msg:(j.created===false
+                ? 'Updated today\'s Anchors row, row '+j.row
+                : 'Logged to Anchors row '+j.row) + ' — and read back.',
+          detail: (j.created===false
+            ? 'Same date, same anchor, so it went into the reading you started this '
+            + 'morning rather than a second row. '
+            : '') + refusedNote(j)};
+      render();
+    })
+    .catch(wrFail);
+}
+const refusedNote = j => (j.refused && j.refused.length)
+  ? 'The endpoint refused columns '+j.refused.join(', ')+'. Those are formulas and were '
+  + 'left alone, which is the allow-list doing its job — but it also means this page sent '
+  + 'something it should not have. Worth reporting.'
+  : '';
+
+/* ── the shelf, written to ─────────────────────────────────────────────── */
+let NB={id:'', since:new Date().toISOString().slice(0,10), wear:'', otherPrior:'', status:'IN ROTATION'};
+let RB={id:'', status:'RETIRED', why:'', retiredOn:new Date().toISOString().slice(0,10),
+        crackAt:'', notes:''};
+
+function addBall(){
+  WRSCOPE='shelf';
+  if(needRegistry()) return;
+  const id=(NB.id||'').trim();
+  if(!id){ WR={busy:'',tone:'warn',msg:'It needs an ID.',detail:''}; return render(); }
+  if(RG.rows.some(b=>b.id.toLowerCase()===id.toLowerCase())){
+    WR={busy:'',tone:'warn',msg:id+' is already on the shelf.',
+        detail:'A ball is never added twice and never deleted — if it came back from '
+             + 'somewhere, change its status instead.'};
+    return render();
+  }
+  WR={busy:'addBall', msg:'', tone:'', detail:''}; render();
+  post('addBall', {id, since:NB.since, wear:numOrBlank(NB.wear),
+                   otherPrior:numOrBlank(NB.otherPrior), status:NB.status})
+    .then(j=>loadShelf().then(()=>j))
+    .then(j=>{
+      const back=RG.rows.find(b=>b.id===id);
+      if(!back) throw new Error('The endpoint wrote row '+j.row+', but the ball is not on '
+        + 'the shelf when it is read back. Open the registry and look at row '+j.row+'.');
+      NB={id:'', since:new Date().toISOString().slice(0,10), wear:'', otherPrior:'', status:'IN ROTATION'};
+      WR={busy:'', tone:'ok', msg:id+' is on the shelf at row '+j.row+' — and read back.',
+          detail:'Effective age '+Math.round(back.age)+', stage '+(back.stage||'—')+'. '
+               + refusedNote(j)};
+      render();
+    })
+    .catch(wrFail);
+}
+
+/* The two guards here are the registry's own, moved forward. Its check column says
+   "RETIRED WITHOUT A REASON" and "SEAM CRACK with no impact count", and a form that can
+   only produce a red cell is a form that should have said no. */
+function retireBall(){
+  WRSCOPE='shelf';
+  if(needRegistry()) return;
+  const b=RG.rows.find(x=>x.id===RB.id);
+  if(!b){ WR={busy:'',tone:'warn',msg:'Pick a ball.',detail:''}; return render(); }
+  if(!RB.why){ WR={busy:'',tone:'warn',msg:'It needs a reason.',
+      detail:'The registry flags a ball taken out of service with no reason, because in '
+           + 'six months the reason is the only part anybody wants.'}; return render(); }
+  if(RB.why==='SEAM CRACK' && numOrBlank(RB.crackAt)===''){
+    WR={busy:'',tone:'warn',msg:'A seam crack needs the impact count.',
+        detail:'It is the one number the crack-rate line on the Degradation tab is '
+             + 'built from. Effective age right now is '+Math.round(b.age)+'.'};
+    return render();
+  }
+  WR={busy:'retire', msg:'', tone:'', detail:''}; render();
+  post('setBall', {id:b.id, expectedStatus:b.status, status:RB.status,
+                   retiredOn:RB.retiredOn, why:RB.why,
+                   crackAt:numOrBlank(RB.crackAt), notes:RB.notes})
+    .then(j=>loadShelf().then(()=>j))
+    .then(j=>{
+      const back=RG.rows.find(x=>x.id===b.id);
+      if(!back) throw new Error('Wrote row '+j.row+', but '+b.id+' is not on the shelf when '
+        + 'it is read back. Open the registry and look.');
+      if(back.status!==RB.status) throw new Error('Wrote row '+j.row+', but '+b.id+' still '
+        + 'reads "'+back.status+'" rather than "'+RB.status+'". Look at row '+j.row+'.');
+      WR={busy:'', tone:'ok',
+          msg:b.id+' is '+RB.status+' — '+j.from+' → '+j.to+', row '+j.row+', read back.',
+          detail:'It keeps its whole history and stops being offered for a session. '
+               + refusedNote(j)};
+      RB={id:'', status:'RETIRED', why:'', retiredOn:new Date().toISOString().slice(0,10),
+          crackAt:'', notes:''};
+      render();
+    })
+    .catch(wrFail);
+}
+
+/* ── what the last write did ───────────────────────────────────────────────
+ * One banner, rendered where the write was asked for and nowhere else. It carries the
+ * row number, because the row number is what you would use to go and look — and being
+ * able to go and look is the whole point of reading a write back rather than trusting
+ * the reply that says it worked.                                                     */
+let WRSCOPE='', SHOWSEC=false;
+function wrBanner(scope){
+  if(scope && WRSCOPE!==scope) return '';
+  if(WR.busy) return `<div class="banner b-mute"><div>Sending…</div></div>`;
+  if(!WR.msg) return '';
+  const cls = WR.tone==='ok'?'b-ok':WR.tone==='warn'?'b-warn':WR.tone==='bad'?'b-bad':'b-mute';
+  return `<div class="banner ${cls}"><div><b>${esc(WR.msg)}</b>
+    ${WR.detail?' '+esc(WR.detail):''}
+    ${WR.dup?`<div class="row" style="margin-top:8px">
+      <button class="ghost" onclick="sendSession(true)">Log it anyway — this is a second session today</button>
+      </div>`:''}
+    ${WR.stale?`<div class="row" style="margin-top:8px">
+      <button class="ghost" onclick="loadShelf()">Re-read the shelf</button></div>`:''}
+    </div></div>`;
+}
+
+/* The URL and the secret live on this machine. Not in the file — see the note on EP. */
+function endpointPanel(){
+  if(!EP.url) return `<div class="card"><h3>Writing to the registry</h3>
+    <div class="banner b-warn"><div><b>No write endpoint yet.</b> Nothing can be sent — the
+      session row still copies to the clipboard, and the shelf below is read-only.
+      <br><br>Paste the Apps Script deployment's <b>/exec</b> URL and the secret from the
+      script's first line. Both stay on this machine, so the published page carries no
+      secret and someone who finds it can read but not write.</div></div>
+    ${endpointForm()}${wrBanner('endpoint')}</div>`;
+  return `<div class="card"><h3>Writing to the registry</h3>
+    <div class="row" style="margin-top:0">
+      <span class="pill ${WR.busy==='ping'?'':(WRSCOPE==='endpoint'&&WR.tone==='ok')?'use'
+            :(WRSCOPE==='endpoint'&&WR.tone==='bad')?'bad':''}">${
+        WR.busy==='ping'?'checking…':'endpoint set'}</span>
+      <span class="muted" style="flex:1;min-width:180px;overflow:hidden;
+        text-overflow:ellipsis;white-space:nowrap">${esc(EP.url)}</span>
+      <button class="ghost" onclick="pingEndpoint()">Check it</button>
+      <button class="ghost" onclick="forgetEndpoint()">Forget it</button>
+    </div>
+    ${wrBanner('endpoint')}
+    <p class="muted" style="margin:8px 0 0">Stored on this machine, not in the page. Every
+      browser you run a session from needs it pasted once.</p></div>`;
+}
+function endpointForm(){
+  return `<div class="grid">
+    <div style="grid-column:span 2"><label>The /exec URL</label>
+      <input id="ep-url" type="text" placeholder="https://script.google.com/macros/s/…/exec"
+        value="${esc(EP.url)}"></div>
+    <div><label>Secret</label>
+      <input id="ep-sec" type="${SHOWSEC?'text':'password'}" class="secret"
+        placeholder="the SECRET line in the script" value="${esc(EP.secret)}"></div>
+    <div><label>&nbsp;</label>
+      <label style="display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink);margin:0">
+        <input type="checkbox" style="width:auto" ${SHOWSEC?'checked':''}
+          onchange="SHOWSEC=this.checked;render()"> show it</label></div>
+  </div>
+  <div class="row"><button onclick="setEndpoint(
+      document.getElementById('ep-url').value, document.getElementById('ep-sec').value)"
+      >Save and check</button>
+    <span class="muted">It has to match the SECRET line in the script exactly.</span></div>`;
+}
+
+/* The weekly one. Ten shots at the mirror-image point, in the same session as the
+   control blocks, so ball, temperature and cannon all cancel in the difference. The
+   crosshair half of that difference is the PRE block — never shot or typed twice. */
+function mirrorCard(){
+  const mir=ctrlBlock(S.mirror), pre=ctrlBlock(S.pre);
+  const gap = (mir.n && pre.n) ? pre.mean - mir.mean : null;
+  return `<div class="card"><h3>Mirror spot — weekly ${ib_('deflection')}</h3>
+    <p class="muted" style="margin-top:-6px">First session of the week only. Ten shots at the
+      mirror-image point across the centerline, and move to a fresh spot each time — the
+      control only works while it stays less worn than the crosshair. Leave it empty the
+      rest of the week. The crosshair half is the PRE block above; it is never shot twice.</p>
+    <textarea id="t-mirror" class="paste" style="min-height:88px"
+      placeholder="ten shots at the mirror spot — Inbound  Outbound  COR"
+      oninput="S.mirror=this.value;render()">${esc(S.mirror)}</textarea>
+    ${mir.n?`<div class="kpi" style="margin-top:10px">
+      <div><b>${mir.n}</b><span>used</span></div>
+      <div><b>${f(mir.mean)}</b><span>P mirror</span></div>
+      <div><b>${f(mir.se)}</b><span>se</span></div>
+      ${gap!=null?`<div><b>${f(gap,4)}</b><span>crosshair − mirror</span></div>`:''}
+    </div>${gap!=null&&Math.abs(gap)>=0.005?`<div class="banner b-warn" style="margin:10px 0 0">
+      <div><b>That gap is past the threshold that matters.</b> ${f(Math.abs(gap),4)} against the
+      0.005 where anchor drift stops being invisible against a published se near 0.0077. A
+      single check cannot see below about 0.012, so this is one point and not a verdict —
+      but if the next one agrees, run a crossover against the spare anchor before publishing
+      anything else.</div></div>`:''}`:''}</div>`;
+}
+
+/* ── screens ──────────────────────────────────────────────────────────────── */
+// The registry's own effective age is recomputed from the two figures we pulled. If
+// they disagree the pull is stale or a column has moved — say so rather than quietly
+// running on numbers that do not add up. The workbook carries the same guard.
+function ballGuard(){
+  const b=S.regBall; if(!b || RG.state!=='ok') return '';
+  const onFile = Math.round(b.otherPrior + b.logged), wearOnFile = Math.round(b.wear);
+  const mine = K.effectiveAge(+S.prior||0, +S.wear||0);
+  const differs = Math.round(+S.prior||0) !== onFile || Math.round(+S.wear||0) !== wearOnFile;
+  // One condition, one banner. Typing over the boxes and disagreeing with the registry
+  // are the same event, and splitting them meant the more useful message could hide
+  // behind the less useful one.
+  if(differs) return `<div class="banner b-bad"><div>` +
+    `<b>PRIOR IMPACTS DISAGREES.</b> ` +
+    `The boxes say ${Math.round(+S.prior||0)} at 50 and ${Math.round(+S.wear||0)} wear shots, ` +
+    `which works out at ${Math.round(mine)} effective impacts. ` +
+    `The registry says ${onFile} and ${wearOnFile}, i.e. ${Math.round(b.age)}. ` +
+    `Believe the registry — re-pick ${esc(b.id)} to put it back.</div></div>`;
+  return `<div class="banner b-ok"><div>` +
+    `<b>${esc(b.id)} — straight from the registry.</b> ` +
+    `${onFile} impacts at 50 plus ${wearOnFile} wear shots at 70. ` +
+    `Stage ${esc(b.stage||'—')}, ${Math.round(b.room)} left before it retires, ` +
+    `room for about ${Math.round(b.paddles)} more paddle${b.paddles===1?'':'s'}.` +
+    `${b.lastUsed?` Last used ${esc(b.lastUsed)}.`:''}</div></div>`;
+}
+
+function regPanel(){
+  if(RG.state==='ok')
+    return `<div class="row" style="margin-top:0;margin-bottom:10px">
+      <button class="ghost" onclick="loadShelf()">Refresh registry</button>
+      <span class="pill use">${esc(RG.msg)}</span>
+      <button class="ghost" onclick="forgetRegistry()">Use a different registry</button></div>`;
+  if(RG.state==='loading')
+    return `<div class="row" style="margin-top:0;margin-bottom:10px"><span class="pill">loading the shelf…</span></div>`;
+  const bad = RG.state==='private'||RG.state==='badurl';
+  return `<div class="banner ${bad?'b-bad':'b-warn'}" style="margin-bottom:10px"><div>
+    <b>The ball registry is not connected.</b>
+    ${RG.state==='unset'
+      ? 'Paste its Google Sheets URL once and this browser will remember it. '
+      + 'The ball, its prior impacts and its wear shots then come straight off the Shelf.'
+      : esc(RG.msg||'')}
+    <div class="row" style="margin-top:8px">
+      <input style="flex:1;min-width:280px" placeholder="https://docs.google.com/spreadsheets/d/…"
+        onkeydown="if(event.key==='Enter') setRegistry(this.value)">
+      <button class="ghost" onclick="setRegistry(this.previousElementSibling.value)">Connect</button>
+    </div>
+    ${RG.url?`<a href="${esc(RG.url)}" target="_blank" rel="noopener" style="color:inherit">
+       Open the CSV link to see what Google returns →</a><br>`:''}
+    You can type the ball and its counts by hand in the meantime — no KewCOR number depends
+    on them, only the ball's running record and the MID prompt.
+    </div></div>`;
+}
+
+function scSession(){
+  const a=A(), age=effAge(), stage=K.ballStage(age);
+  const planned=paddleShotCounts().reduce((x,y)=>x+y,0);
+  const adv=K.midAdvice(age,planned);
+  const retired=a.status.startsWith('RETIRED');
+  return `<h2>Session</h2><p class="lede">Everything downstream reads from this screen.</p>
+  ${retired?`<div class="banner b-bad"><b>ANCHOR 1 IS RETIRED — reference only.</b>
+     Its face is worn and P_ref no longer describes it. Set this back to Anchor 2 before shooting anything new.</div>`:''}
+  <div class="card"><h3>When and who</h3><div class="grid">
+    <div><label>Date</label><input id="f-date" type="date" value="${esc(S.date)}"
+      oninput="S.date=this.value;render()"></div>
+    ${field('Personnel','person')}${field('Temp (°F)','temp','number')}
+  </div></div>
+
+  <div class="card"><h3>Control paddle ${ib_('anchor')}</h3><div class="grid">
+    <div><label>Anchor</label><select id="f-anchor" onchange="S.anchor=this.value;render()">
+      ${Object.keys(K.ANCHORS).map(k=>`<option ${k===S.anchor?'selected':''}>${k}</option>`).join('')}
+    </select></div>
+    <div><label>Paddle</label><div class="out">${a.id} · ${a.paddle}</div></div>
+    <div><label>P_ref (frozen)</label><div class="out"><b>${a.pRef.toFixed(4)}</b></div></div>
+    <div><label>Strike at</label><div class="out">${K.strikeLocation(a.length).toFixed(2)} in from tip</div></div>
+    <div><label>Status</label><div class="out"><span class="pill ${retired?'bad':(a.status==='IN USE'?'use':'warn')}">${a.status}</span></div></div>
+  </div></div>
+
+  <div class="card"><h3>Anchor health ${ib_('deflection')}</h3>
+    <p class="muted" style="margin-top:-6px">A minute, no shots. Press at the same spot every time,
+      as near the crosshair as the rig allows. Temperature comes from the session above — the rig is
+      in the same room as the cannon.</p>
+    <div class="grid">${field('Deflection (lbf)','deflection','number')}
+      <div><label>In KewCOR terms</label><div class="out">${S.deflection
+        ? `1 lb ≈ 0.0012 · logged at ${S.temp||'—'} °F` : '—'}</div></div></div>
+    <div class="row">
+      <button class="ghost" ${EP.url&&S.deflection!==''?'':'disabled'}
+        onclick="sendAnchor()">${S.sent.anchor?'Update today\'s reading':'Log the reading'}</button>
+      ${S.sent.anchor?`<span class="pill use">Anchors row ${S.sent.anchor.row}</span>`:''}
+      <span class="muted">${EP.url
+        ? 'Send it before the first shot. The PRE block and the mirror block join the same row later.'
+        : 'No write endpoint yet — set one on the Ball registry tab.'}</span>
+    </div>${wrBanner('anchor')}</div>
+
+  <div class="card"><h3>Ball ${ib_('prior')}</h3>
+    ${regPanel()}
+    <div class="grid">
+    ${RG.state==='ok'
+      ? `<div><label>Ball ID</label><select id="ballsel" onchange="const b=RG.rows.find(x=>x.id===this.value); if(b) applyBall(b);">
+           ${RG.rows.some(b=>b.id===S.ballId)?'':`<option value="">— pick a ball —</option>`}
+           ${RG.rows.map(b=>`<option value="${esc(b.id)}" ${b.id===S.ballId?'selected':''}>`
+              + `${esc(b.id)}${b.status&&b.status!=='IN ROTATION'?' · '+esc(b.status):''}</option>`).join('')}
+         </select></div>`
+      : field('Ball ID','ballId')}
+    ${field('Prior impacts @50','prior','number')}
+    ${field('Wear shots @70','wear','number')}
+    <div><label>Effective age</label><div class="out"><b>${Math.round(age)}</b> impacts</div></div>
+    <div><label>Stage</label><div class="out"><span class="pill ${stage==='IN SERVICE'?'use':(stage==='RETIRE IT'||stage==='NOT WEAR-PHASED'?'bad':'warn')}">${stage}</span></div></div>
+    <div><label>Room before 600</label><div class="out">${Math.max(0,Math.round(K.C.retire-age))}</div></div>
+  </div>${ballGuard()}</div>
+
+  ${paddleCard()}
+
+  ${adv?`<div class="banner ${adv.verdict==='SHOOT IT'?'b-warn':'b-mute'}">
+     <b>MID block: ${adv.verdict}.</b> ${adv.why}${ib_('mid')}</div>`:''}
+  <div class="row"><button onclick="go(1)">Start the session →</button>
+    <button class="ghost" onclick="resetAll()">New session</button>
+    <span class="muted">Saved to this browser as you type.</span></div>`;
+}
+
+function paddleCard(){
+  const listId='pmlist';
+  const pill = {ok:'use', loading:'', fail:'warn', private:'bad', empty:'warn', idle:''}[PM.state]||'';
+  const word = {ok:PM.msg, loading:'loading…', fail:'not connected',
+                private:'no access', empty:'no rows', idle:'not connected yet'}[PM.state];
+  return `<div class="card"><h3>Paddles today</h3>
+    <div class="row" style="margin-top:0;margin-bottom:6px">
+      <button class="ghost" onclick="loadPaddles()">${PM.state==='ok'?'Refresh':'Connect'} Paddle Metrics</button>
+      <span class="pill ${pill}">${word}</span>
+      ${PM.state==='ok'?'<span class="muted">Start typing a name — the list filters as you go.</span>':''}
+    </div>
+    ${PM.state!=='ok'&&PM.state!=='loading'?`<div class="banner ${PM.state==='private'?'b-bad':'b-warn'}"
+       style="margin-bottom:10px"><div><b>The paddle list is not connected.</b>
+       ${esc(PM.msg||'Press Connect to try.')}
+       ${PM.url?`<br><a href="${esc(PM.url)}" target="_blank" rel="noopener"
+          style="color:inherit">Open the CSV link in a tab to see what Google actually returns →</a>`:''}
+       <br>You can type the name, length and swing weight by hand in the meantime — nothing else depends on this.
+       </div></div>`:''}
+    <datalist id="${listId}">${pmOptions()}</datalist>
+    ${S.paddles.map((p,i)=>`<div class="grid" style="margin-bottom:9px">
+      <div style="grid-column:span 2"><label>Paddle ${i+1}${p.mfr?` · <span class="muted">${esc(p.mfr)}</span>`:''}</label>
+        <input id="p${i}-name" list="${listId}" value="${esc(p.name)}"
+          placeholder="start typing — the list filters as you go"
+          oninput="pickPaddle(${i},this.value)"></div>
+      ${pfield(i,'Length (in)','len')}${pfield(i,'Swing weight','sw')}
+    </div>${p.pmNote?`<p class="muted" style="margin:6px 0 0">${esc(p.pmNote)}</p>`:''}
+    ${p.pmWarn?`<div class="banner b-warn" style="margin:8px 0 0"><b>Paddle Metrics is missing a spec:</b> ${esc(p.pmWarn)}.</div>`:''}`).join('')}
+    <div class="row">
+      <button class="ghost" onclick="S.paddles.push(blankPaddle());render()" ${S.paddles.length>=4?'disabled':''}>Add a paddle</button>
+      ${S.paddles.length>1?`<button class="ghost" onclick="S.paddles.pop();render()">Remove the last</button>`:''}
+      <span class="muted">Four is the ceiling. Past that a second MID block is worth more than the time it costs.</span>
+    </div></div>`;
+}
+
+function scControl(which){
+  const key = which==='PRE'?'pre':which==='MID'?'mid':'post';
+  const sum = ctrlBlock(S[key]);
+  const age=effAge(), planned=paddleShotCounts().reduce((x,y)=>x+y,0);
+  const adv = which==='MID' ? K.midAdvice(age,planned) : null;
+  let verdict='';
+  if(which==='POST'){
+    const pre=ctrlBlock(S.pre);
+    if(pre.n && sum.n){
+      const dm=K.driftMode({pre,post:sum});
+      verdict=`<div class="banner ${dm.ramp?'b-warn':'b-ok'}"><b>${dm.mode}</b> —
+        P_post − P_pre = ${f(dm.diff)} ± ${f(dm.sed)}, t = ${f(dm.t,2)}.
+        ${dm.ramp?'The ball moved. Each paddle, and each location block, is corrected at its own point on the wear curve.'
+                 :'The ball did not move enough to distinguish the paddles; one correction is used for the whole session.'}
+        ${ib_('drift')}</div>`;
+    }
+  }
+  return `<h2>${which} ball correction</h2>
+  <p class="lede">${which==='MID'?'Between paddles 2 and 3, if the sheet asked for it.'
+      :which==='PRE'?'Before the first paddle.':'After the last paddle.'}
+    Ten shots at the control paddle, at the crosshair. Never move the paddle to change aim.</p>
+  ${S.endedEarly&&which==='POST'?`<div class="banner b-ok"><b>Session ended after two paddles.</b>
+     The MID block you shot has become the POST block — nothing was wasted.</div>`:''}
+  ${adv?`<div class="banner ${adv.verdict==='SHOOT IT'?'b-warn':'b-mute'}"><b>${adv.verdict}.</b> ${adv.why}</div>`:''}
+  ${verdict}${NOSORT}${WINDOW_NOTE('ten')}
+  <div class="card"><h3>Paste the gate dump</h3>
+    <textarea id="t-${key}" class="paste" placeholder="Inbound  Outbound  COR&#10;49.8  12.1  0.243"
+      oninput="S['${key}']=this.value;render()">${esc(S[key])}</textarea>
+    <p class="muted" style="margin-bottom:0">Rejected shots stay in — the ball felt them.${ib_('window')}</p></div>
+  ${sum.n?ctrlPanel(sum,which+' summary'):''}
+  <div class="card"><h3>Shots</h3>${shotTable(sum)}</div>
+  ${which==='PRE'?mirrorCard():''}
+  ${which==='MID'&&sum.n?`<div class="row"><button class="ghost" onclick="endEarly()">End the session here →</button>
+     <span class="muted">Turns this block into the POST block and skips paddles 3 and 4.</span></div>`:''}
+  <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
+    <button onclick="go(S.step+1)">Next →</button></div>`;
+}
+function endEarly(){
+  if(!confirm('End the session after two paddles?\n\nThe MID block becomes the POST block, and paddles 3 and 4 are dropped.')) return;
+  S.post=S.mid; S.mid=''; S.midAfter=0; S.endedEarly=true;
+  S.paddles=S.paddles.slice(0,2);
+  go(7);
+}
+
+function paddleResults(idx){
+  const p=S.paddles[idx]; if(!p||!p.name) return null;
+  const len=parseFloat(p.len), sw=parseFloat(p.sw); if(!(len>0&&sw>0)) return null;
+  const pre=ctrlBlock(S.pre); if(!pre.n) return null;
+  const post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
+  const tl=timeline();
+  const dm=K.driftMode({pre,post:post.n?post:null});
+  const pooled=K.pooledD(A().pRef,pre,post.n?post:null);
+  const locs=locsFor(p), groups=groupsFor(p);
+  if(!groups.some(g=>g.length)) return null;
+  const bD=K.blockCorrections({slot:idx, tl,
+    dPre:K.D(A().pRef,pre.mean),
+    dMid:mid.n?K.D(A().pRef,mid.mean):null,
+    dPost:post.n?K.D(A().pRef,post.mean):null,
+    ramp:dm.ramp, pooled, nLocations:locs.length,
+    blockCounts:groups.map(g=>g.length)});
+  const res=K.locationResults(groups,len,sw,locs,bD);
+  return {res, summary:K.faceSummary(res), dm, bD};
+}
+
+/* The window is 0.07 — the span the KewCOR curve uses on the site — centered on this
+   paddle's own values. Wider than that and it opens to fit, with 0.01 of headroom. */
+function axisFor(vals){
+  const WIN=0.07, lo=Math.min(...vals), hi=Math.max(...vals), span=hi-lo;
+  if(span<=WIN){ const c=(lo+hi)/2; return {lo:c-WIN/2, hi:c+WIN/2, fitted:true}; }
+  return {lo:lo-0.01, hi:hi+0.01, fitted:false};
+}
+function faceChart(res){
+  const live=res.filter(r=>r.kewcor!=null); if(live.length<2) return '';
+  const ax=axisFor(live.map(r=>r.kewcor));
+  const W=620,H=250,PL=54,PR=18,PT=20,PB=38;
+  const xs=live.map(r=>r.location), x0=Math.min(...xs)-0.5, x1=Math.max(...xs)+0.5;
+  const X=v=>PL+(v-x0)/(x1-x0)*(W-PL-PR), Y=v=>PT+(ax.hi-v)/(ax.hi-ax.lo)*(H-PT-PB);
+  const pts=live.map(r=>[X(r.location),Y(r.kewcor)]);
+  let d=`M${pts[0][0]},${pts[0][1]}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    d+=` C${p1[0]+(p2[0]-p0[0])/6},${p1[1]+(p2[1]-p0[1])/6} ${p2[0]-(p3[0]-p1[0])/6},${p2[1]-(p3[1]-p1[1])/6} ${p2[0]},${p2[1]}`;
+  }
+  const step=(ax.hi-ax.lo)/7; let g='';
+  for(let i=0;i<=7;i++){ const v=ax.lo+i*step;
+    g+=`<line x1="${PL}" y1="${Y(v)}" x2="${W-PR}" y2="${Y(v)}" stroke="#eef1f6"/>
+        <text x="${PL-7}" y="${Y(v)+4}" text-anchor="end" font-size="10" fill="#6b7280">${v.toFixed(3)}</text>`; }
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px">${g}
+    ${live.map(r=>`<text x="${X(r.location)}" y="${H-PB+16}" text-anchor="middle" font-size="11" fill="#6b7280">${r.location}</text>`).join('')}
+    <path d="${d}" fill="none" stroke="#1f3864" stroke-width="2.4"/>
+    ${pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#1f3864"/>
+      <text x="${p[0]}" y="${p[1]-11}" text-anchor="middle" font-size="11" font-weight="600" fill="#1f3864">${live[i].kewcor.toFixed(3)}</text>`).join('')}
+    <text x="${(W-PL)/2+PL}" y="${H-4}" text-anchor="middle" font-size="11" fill="#4b5563">Impact location (in from tip)</text>
+    </svg><p class="muted" style="margin:2px 0 0">Vertical span ${(ax.hi-ax.lo).toFixed(3)}${
+      ax.fitted?', the standard 0.07 window centered on this paddle':' — wider than 0.07, opened to fit'}${ib_('axis')}</p>`;
+}
+
+function scPaddle(idx){
+  const p=S.paddles[idx];
+  if(!p) return `<h2>Paddle ${idx+1}</h2>
+    <div class="banner b-mute">No paddle in this slot yet.</div>${paddleCard()}
+    <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
+      <button onclick="go(S.step+1)">Next →</button></div>`;
+  const R=paddleResults(idx), locs=locsFor(p);
+  return `<h2>Paddle ${idx+1}${p.name?' — '+esc(p.name):''}</h2>
+  <p class="lede">One box per location, in the order you shoot them. Ten shots each.</p>
+  <div class="card"><h3>Paddle</h3>
+    <datalist id="pmlist2">${pmOptions()}</datalist>
+    <div class="grid">
+      <div style="grid-column:span 2"><label>Name${p.mfr?` · <span class="muted">${esc(p.mfr)}</span>`:''}</label>
+        <input id="q${idx}-name" list="pmlist2" value="${esc(p.name)}" oninput="pickPaddle(${idx},this.value)"></div>
+      ${pfield(idx,'Length (in)','len')}${pfield(idx,'Swing weight','sw')}</div>${p.pmNote?`<p class="muted" style="margin:6px 0 0">${esc(p.pmNote)}</p>`:''}
+    ${p.pmWarn?`<div class="banner b-warn" style="margin:8px 0 0"><b>Paddle Metrics is missing a spec:</b> ${esc(p.pmWarn)}.</div>`:''}</div>
+  ${NOSORT}${WINDOW_NOTE('ten per location')}
+  ${locs.map(l=>{
+    const n=parseShots(p.shots[l]||'').length;
+    return `<div class="card"><h3>${l} in ${n?`<span class="pill ${n===10?'use':'warn'}">${n} shots</span>`:''}</h3>
+      <textarea id="s${idx}-${l}" class="paste" style="min-height:88px"
+        placeholder="ten shots at ${l} in — Inbound  Outbound  COR"
+        oninput="S.paddles[${idx}].shots[${l}]=this.value;render()">${esc(p.shots[l]||'')}</textarea></div>`;
+  }).join('')}
+  <div class="card" style="padding:11px 18px"><label style="display:flex;gap:9px;align-items:center;margin:0;font-size:14px;color:var(--ink)">
+    <input type="checkbox" style="width:auto" ${p.use7?'checked':''}
+      onchange="S.paddles[${idx}].use7=this.checked;render()">
+    Extend to the 7 in location</label>
+    <p class="muted" style="margin:5px 0 0">Chasing a trend out toward the bottom of the paddle. Adds ten shots and one more block.</p></div>
+  ${!R?`<div class="banner b-mute">Fill in the paddle's length and swing weight, shoot the PRE block, then paste to see results.</div>`:`
+  <div class="card"><h3>By location ${ib_('block')}</h3>
+    <table><thead><tr><th>Loc (in)</th><th>Fired</th><th>Used</th><th>Mean Vin</th>
+      <th>PBCoR @50</th><th>se</th><th>D applied</th><th>KewCOR</th></tr></thead><tbody>
+      ${R.res.map(r=>`<tr><td><b>${r.location}</b></td><td>${r.fired}</td><td>${r.used}</td>
+        <td>${f(r.meanVin,1)}</td><td>${f(r.p50)}</td><td>${f(r.se)}</td>
+        <td>${f(r.D,5)}</td><td><b>${f(r.kewcor,3)}</b></td></tr>`).join('')}
+    </tbody></table>
+    <p class="muted" style="margin-bottom:0">${R.dm.ramp
+      ? 'Each block is corrected at its own moment in the life of the ball — the spread down the D column is the face-map gradient this removes.'
+      : 'POOLED: one correction for the whole session, so every block shows the same D. That is correct, not a bug.'}</p></div>
+  ${R.summary?`<div class="card"><h3>Face map ${ib_('kewcor')}</h3>${faceChart(R.res)}
+    <div class="kpi" style="margin-top:8px">
+      <div><b>${R.summary.peakLocation} in</b><span>peak location</span></div>
+      <div><b>${R.summary.max.toFixed(3)}</b><span>max KewCOR</span></div>
+      <div><b>${R.summary.variance.toFixed(3)}</b><span>face variance</span></div>
+      <div><b style="font-size:15px;padding-top:6px">${R.summary.band}</b><span>power band</span></div>
+    </div></div>`:''}`}
+  <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
+    <button onclick="go(S.step+1)">Next →</button>
+    ${idx>=1&&S.paddles.length<4?`<button class="ghost" onclick="S.paddles.push(blankPaddle());render()">Add another paddle</button>`:''}
+    ${idx===2?`<button class="ghost" onclick="go(7)">Skip to POST →</button>`:''}
+  </div>`;
+}
+
+function scResults(){
+  const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
+  const tl=timeline(), done = pre.n && post.n;
+  const rows=S.paddles.map((p,i)=>({p,R:paddleResults(i)})).filter(x=>x.R);
+  // The SAME array that gets written. Built once so the clipboard and the wire cannot
+  // disagree in the last decimal place, which they could when this was built with the
+  // 4-figure display formatter and the write would have carried full precision.
+  const sessionRow=sessionRowValues();
+  const url = REGID ? 'https://docs.google.com/spreadsheets/d/'+REGID+'/edit' : '';
+  return `<h2>Results</h2><p class="lede">What the session produced, and the row that goes to the registry.</p>
+  ${done?'':`<div class="banner b-bad"><b>NOT FINISHED.</b> The POST block has not been shot, so the ball correction is not final. Nothing here should leave the building yet.</div>`}
+  <div class="card"><h3>Ball</h3><div class="kpi">
+    <div><b>${Math.round(effAge())}</b><span>age at start</span></div>
+    <div><b>${Math.round(tl.agePre)}</b><span>at PRE</span></div>
+    ${tl.midLive?`<div><b>${Math.round(tl.ageMid)}</b><span>at MID</span></div>`:''}
+    <div><b>${Math.round(tl.agePost)}</b><span>at POST</span></div>
+    <div><b>${Math.round(tl.ageAfter)}</b><span>after today</span></div>
+    ${S.deflection?`<div><b>${esc(S.deflection)}</b><span>anchor deflection</span></div>`:''}</div></div>
+  ${rows.map(({p,R})=>`<div class="card"><h3>${esc(p.name)}</h3>${faceChart(R.res)}
+    <div class="kpi" style="margin-top:6px">
+      <div><b>${R.summary.peakLocation} in</b><span>peak</span></div>
+      <div><b>${R.summary.max.toFixed(3)}</b><span>max</span></div>
+      <div><b>${R.summary.variance.toFixed(3)}</b><span>variance</span></div>
+      <div><b style="font-size:15px;padding-top:6px">${R.summary.band}</b><span>band</span></div>
+    </div></div>`).join('')}
+  <div class="card"><h3>Send it to the registry</h3>
+    ${S.sent.session
+      ? `<div class="banner b-ok"><div><b>Already logged — Sessions row ${S.sent.session.row}.</b>
+          ${esc(S.sent.session.ball)} on ${esc(S.sent.session.date)}, read back off the sheet.
+          The archive is append-only, so sending again would make a second row rather than
+          replace this one. If something in it is wrong, fix the cell in the registry.</div></div>`
+      : done ? ''
+      : `<div class="banner b-warn"><div><b>The POST block has not been shot.</b> You can send
+          anyway and the registry will mark the row "logged without a POST block" — but the ball
+          correction is not final and nothing here should leave the building yet.</div></div>`}
+    <div class="row" style="margin-top:0">
+      <button ${EP.url && !S.sent.session ? '' : 'disabled'} onclick="sendSession(false)">
+        Send the session row</button>
+      <button class="ghost" onclick="copyRow(this)">Copy it instead</button>
+      <button class="ghost" ${url?'':'disabled'}
+        onclick="window.open('${esc(url)}','_blank','noopener')">Open the registry →</button>
+      ${EP.url?'':`<span class="muted">No write endpoint — set one on the Ball registry tab,
+        or copy the row and paste it by hand.</span>`}
+    </div>
+    ${wrBanner('session')}
+    <details style="margin-top:12px"><summary class="muted" style="cursor:pointer">
+      The row itself</summary>
+      <textarea id="sessrow" readonly style="min-height:64px;margin-top:8px">${sessionRow.join('\t')}</textarea>
+      <p class="muted" style="margin-bottom:0">Exactly what the button writes — same numbers
+        either way. For the manual path: Sessions tab, the row the red number names,
+        Paste special → Values only.</p></details></div>
+  <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
+    <button class="ghost" onclick="resetAll()">Finish and start a new session</button></div>`;
+}
+function copyRow(btn){
+  const t=document.getElementById('sessrow');
+  navigator.clipboard.writeText(t.value).then(()=>{ btn.textContent='Copied'; setTimeout(()=>{btn.textContent='Copy row';},1400); });
+}
+
+/* ── the shelf ─────────────────────────────────────────────────────────────
+ * The same app as the session on purpose. Putting a ball into service and taking it out
+ * are the first and last things that happen to it, the session is everything in
+ * between, and splitting that across two tools would mean the one place the ball's life
+ * is written down is the one place you are not standing.                              */
+function shelfTable(){
+  const rows=RG.rows;
+  if(!rows.length) return '';
+  const noReason = rows.filter(b=>(b.status==='RETIRED'||b.status==='CRACKED') && !b.why);
+  return `<div class="card"><h3>On the shelf</h3>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th class="l">Ball</th><th>Status</th><th>In service</th><th>@70</th>
+      <th>Other prior</th><th>Logged</th><th>Effective age</th><th>Stage</th>
+      <th>Room</th><th>Paddles</th><th>Last used</th><th class="l">How it ended</th></tr></thead>
+    <tbody>${rows.map(b=>{
+      const dead = b.status==='RETIRED'||b.status==='CRACKED';
+      return `<tr class="${dead?'dim':''}">
+        <td class="l"><b>${esc(b.id)}</b></td>
+        <td><span class="pill ${b.status==='IN ROTATION'?'use':dead?'bad':'warn'}">${
+          esc(b.status||'—')}</span></td>
+        <td>${esc(b.since||'—')}</td><td>${b.wear||0}</td><td>${b.otherPrior||0}</td>
+        <td>${b.logged||0}</td><td><b>${Math.round(b.age)}</b></td>
+        <td>${esc(b.stage||'—')}</td>
+        <td>${dead?'—':Math.round(b.room)}</td><td>${dead?'—':Math.round(b.paddles)}</td>
+        <td>${esc(b.lastUsed||'—')}</td>
+        <td class="l">${dead
+          ? esc([b.why, b.retiredOn].filter(Boolean).join(' · ') || 'no reason on file')
+          : ''}</td></tr>`;
+    }).join('')}</tbody></table></div>
+  ${noReason.length?`<div class="banner b-warn" style="margin:12px 0 0"><div>
+    <b>${noReason.map(b=>esc(b.id)).join(', ')} came out of service with no reason recorded.</b>
+    The registry flags those too. In six months the reason is the only part anybody wants —
+    fill it in on the Shelf tab, or retire it again below to write it properly.</div></div>`:''}
+  <p class="muted" style="margin-bottom:0">A ball is never deleted. It is set to RETIRED or
+    CRACKED, keeps its whole history, and stops being offered for a session.</p></div>`;
+}
+
+function addBallCard(){
+  const ready = RG.state==='ok' && EP.url;
+  return `<div class="card"><h3>Put a ball into service</h3>
+    <p class="muted" style="margin-top:-6px">Everything else about a ball is counted from the
+      sessions. These four are the only things typed, and only once.</p>
+    <div class="grid">
+      <div><label>Ball ID</label><input id="nb-id" value="${esc(NB.id)}"
+        placeholder="LT-91" oninput="NB.id=this.value;render()"></div>
+      <div><label>Date in service</label><input id="nb-since" type="date" value="${esc(NB.since)}"
+        oninput="NB.since=this.value;render()"></div>
+      <div><label>Wear shots @70</label><input id="nb-wear" type="number" value="${esc(NB.wear)}"
+        placeholder="100" oninput="NB.wear=this.value;render()"></div>
+      <div><label>Other prior impacts @50</label><input id="nb-op" type="number"
+        value="${esc(NB.otherPrior)}" placeholder="0" oninput="NB.otherPrior=this.value;render()"></div>
+      <div><label>Status</label><select id="nb-status" onchange="NB.status=this.value;render()">
+        ${['IN ROTATION','RESERVED'].map(v=>`<option ${v===NB.status?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+      <div><label>Effective age it starts at</label><div class="out"><b>${
+        Math.round(K.effectiveAge(+NB.otherPrior||0, +NB.wear||0))}</b> impacts</div></div>
+    </div>
+    <p class="muted" style="margin:9px 0 0">A standard 100-shot wear phase at 70 mph leaves a ball
+      about 44 effective impacts old — the rig clamps at 30°, so those are glancing blows worth
+      0.44 each, not 2.1. "Other prior" is for impacts a ball took before this registry existed;
+      everything logged since is counted from the Sessions archive and must not be typed here too.</p>
+    <div class="row"><button ${ready?'':'disabled'} onclick="addBall()">Add it to the shelf</button>
+      ${ready?'':`<span class="muted">Needs the registry connected and a write endpoint.</span>`}
+    </div></div>`;
+}
+
+function retireCard(){
+  const live = RG.rows.filter(b=>b.status==='IN ROTATION'||b.status==='RESERVED');
+  const b = RG.rows.find(x=>x.id===RB.id);
+  const ready = RG.state==='ok' && EP.url && live.length;
+  return `<div class="card"><h3>Take a ball out of service</h3>
+    <p class="muted" style="margin-top:-6px">It keeps its history and its numbers. It just stops
+      being offered.</p>
+    ${live.length?'':`<div class="banner b-mute"><div>Nothing on the shelf is in rotation or
+      reserved, so there is nothing to retire.</div></div>`}
+    <div class="grid">
+      <div><label>Ball</label><select id="rb-id" onchange="RB.id=this.value;render()">
+        <option value="">— pick a ball —</option>
+        ${live.map(x=>`<option value="${esc(x.id)}" ${x.id===RB.id?'selected':''}>${esc(x.id)}
+          · ${Math.round(x.age)} impacts · ${esc(x.stage||'')}</option>`).join('')}
+      </select></div>
+      <div><label>New status</label><select id="rb-status" onchange="RB.status=this.value;render()">
+        ${['RETIRED','CRACKED'].map(v=>`<option ${v===RB.status?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+      <div><label>Why it ended</label><select id="rb-why" onchange="RB.why=this.value;render()">
+        <option value="">— pick a reason —</option>
+        ${BALL_WHY.map(v=>`<option ${v===RB.why?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+      <div><label>Retired on</label><input id="rb-on" type="date" value="${esc(RB.retiredOn)}"
+        oninput="RB.retiredOn=this.value;render()"></div>
+      <div><label>Impacts at the crack</label><input id="rb-crack" type="number"
+        value="${esc(RB.crackAt)}" placeholder="${b?Math.round(b.age):''}"
+        ${RB.why==='SEAM CRACK'?'':'disabled'} oninput="RB.crackAt=this.value;render()"></div>
+      <div style="grid-column:span 2"><label>Notes</label><input id="rb-notes"
+        value="${esc(RB.notes)}" oninput="RB.notes=this.value;render()"></div>
+    </div>
+    ${RB.why==='SEAM CRACK'?`<div class="banner b-warn" style="margin:11px 0 0"><div>
+      <b>A seam crack needs the impact count.</b> It is the one number the crack-rate line on the
+      Degradation tab is built from.${b?` This ball is at ${Math.round(b.age)} effective impacts
+      right now — use that unless you know when it actually went.`:''}</div></div>`:''}
+    ${RB.status==='CRACKED'?`<div class="banner b-mute"><div>CRACKED rather than RETIRED says the
+      ball failed rather than wore out. The distinction is what the crack rate is counted from,
+      so it is worth getting right even when the practical effect is the same.</div></div>`:''}
+    <div class="row"><button ${ready&&RB.id?'':'disabled'} onclick="retireBall()">
+      Take it out of service</button>
+      ${b?`<span class="muted">${esc(b.id)} is "${esc(b.status)}" on the shelf now.
+        ${b.lastUsed?'Last used '+esc(b.lastUsed)+'.':''}</span>`:''}
+    </div>${wrBanner('shelf')}</div>`;
+}
+
+function scRegistry(){
+  return `<h2>Ball registry</h2>
+  <p class="lede">The shelf: what is on it, what goes onto it, and what comes off.</p>
+  ${endpointPanel()}
+  <div class="card"><h3>The registry sheet</h3>${regPanel()}
+    <p class="muted" style="margin-bottom:0">Reading is done straight off the sheet, so the
+      registry has to be shared "Anyone with the link · Viewer". Writing goes through the
+      endpoint above, which is what keeps the formulas out of reach.</p></div>
+  ${RG.state==='ok'?shelfTable():''}
+  ${addBallCard()}
+  ${retireCard()}`;
+}
+
+/* OPENED FROM DISK. Nothing that leaves this machine can work — not the paddle list,
+ * not the registry, not one of the four writes — because a file:// page has a null
+ * origin and the browser refuses the request before it is sent.
+ *
+ * Each of those already explained itself where it failed, which was the mistake: you
+ * only met the explanation after doing the work that could not succeed. Pasting a
+ * registry URL into a page that cannot fetch anything is a wasted step, and the page
+ * knew that before the URL was typed. So it says so once, at the top, before anything
+ * asks you for something.                                                            */
+function fileBanner(){
+  if(location.protocol!=='file:') return '';
+  return `<div class="banner b-bad"><div>
+    <b>This page was opened from disk, so nothing can reach the network.</b>
+    The paddle list, the ball registry and all four writes are blocked by the browser
+    before the request is even sent — a file:// page has no origin Google will answer.
+    Nothing here is broken; it is in the wrong place.
+    <div style="margin:9px 0 4px"><b>Serve the folder and load it over http instead:</b></div>
+    <div style="background:rgba(255,255,255,.55);border-radius:6px;padding:9px 11px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;
+      overflow-x:auto;white-space:pre">cd "…/Work/KewCOR/web"
+python3 -m http.server 8000</div>
+    <div style="margin-top:7px">Then open
+      <b>http://localhost:8000/kewcor-session.html</b> and leave the terminal running.
+      Everything you have typed is saved in this browser and will still be here.</div>
+    </div></div>`;
+}
+
+function setMode(m){ S.mode=m; WR={busy:'',msg:'',tone:'',detail:''}; window.scrollTo(0,0); render(); }
+
+/* ── shell ────────────────────────────────────────────────────────────────── */
+function go(i){ S.step=Math.max(0,Math.min(STEPS.length-1,i)); window.scrollTo(0,0); render(); }
+
+function render(){
+  const ae=document.activeElement, keep={};
+  if(ae && ae.id && (ae.tagName==='INPUT'||ae.tagName==='TEXTAREA')){
+    keep.id=ae.id;
+    try{ keep.a=ae.selectionStart; keep.b=ae.selectionEnd; }catch(e){}
+  }
+  paint();
+  if(keep.id){
+    const el=document.getElementById(keep.id);
+    if(el){ el.focus(); if(keep.a!=null) try{ el.setSelectionRange(keep.a,keep.b); }catch(e){} }
+  }
+  save();
+}
+function paint(){
+  modes.innerHTML = [['session','Session'],['registry','Ball registry']]
+    .map(([k,t])=>`<button class="${S.mode===k?'on':''}" onclick="setMode('${k}')">${t}</button>`)
+    .join('');
+  document.querySelector('.wrap').classList.toggle('solo', S.mode!=='session');
+  if(S.mode==='registry'){
+    rail.innerHTML='';
+    main.innerHTML = fileBanner() + scRegistry();
+    hdrsub.textContent = RG.state==='ok'
+      ? `${RG.rows.length} on the shelf · ${RG.rows.filter(b=>b.status==='IN ROTATION').length} in rotation`
+      : 'the shelf';
+    return;
+  }
+  rail.innerHTML = STEPS.map((s,i)=>{
+    const skip = S.endedEarly && (i===4||i===5||i===6);
+    return `<div class="step ${i===S.step?'on':''} ${i<S.step?'done':''} ${skip?'locked':''}"
+      onclick="${skip?'':`go(${i})`}"><div class="dot">${i<S.step?'✓':i+1}</div>
+      <div><b>${s.t}</b><span>${skip?'skipped':s.s}</span></div></div>`;
+  }).join('');
+  const i=S.step;
+  main.innerHTML = fileBanner() + (i===0 ? scSession()
+    : i===1 ? scControl('PRE')
+    : i===2 ? scPaddle(0) : i===3 ? scPaddle(1)
+    : i===4 ? scControl('MID')
+    : i===5 ? scPaddle(2) : i===6 ? scPaddle(3)
+    : i===7 ? scControl('POST') : scResults());
+  hdrsub.textContent = `${S.date} · ${S.anchor} · ${S.ballId} · ${Math.round(effAge())} effective impacts`;
+}
+// The registry used to be named twice: once for the shelf reader, once for the Open
+// button on Results. One of those is now gone, so a draft that only has the old one
+// donates it rather than losing it.
+if(!REGID && S.registryUrl){ const id=sheetId(S.registryUrl); if(id){ REGID=id;
+  try{ localStorage.setItem(REG_KEY,id); }catch(e){} RG.state='idle'; } }
+
+render();
+// Attempt both even from file:// — a real error message beats a silently dead box.
+loadPaddles();
+loadShelf();
+</script>
+</body>
+</html>
