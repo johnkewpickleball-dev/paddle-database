@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<!-- Same per-bot block the rest of the site carries. A report link is meant for one
+     recipient; there is no reason for it to be indexed or ingested. -->
+<meta name="GPTBot" content="noindex, nofollow">
+<meta name="ChatGPT-User" content="noindex, nofollow">
+<meta name="Google-Extended" content="noindex, nofollow">
+<meta name="Applebot-Extended" content="noindex, nofollow">
+<meta name="CCBot" content="noindex, nofollow">
+<meta name="ClaudeBot" content="noindex, nofollow">
+<meta name="anthropic-ai" content="noindex, nofollow">
+<meta name="Bytespider" content="noindex, nofollow">
+<meta name="PerplexityBot" content="noindex, nofollow">
+<meta name="Amazonbot" content="noindex, nofollow">
+<meta name="Diffbot" content="noindex, nofollow">
+<meta name="cohere-ai" content="noindex, nofollow">
+<meta name="omgili" content="noindex, nofollow">
+<title>KewCOR Test Report</title>
+<style>
+  :root{
+    --navy:#1f3864; --ink:#1a1f2b; --muted:#6b7280; --line:#e3e7ee; --bg:#eef1f6;
+    --card:#fff; --amber:#b45309; --amberbg:#fef3c7; --red:#b91c1c; --redbg:#fee2e2;
+    --ok:#1e40af; --okbg:#dbeafe;
+    /* The four bands, separated by LIGHTNESS rather than hue. Red-green is not a
+       distinction this page is allowed to depend on, and every band is spelled out
+       in words beside its color anyway — which also survives a black-and-white print. */
+    --b1:#dfe5f0; --b2:#b9c6de; --b3:#7f96bf; --b4:#31456e;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .sheet{max-width:860px;margin:26px auto 60px;background:var(--card);
+         box-shadow:0 2px 18px rgba(16,24,40,.09);border-radius:10px;overflow:hidden}
+  header{background:var(--navy);color:#fff;padding:20px 32px}
+  header h1{margin:0;font-size:15px;letter-spacing:2.4px;text-transform:uppercase;opacity:.82;font-weight:600}
+  header .name{font-size:27px;font-weight:700;margin:5px 0 0;letter-spacing:.2px}
+  header .mfr{opacity:.76;font-size:14px;margin-top:2px}
+  .body{padding:24px 32px 30px}
+  h2{font-size:11.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--navy);
+     margin:26px 0 10px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+  h2:first-child{margin-top:0}
+  .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:14px 18px}
+  .facts div span{display:block;font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;
+                  color:var(--muted);margin-bottom:2px}
+  .facts div b{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+  th{background:var(--navy);color:#fff;font-weight:600;padding:7px 8px;font-size:11.5px;
+     letter-spacing:.5px}
+  td{padding:7px 8px;border-bottom:1px solid #eef1f6;text-align:center}
+  td.l,th.l{text-align:left}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;
+       background:#f7f9fc;border:1px solid var(--line);border-radius:9px;padding:16px 18px}
+  .kpi div span{display:block;font-size:10.5px;letter-spacing:.7px;text-transform:uppercase;
+                color:var(--muted);margin-bottom:3px}
+  .kpi div b{font-size:23px;color:var(--navy);font-variant-numeric:tabular-nums;line-height:1.15}
+  .kpi div b.word{font-size:16px;line-height:1.5}
+  .note{color:var(--muted);font-size:12.5px;margin:9px 0 0}
+  .banner{border-radius:7px;padding:12px 15px;margin-bottom:16px;font-size:13.5px}
+  .b-warn{background:var(--amberbg);color:#7c3f06}
+  .b-bad{background:var(--redbg);color:#8c1616}
+  .b-mute{background:#eef0f4;color:#4b5563}
+  /* the band strip */
+  .strip{display:flex;height:30px;border-radius:5px;overflow:hidden;margin-top:22px}
+  .strip div{display:grid;place-items:center;font-size:10.5px;font-weight:700;letter-spacing:.6px}
+  .ticks{display:flex;font-size:10.5px;color:var(--muted);margin-top:3px;
+         font-variant-numeric:tabular-nums}
+  .foot{padding:16px 32px 22px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px}
+  .tools{max-width:860px;margin:0 auto 14px;display:flex;gap:9px;flex-wrap:wrap;align-items:center}
+  button{font:inherit;font-size:13.5px;padding:7px 15px;border-radius:7px;border:1px solid var(--navy);
+         background:#fff;color:var(--navy);cursor:pointer;font-weight:600}
+  button.solid{background:var(--navy);color:#fff}
+  @media print{
+    body{background:#fff}
+    .tools{display:none}
+    .sheet{box-shadow:none;margin:0;max-width:none;border-radius:0}
+    h2{break-after:avoid} table{break-inside:avoid} .kpi{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="tools" id="tools"></div>
+<div class="sheet" id="sheet"></div>
+
+<script src="kewcor-core.js"></script>
+<script>
+'use strict';
+/* THE REPORT IS THE LINK. Everything on this page comes out of the URL hash — there is
+ * no fetch, no sheet, no login, and nothing to keep serving for an old report to keep
+ * working. Hand someone the link and they have the report; the hash is never sent to
+ * the server, so it does not turn up in an access log either.
+ *
+ * This page renders. It does not compute. Every number was produced by kewcor-core.js
+ * inside the runner, against the same functions the workbook was validated cell-for-cell
+ * against — recomputing any of it here would be a second implementation to keep in step.
+ * The two things it does work out for itself are the axis window and the pointer
+ * position, and both come from the core module rather than from this file.            */
+const K = window.KewCOR;
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const f = (v,d) => (v==null||!isFinite(v)) ? '—' : (+v).toFixed(d);
+const or = (v,alt) => (v==null||v==='') ? (alt||'—') : v;
+
+function fail(title, detail){
+  document.getElementById('sheet').innerHTML =
+    `<header><h1>KewCOR Test Report</h1><div class="name">${esc(title)}</div></header>
+     <div class="body"><div class="banner b-bad">${esc(detail)}</div>
+     <p class="note">A report link is the whole report — the data travels in the part of
+     the address after the <b>#</b>. Mail clients and chat apps sometimes cut a long link
+     in half, so if this arrived in a message, ask for it again as an attachment or a
+     pasted link rather than a clickable one.</p></div>`;
+  document.getElementById('tools').innerHTML = '';
+}
+
+/* The chart. Same shape as the runner's face map, on the report's own axis: a smoothed
+ * spline through the measured points, with every point labeled.
+ *
+ * The curve is drawn THROUGH the dots but the peak is read off the TABLE. A Catmull-Rom
+ * spline can bulge slightly past its highest control point, so on a paddle whose top two
+ * locations are close the curve's apex can sit between them. The number below is the
+ * measured one; if the picture and the table ever seem to disagree, the table is right. */
+function chart(rows){
+  const live = rows.filter(r => r.k != null);
+  if (live.length < 2) return '';
+  const ax = K.reportAxis(live.map(r => r.k));
+  const W=760, H=300, PL=62, PR=22, PT=24, PB=46;
+  const xs = live.map(r=>r.loc), x0=Math.min(...xs)-0.5, x1=Math.max(...xs)+0.5;
+  const X = v => PL + (v-x0)/(x1-x0)*(W-PL-PR);
+  const Y = v => PT + (ax.hi-v)/(ax.hi-ax.lo)*(H-PT-PB);
+  const pts = live.map(r=>[X(r.loc), Y(r.k)]);
+  let d = `M${pts[0][0]},${pts[0][1]}`;
+  for (let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i], p1=pts[i], p2=pts[i+1], p3=pts[i+2]||p2;
+    d += ` C${p1[0]+(p2[0]-p0[0])/6},${p1[1]+(p2[1]-p0[1])/6}`
+       + ` ${p2[0]-(p3[0]-p1[0])/6},${p2[1]-(p3[1]-p1[1])/6} ${p2[0]},${p2[1]}`;
+  }
+  const steps=10, step=(ax.hi-ax.lo)/steps;
+  let grid='';
+  for(let i=0;i<=steps;i++){ const v=ax.lo+i*step;
+    grid += `<line x1="${PL}" y1="${Y(v)}" x2="${W-PR}" y2="${Y(v)}" stroke="#eef1f6"/>`
+          + `<text x="${PL-8}" y="${Y(v)+4}" text-anchor="end" font-size="10.5"
+              fill="#6b7280">${v.toFixed(2)}</text>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px" role="img"
+      aria-label="KewCOR by impact location">${grid}
+    ${live.map(r=>`<text x="${X(r.loc)}" y="${H-PB+18}" text-anchor="middle" font-size="11.5"
+        fill="#6b7280">${r.loc}</text>`).join('')}
+    <path d="${d}" fill="none" stroke="#1f3864" stroke-width="2.6"/>
+    ${pts.map((p,i)=>`<circle cx="${p[0]}" cy="${p[1]}" r="5" fill="#1f3864"/>
+      <text x="${p[0]}" y="${p[1]-12}" text-anchor="middle" font-size="11.5" font-weight="700"
+        fill="#1f3864">${live[i].k.toFixed(3)}</text>`).join('')}
+    <text x="${PL+(W-PL-PR)/2}" y="${H-6}" text-anchor="middle" font-size="11.5"
+      fill="#4b5563">Impact location — inches from the tip</text>
+  </svg>
+  <p class="note">${ax.fixed
+    ? 'Vertical axis fixed at 0.33 to 0.43, the published 0.10 window, so any two reports can be laid side by side.'
+    : `This paddle falls outside the standard 0.33–0.43 window, so the axis has moved to
+       ${ax.lo.toFixed(2)}–${ax.hi.toFixed(2)}. The span is${
+         Math.abs(ax.hi-ax.lo-0.1)<1e-9 ? ' still 0.10, so the shape is still comparable'
+         : ` ${(ax.hi-ax.lo).toFixed(2)} rather than the usual 0.10 — this paddle's face
+             varies too much to fit, so the curve looks flatter than a standard report`}.`}</p>`;
+}
+
+/* The published band strip, with the pointer placed by value rather than by hand.
+ * Each band is labeled in words as well as shaded, and the shades differ in LIGHTNESS,
+ * so the graphic works in black and white and does not ask anyone to tell one hue from
+ * another. */
+function strip(max){
+  const pos = K.bandPosition(max);
+  const span = K.BAND_HI - K.BAND_LO;
+  const shades = ['--b1','--b2','--b3','--b4'];
+  const cells = K.BANDS.map((b,i)=>{
+    const w = (b.to-b.from)/span*100;
+    return `<div style="flex:0 0 ${w}%;background:var(${shades[i]});color:${i>1?'#fff':'#1f3864'}">
+      ${b.name}</div>`;
+  }).join('');
+  const ticks = K.BANDS.map((b,i)=>{
+    const w = (b.to-b.from)/span*100;
+    return `<div style="flex:0 0 ${w}%;text-align:right">${b.to.toFixed(3)}</div>`;
+  }).join('');
+  return `<h2>Where this paddle sits</h2>
+    ${pos==null?'':`<div style="position:relative;height:20px">
+      <div style="position:absolute;left:${(pos*100).toFixed(2)}%;transform:translateX(-50%);
+        white-space:nowrap;font-size:11.5px;font-weight:700;color:var(--navy)">
+        ${max.toFixed(3)} ▼</div></div>`}
+    <div class="strip">${cells}</div>
+    <div class="ticks"><div style="flex:0 0 0">${K.BAND_LO.toFixed(2)}</div>${ticks}</div>`;
+}
+
+function render(o){
+  const rows = (o.r||[]).map(a=>({loc:a[0], k:a[1]}));
+  const sp = o.sp||{};
+  const specs = [
+    ['Static Weight (oz)', sp.wt, 2], ['Swing Weight', sp.sw, 1],
+    ['Twist Weight', sp.tw, 2], ['Length (in)', sp.len, 2],
+    ['Width (in)', sp.w, 2], ['Handle Length (in)', sp.hl, 2],
+    ['Deflection (lbf)', sp.defl, 1], ['Balance Point (cm)', sp.bp, 2]
+  ];
+  const anySpec = specs.some(([,v])=>v!=null && v!=='');
+
+  document.getElementById('sheet').innerHTML = `
+    <header>
+      <h1>KewCOR Test Report</h1>
+      <div class="name">${esc(or(o.m,'— no paddle —'))}</div>
+      ${o.mfr?`<div class="mfr">${esc(o.mfr)}</div>`:''}
+    </header>
+    <div class="body">
+      ${o.draft?`<div class="banner b-warn"><b>DRAFT — ${esc(o.draft)}</b></div>`:''}
+
+      <h2>Test</h2>
+      <div class="facts">
+        <div><span>Test date</span><b>${esc(or(o.d))}</b></div>
+        <div><span>Personnel</span><b>${esc(or(o.p))}</b></div>
+        <div><span>Temp (°F)</span><b>${esc(or(o.t))}</b></div>
+        <div><span>Test ball</span><b>${esc(or(o.b))}</b></div>
+        <div><span>Control paddle</span><b>${esc(or(o.a))}</b></div>
+        <div><span>Impacts fired</span><b>${esc(or(o.n))}</b></div>
+      </div>
+
+      ${anySpec?`<h2>Paddle specifications</h2>
+      <div class="facts">${specs.map(([lbl,v,dp])=>
+        `<div><span>${lbl}</span><b>${v==null||v===''?'—':f(v,dp)}</b></div>`).join('')}</div>`:''}
+      <p class="note">All impacts at ${o.tg||50} mph inbound. Deflection to UPA-A standard:
+        pounds of force to compress the face 1/16 inch.</p>
+
+      <h2>KewCOR by impact location</h2>
+      ${chart(rows)}
+      <table style="margin-top:14px"><thead><tr>
+        <th class="l">Impact location (in from tip)</th>
+        ${rows.map(r=>`<th>${r.loc}</th>`).join('')}</tr></thead>
+        <tbody><tr><td class="l"><b>KewCOR</b></td>
+        ${rows.map(r=>`<td><b>${r.k==null?'—':r.k.toFixed(3)}</b></td>`).join('')}</tr>
+      </tbody></table>
+
+      <h2>Results summary</h2>
+      <div class="kpi">
+        <div><span>Peak location</span><b>${o.sum?esc(o.sum.peak)+' in':'—'}</b></div>
+        <div><span>Maximum KewCOR</span><b>${o.sum?f(o.sum.max,3):'—'}</b></div>
+        <div><span>Face variance</span><b>${o.sum?f(o.sum.var,3):'—'}</b></div>
+        <div><span>Power category</span><b class="word">${o.sum?esc(o.sum.band):'—'}</b></div>
+      </div>
+      <p class="note">Peak location is read off the measured values in the table, never off
+        the curve — a smoothed line through five points can bulge slightly past the highest
+        one. The power category is spelled out as well as shaded, so it survives a
+        black-and-white print.</p>
+
+      ${o.sum?strip(o.sum.max):''}
+    </div>
+    <div class="foot">
+      KewCOR = √(PBCoR@50² + D), where D corrects for the wear state of the test ball
+      against a control paddle whose reference value is frozen. Every shot is corrected to
+      ${o.tg||50} mph before averaging; shots outside ${o.tg||50} ± 7 mph are excluded from
+      the mean but still counted against the ball.
+      ${o.iss?`<br>Issued ${esc(o.iss)}.`:''}
+    </div>`;
+
+  document.getElementById('tools').innerHTML = `
+    <button class="solid" onclick="window.print()">Print or save as PDF</button>
+    <button onclick="copyLink(this)">Copy this link</button>
+    <span class="note" style="margin:0">The whole report is in this link — nothing is
+      stored anywhere, so it keeps working as long as the page does.</span>`;
+  document.title = (o.m ? o.m + ' — ' : '') + 'KewCOR Test Report';
+}
+
+function copyLink(btn){
+  navigator.clipboard.writeText(location.href).then(
+    ()=>{ btn.textContent='Copied'; setTimeout(()=>{btn.textContent='Copy this link';},1500); },
+    ()=>{ btn.textContent='Press ⌘C'; });
+}
+
+try {
+  const raw = location.hash.replace(/^#/,'');
+  if (!raw) {
+    fail('No report in this link', 'This page shows a report that is carried in the link '
+      + 'itself, and this address has nothing after the #. Open the session runner, go to '
+      + 'Results, and use the Client report button beside the paddle you want.');
+  } else {
+    render(K.decodeReport(raw));
+  }
+} catch (e) {
+  fail('This report could not be read', e.message);
+}
+</script>
+</body>
+</html>

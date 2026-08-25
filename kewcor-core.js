@@ -231,6 +231,87 @@
     return { peakLocation: peak.location, max, variance: max - min, band };
   }
 
+  // ── the client report ─────────────────────────────────────────────────────
+  // The four published bands, read off the KewCOR graphic. Kept as data rather than
+  // as the chain of comparisons in faceSummary(), because the report also has to DRAW
+  // them, and two hand-maintained copies of the same four numbers is one too many.
+  const BANDS = [
+    { name: 'LOW POWER',   from: 0.340, to: 0.365 },
+    { name: 'MID POWER',   from: 0.365, to: 0.390 },
+    { name: 'HIGH POWER',  from: 0.390, to: 0.445 },
+    { name: 'OUT OF SPEC', from: 0.445, to: 0.520 }
+  ];
+  const BAND_LO = 0.34, BAND_HI = 0.52;        // Client Report B40, the strip's ends
+
+  // Where the pointer goes on that strip, 0 to 1. Clamped: a paddle off either end
+  // still gets a pointer at the end rather than falling off the graphic.
+  function bandPosition(max) {
+    if (max == null || !isFinite(max)) return null;
+    return Math.max(0, Math.min(1, (max - BAND_LO) / (BAND_HI - BAND_LO)));
+  }
+
+  const round6 = v => Math.round(v * 1e6) / 1e6;
+
+  /* The report's vertical axis, which is NOT the runner's.
+   *
+   * The runner uses a 0.07 window centered on the paddle, to show shape. The report
+   * uses the published 0.10 window, 0.33 to 0.43, so that two reports can be laid side
+   * by side and compared by eye — which is the whole point of fixing an axis, and the
+   * reason it must not quietly re-center per paddle.
+   *
+   * A paddle outside that range keeps the 0.10 SPAN and slides the window, exactly as
+   * Client Report L15/L16 compute it. In the workbook those two cells only tell you
+   * what to type into the chart editor by hand; here it just happens. */
+  function reportAxis(values) {
+    const live = (values || []).filter(v => v != null && isFinite(v));
+    if (!live.length) return { lo: 0.33, hi: 0.43, fixed: true };
+    const min = Math.min.apply(null, live), max = Math.max.apply(null, live);
+    const span = max - min;
+    if (min >= 0.33 && max <= 0.43) return { lo: 0.33, hi: 0.43, fixed: true };
+    const floorTo = (v, s) => Math.floor(v / s + 1e-9) * s;
+    const ceilTo  = (v, s) => Math.ceil(v / s - 1e-9) * s;
+    const lo = floorTo(span >= 0.1 ? min - 0.005 : min - (0.1 - span) / 2, 0.01);
+    const hi = Math.max(lo + 0.1, ceilTo(max + 0.002, 0.01));
+    return { lo: round6(lo), hi: round6(hi), fixed: false };
+  }
+
+  /* THE REPORT TRAVELS IN THE URL, so a report is a link and nothing has to be stored
+   * or served for it to work. Base64url of compact JSON in the hash — the hash is never
+   * sent to the server, so the payload does not turn up in anybody's access log.
+   *
+   * Deliberately only what the report DISPLAYS. Not the shot rows, not the standard
+   * errors, not the block corrections: a client link should not carry lab internals
+   * that nothing on the page will show, and a smaller payload is a shorter link.
+   *
+   * `v` is a version. A report link is a thing somebody may open a year later, and a
+   * reader that cannot tell which shape it is holding has no way to fail honestly. */
+  function encodeReport(obj) {
+    const json = JSON.stringify(obj);
+    const b64 = (typeof btoa === 'function')
+      ? btoa(unescape(encodeURIComponent(json)))
+      : Buffer.from(json, 'utf8').toString('base64');
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function decodeReport(str) {
+    if (!str) return null;
+    const b64 = String(str).replace(/^#/, '').replace(/-/g, '+').replace(/_/g, '/');
+    let json;
+    try {
+      json = (typeof atob === 'function')
+        ? decodeURIComponent(escape(atob(b64)))
+        : Buffer.from(b64, 'base64').toString('utf8');
+    } catch (e) { throw new Error('This report link is damaged - the text after the # is not '
+      + 'readable. It was probably cut short somewhere between here and the sender.'); }
+    let o;
+    try { o = JSON.parse(json); }
+    catch (e) { throw new Error('This report link is damaged - it decoded, but not into a '
+      + 'report. It was probably truncated.'); }
+    if (!o || typeof o !== 'object') throw new Error('This report link does not hold a report.');
+    if (o.v !== 1) throw new Error('This link is version ' + o.v + ' and this page reads '
+      + 'version 1. Re-issue it from the session runner.');
+    return o;
+  }
+
   // ── does today's ball want the MID block? ─────────────────────────────────
   function midAdvice(effAge, plannedImpacts) {
     if (effAge == null) return null;
@@ -254,5 +335,6 @@
   return { C, ANCHORS, effMass, pbcor, correctTo50, qForLocation, controlQ, strikeLocation,
            classify, summarize,
            effectiveAge, D, curveFraction, driftMode, pooledD, ballTimeline, segmentFor,
-           blockCorrections, locationResults, faceSummary, midAdvice, ballStage };
+           blockCorrections, locationResults, faceSummary, midAdvice, ballStage,
+           BANDS, BAND_LO, BAND_HI, bandPosition, reportAxis, encodeReport, decodeReport };
 }));

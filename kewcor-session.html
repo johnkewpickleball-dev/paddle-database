@@ -152,7 +152,8 @@ function bubble(k){ const [h,b]=NOTES[k]; ih.textContent=h; ib.textContent=b; in
 
 /* ── session state, with a local draft so a refresh cannot cost you the day ── */
 const LOC_ALL = [3,4,5,6,7];
-const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',pmNote:'',pmWarn:'',use7:false,shots:{}});
+const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',pmNote:'',pmWarn:'',use7:false,
+                            spec:{}, shots:{}, archive:null});
 const DEFAULT = {
   regBall:null,
   date:new Date().toISOString().slice(0,10), person:'', temp:'',
@@ -187,7 +188,10 @@ const STEPS = [
 
 /* ── Paddle Metrics, live ─────────────────────────────────────────────────── */
 const PM_SHEET='1LyJMxNydRdoCbguGYDE6b77hz6_pBsPMI6IF3oolBcg', PM_TAB='Source Entry';
-const PM_COL={name:1, date:2, swing:5, length:10, mfr:23};   // Setup C38-C43
+// Setup C38-C43 for the two the math needs, C48-C53 for the six the client report
+// shows. 1 = column A of the Source Entry tab.
+const PM_COL={name:1, date:2, swing:5, length:10, mfr:23,
+              defl:3, wt:4, tw:6, bp:7, w:12, hl:15};
 let PM={rows:[], state:'idle', msg:''};
 function csv(text){
   const out=[]; let row=[], f='', q=false;
@@ -254,6 +258,13 @@ function forgetRegistry(){
  * straight out and the reply — which does carry Access-Control-Allow-Origin — is
  * readable. That is what lets a write report the row it landed on instead of vanishing
  * into no-cors and being taken on trust.                                              */
+/* The endpoint build this page is written against. Compared, never assumed.
+ *
+ * The check used to read `j.version===2 ? '' : <warning>`, written when 2 was current —
+ * so the moment build 3 went live it warned about the CORRECT build, in a blue banner,
+ * with wording about features build 3 actually has. A hardcoded "current" is a landmine
+ * with a timer on it; a hardcoded EXPECTED is just a fact this page knows about itself. */
+const WANT_BUILD = 3;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -316,12 +327,20 @@ function pingEndpoint(){
   WRSCOPE='endpoint';
   WR={busy:'ping', msg:'', tone:'', detail:''}; render();
   post('ping').then(j=>{
-    WR={busy:'', tone:'ok', msg:'Endpoint answered'+(j.version?' — build '+j.version:'')+'.',
-        detail: j.version===2 ? '' :
-          'This deployment is an older build of the script. Sessions will not be checked '
-          + 'for duplicates and anchor readings will append a new row instead of updating '
-          + 'the day\'s row. Re-copy the script from the registry\'s Apps Script tab and '
-          + 'redeploy.'};
+    const v = j.version || 1;
+    const ok = v === WANT_BUILD;
+    WR={busy:'', tone: ok ? 'ok' : 'warn',
+        msg:'Endpoint answered — build '+v+'.',
+        detail: ok ? ''
+          : v < WANT_BUILD
+            ? 'This page expects build '+WANT_BUILD+', so the deployment is behind it. '
+            + 'Some of what the page asks for will not be there — paste the current script '
+            + 'into Apps Script, then Deploy > Manage deployments > pencil > New version. '
+            + 'Saving alone changes nothing the web can see, and picking an existing version '
+            + 'from that list re-deploys OLD code.'
+            : 'The deployment is NEWER than this page, which expects build '+WANT_BUILD+'. '
+            + 'This copy of the runner is the stale one — reload it, and if that does not '
+            + 'change anything, get the current page.'};
     render();
   }).catch(e=>{ WR={busy:'', tone:'bad', msg:'No.', detail:e.message}; render(); });
 }
@@ -432,7 +451,11 @@ function loadPaddles(){
                   date:(r[PM_COL.date-1]||'').trim(),
                   when:pmDate(r[PM_COL.date-1]),
                   sw:parseFloat(r[PM_COL.swing-1]), len:parseFloat(r[PM_COL.length-1]),
-                  mfr:(r[PM_COL.mfr-1]||'').trim()}))
+                  mfr:(r[PM_COL.mfr-1]||'').trim(),
+                  // display only — the report shows these, nothing computes from them
+                  spec:{ defl:parseFloat(r[PM_COL.defl-1]), wt:parseFloat(r[PM_COL.wt-1]),
+                         tw:parseFloat(r[PM_COL.tw-1]),   bp:parseFloat(r[PM_COL.bp-1]),
+                         w:parseFloat(r[PM_COL.w-1]),     hl:parseFloat(r[PM_COL.hl-1]) }}))
         .filter(x=>x.name);
       PM = rows.length
         ? {rows, state:'ok', url, msg:`${rows.length} paddles`}
@@ -478,6 +501,10 @@ function pickPaddle(i,name){
   if(isFinite(hit.len)) p.len=hit.len;
   else p.pmWarn=(p.pmWarn?p.pmWarn+'; ':'')+'no length on file — type it';
   p.mfr=hit.mfr||'';
+  // Display-only specs for the client report. Taken from the SAME Paddle Metrics row the
+  // length and swing weight came from, so a report can never mix one measurement's swing
+  // weight with another's deflection.
+  p.spec=Object.assign({}, hit.spec);
   if(hits.length>1){
     const older=hits.filter(h=>h!==hit).map(h=>h.date||'undated').join(', ');
     p.pmNote=`${hits.length} entries for this name — using the ${hit.date||'undated'} `
@@ -1148,7 +1175,11 @@ function scPaddle(idx){
 function scResults(){
   const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
   const tl=timeline(), done = pre.n && post.n;
-  const rows=S.paddles.map((p,i)=>({p,R:paddleResults(i)})).filter(x=>x.R);
+  // KEEP THE SLOT. rows is filtered, so its index is not the paddle's position in the
+  // session, and the report button needs the position — paddle 3 with paddles 1 and 2
+  // empty is rows[0] but slot 2.
+  const rows=S.paddles.map((p,i)=>({p:Object.assign({_i:i},p), R:paddleResults(i)}))
+                      .filter(x=>x.R);
   // The SAME array that gets written. Built once so the clipboard and the wire cannot
   // disagree in the last decimal place, which they could when this was built with the
   // 4-figure display formatter and the write would have carried full precision.
@@ -1163,13 +1194,29 @@ function scResults(){
     <div><b>${Math.round(tl.agePost)}</b><span>at POST</span></div>
     <div><b>${Math.round(tl.ageAfter)}</b><span>after today</span></div>
     ${S.deflection?`<div><b>${esc(S.deflection)}</b><span>anchor deflection</span></div>`:''}</div></div>
-  ${rows.map(({p,R})=>`<div class="card"><h3>${esc(p.name)}</h3>${faceChart(R.res)}
+  ${rows.map(({p,R},i)=>`<div class="card"><h3>${esc(p.name)}</h3>${faceChart(R.res)}
     <div class="kpi" style="margin-top:6px">
       <div><b>${R.summary.peakLocation} in</b><span>peak</span></div>
       <div><b>${R.summary.max.toFixed(3)}</b><span>max</span></div>
       <div><b>${R.summary.variance.toFixed(3)}</b><span>variance</span></div>
       <div><b style="font-size:15px;padding-top:6px">${R.summary.band}</b><span>band</span></div>
-    </div></div>`).join('')}
+    </div>
+    <div class="row">
+      <button class="ghost" onclick="openReport(${p._i})">Client report →</button>
+      <button class="ghost" onclick="copyReport(${p._i}, this)">Copy the link</button>
+      <span class="muted">${done && S.sent.session
+        ? 'The whole report travels in the link, so it works for anyone you send it to.'
+        : 'It will open, and it will be stamped DRAFT until the POST block is shot and the session is logged.'}</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost" ${EP.url?'':'disabled'} onclick="archivePaddle(${p._i})">${
+        p.archive?'Archive again':'Archive this paddle'}</button>
+      ${p.archive?`<button class="ghost"
+        onclick="window.open('${esc(p.archive.url)}','_blank','noopener')">Open ${esc(p.archive.name)} →</button>`:''}
+      <span class="muted">${p.archive
+        ? 'A second archive keeps the first — the old one is the record of what was reported at the time.'
+        : 'The internal record: every shot, the specs, and the ball correction, as live formulas you can correct later.'}</span>
+    </div>${wrBanner('archive')}</div>`).join('')}
   <div class="card"><h3>Send it to the registry</h3>
     ${S.sent.session
       ? `<div class="banner b-ok"><div><b>Already logged — Sessions row ${S.sent.session.row}.</b>
@@ -1355,6 +1402,144 @@ python3 -m http.server 8000</div>
 }
 
 function setMode(m){ S.mode=m; WR={busy:'',msg:'',tone:'',detail:''}; window.scrollTo(0,0); render(); }
+
+/* ── the client report ─────────────────────────────────────────────────────
+ * One paddle, one report, one link. The payload is only what the report DISPLAYS —
+ * see the note on encodeReport — and it is built here rather than on the report page
+ * because everything it needs is session state, and because the DRAFT stamp is a fact
+ * about the session that the report page has no way to work out for itself.
+ *
+ * A report is a SNAPSHOT. Nothing is stored, so re-issuing gives you a second link
+ * rather than updating the first. For a document you hand to somebody else that is the
+ * safer direction — a report that changed after it was sent would be worse — but it is
+ * a real property and the button says so.                                            */
+function reportPayload(idx){
+  const p=S.paddles[idx], R=paddleResults(idx);
+  if(!R || !R.summary) return null;
+  const post=ctrlBlock(S.post);
+  const num = v => { const x=parseFloat(v); return isFinite(x) ? Math.round(x*1e4)/1e4 : null; };
+  /* WHY THIS ONE IS NOT FINISHED, in the words the workbook uses. Empty means complete.
+     There is no "no PRE block" case here: without one there is no correction and so no
+     KewCOR at all, paddleResults returns null above, and no report button is drawn. A
+     branch for it would be a branch that can never run, which reads like a handled case
+     and is not one. */
+  const draft = !post.n
+    ? 'the POST ball correction has not been shot, so the ball correction is not final'
+    : !S.sent.session ? 'this session has not been logged to the registry' : '';
+  const sp=p.spec||{};
+  return {
+    v:1, d:S.date, m:p.name, mfr:p.mfr||'', p:S.person||'', t:S.temp===''?null:+S.temp,
+    b:S.ballId, a:S.anchor, tg:K.C.target,
+    n:R.res.reduce((a,r)=>a+r.fired,0),
+    sp:{ sw:num(p.sw), len:num(p.len), wt:num(sp.wt), tw:num(sp.tw),
+         w:num(sp.w), hl:num(sp.hl), defl:num(sp.defl), bp:num(sp.bp) },
+    r:R.res.map(x=>[x.location, x.kewcor==null?null:Math.round(x.kewcor*1e4)/1e4]),
+    sum:{ peak:R.summary.peakLocation, max:Math.round(R.summary.max*1e4)/1e4,
+          var:Math.round(R.summary.variance*1e4)/1e4, band:R.summary.band },
+    draft, iss:S.date
+  };
+}
+function reportUrl(idx){
+  const o=reportPayload(idx);
+  if(!o) return '';
+  // RELATIVE, so the link is right wherever the pair is served from — localhost while
+  // you are testing, github.io once published — without either page knowing its own home.
+  return new URL('kewcor-report.html', location.href).href + '#' + K.encodeReport(o);
+}
+function openReport(idx){
+  const u=reportUrl(idx);
+  if(u) window.open(u, '_blank', 'noopener');
+}
+function copyReport(idx, btn){
+  const u=reportUrl(idx);
+  if(!u) return;
+  navigator.clipboard.writeText(u).then(
+    ()=>{ btn.textContent='Link copied'; setTimeout(()=>{btn.textContent='Copy the link';},1600); },
+    ()=>{ btn.textContent='Could not copy'; });
+}
+
+/* ── the per-paddle archive ────────────────────────────────────────────────
+ * The internal record, one Google Sheet per paddle, built out of FORMULAS so that a
+ * spec corrected months later still flows through to the results. What travels is the
+ * raw material: every shot as it came off the gate, the paddle's specs, and the ball
+ * correction that was in force. The sheet does the arithmetic itself.
+ *
+ * It also carries the KewCOR this page computed, per location, so the sheet can put its
+ * own recomputed figure beside it and say whether they agree. Two implementations of the
+ * same arithmetic now exist; rather than assert they match, the sheet checks it on every
+ * row every time it is opened.                                                        */
+function archivePayload(idx){
+  const p=S.paddles[idx], R=paddleResults(idx);
+  if(!R || !R.summary) return null;
+  const pre=ctrlBlock(S.pre), mid=ctrlBlock(S.mid), post=ctrlBlock(S.post);
+  const n6 = v => (v==null||!isFinite(v)) ? '' : Math.round(v*1e6)/1e6;
+  const num = v => { const x=parseFloat(v); return isFinite(x) ? x : ''; };
+  const sp=p.spec||{};
+  // Shots in FIRED ORDER, location by location. The sheet groups by the location column
+  // rather than by position, but the order is kept because it is the record of what
+  // happened and because the block corrections were computed against it.
+  const shots=[];
+  R.res.forEach(r => (r.rows||[]).forEach(sh =>
+    shots.push([r.location, num(sh.vin), num(sh.vout),
+                sh.gateCor==null||!isFinite(sh.gateCor) ? '' : sh.gateCor])));
+  return {
+    op:'archive',
+    a:{
+      date:S.date, person:S.person||'', temp:S.temp===''?'':+S.temp,
+      mfr:p.mfr||'', model:p.name||'', ball:S.ballId, anchor:S.anchor,
+      mode: R.dm.ramp ? 'RAMP - one D per location block' : 'POOLED - one D for the session',
+      sp:{ sw:num(p.sw), len:num(p.len), w:num(sp.w), wt:num(sp.wt),
+           tw:num(sp.tw), bp:num(sp.bp) },
+      pre:{n:pre.n||'', mean:n6(pre.mean), se:n6(pre.se)},
+      mid:{n:mid.n||'', mean:n6(mid.mean), se:n6(mid.se)},
+      post:{n:post.n||'', mean:n6(post.mean), se:n6(post.se)},
+      loc:R.res.map(r=>r.location),
+      // FULL PRECISION, deliberately. D is not a display value — the sheet's KewCOR
+      // formula divides into it, so rounding it here would put a real difference between
+      // what the archive says and what was published, in the last places where the two
+      // are supposed to be the same number. The P_pre/P_mid/P_post figures above are
+      // rounded because nothing computes from them.
+      blockD:R.res.map(r=>r.D),
+      said:R.res.map(r=>r.kewcor),          // what THIS page computed, for the sheet to check
+      shots,
+      k:{ ballKg:K.C.ballKg, ballOz:K.C.ballOz, clampMOI:K.C.clampMOI,
+          clampDepth:K.C.clampDepth, target:K.C.target, window:K.C.window,
+          slope:K.C.slope, pRef:A().pRef }
+    }
+  };
+}
+
+function archivePaddle(idx){
+  WRSCOPE='archive';
+  const req=archivePayload(idx);
+  if(!req){ WR={busy:'',tone:'warn',msg:'Nothing to archive yet.',detail:''}; return render(); }
+  if(!EP.url){ WR={busy:'',tone:'bad',msg:'No write endpoint.',
+    detail:'The archive is created by the Apps Script, so it needs the /exec URL set on '
+         + 'the Ball registry tab.'}; return render(); }
+  WR={busy:'archive', msg:'', tone:'', detail:''}; render();
+  post('archive', req)
+    .then(j=>{
+      S.paddles[idx].archive={url:j.url, name:j.name};
+      WR={busy:'', tone:'ok', msg:'Archived as '+j.name+'.',
+          detail:j.shots+' shots across '+j.locations+' locations, in the '+j.folder
+               + ' folder. Open it and check the Agrees? column reads "agrees" on every '
+               + 'row before you rely on it.'};
+      render();
+    })
+    .catch(e=>{
+      // A missing Drive scope is the one failure that looks like something else: the
+      // script was pasted but never re-authorized, and the error is about permissions
+      // rather than about anything on this page.
+      const scope=/PERMISSION|authoriz|scope|Drive/i.test(e.message||'');
+      WR={busy:'', tone:'bad', msg:'The archive was not created.',
+          detail:(scope
+            ? 'This looks like the script not being authorized for Drive. Creating a sheet '
+            + 'needs a permission the earlier version never asked for: open the script, '
+            + 'Run the archive function once, and accept the prompt. Then redeploy. '
+            : '') + e.message};
+      render();
+    });
+}
 
 /* ── shell ────────────────────────────────────────────────────────────────── */
 function go(i){ S.step=Math.max(0,Math.min(STEPS.length-1,i)); window.scrollTo(0,0); render(); }
