@@ -143,8 +143,8 @@ const NOTES = {
     "A third control reading, shot between paddles 2 and 3.\n\nBall COR decays exponentially, so the correction between PRE and POST follows a curve, not a straight line. The ramp already bends to that curve using a decay constant borrowed from LT-15. The MID block is what makes that borrowing unnecessary: with a third reading the ramp is anchored on measurements in both halves of the session.\n\nIt is asked for when the ball is under 190 effective impacts and the session runs more than about 90 paddle impacts — in practice, a ball's first session or two after its wear phase, and almost never after that.\n\nIf you decide to stop after two paddles, this block becomes the POST block. Nothing is wasted."],
   drift: ["POOLED or RAMP",
     "PRE and POST are a FAILURE DETECTOR before they are a drift meter.\n\nOn a settled ball the true drift across a session is about 0.001, while each block carries a standard error near 0.005. Most sessions the difference you measure is noise, and ramping on noise adds error to every paddle instead of removing it. So AUTO ramps only when PRE and POST differ by more than two standard errors.\n\nOn a ball fresh off its wear phase, expect RAMP — that one really is still breaking in. On an old ball, RAMP means something mechanical happened: go and look at the seam."],
-  block: ["One correction per location block",
-    "The ball keeps decaying while a paddle is being shot. Because locations are shot in blocks from the top of the face downward, that decay would land as a GRADIENT across the face map — top reading hot, bottom cold — if the whole paddle shared one correction.\n\nSo each block gets its own D, taken at the moment that block was actually fired. On paddle 1 of a ball fresh off the wear phase that is worth about 0.004 across the face; by paddle 4, or on a settled ball, it is nothing.\n\nIn POOLED mode all the blocks fall back to the same figure, which is correct: there is no measured drift to distribute."],
+  block: ["One correction per paddle",
+    "Every location on a paddle carries the SAME ball correction, taken once at that paddle's midpoint on the wear curve.\n\nTHIS TILTS THE FACE MAP, ON PURPOSE. Locations are shot in order, 3 in first, so the top of the face meets the freshest ball of that paddle and the bottom meets the most worn one. Raw PBCoR therefore comes out a little high at 3 in and a little low at 6 in.\n\nUntil 2026-08-27 each location block carried its own correction, which canceled that exactly. On a simulation where the true COR is identical at every location and there is no measurement noise, per-block returns the flat truth to 0.0003; one D per paddle leans the map toward the top by about 0.017 across a 3–6 in run.\n\nThat was given back knowingly. Almost every paddle measured the per-block way peaked at 6 in, which disagrees with years of published results and with how the paddles play, and comparability with the archive was judged worth more than an unbiased face map. It is a business call, not a physics claim — do not describe this face map as unbiased.\n\nThe ramp BETWEEN paddles stays. Paddle 1 and paddle 4 sat at genuinely different points on the ball's life, and that difference IS bracketed by measured control blocks."],
   kewcor: ["KewCOR",
     "KewCOR = SQRT(PBCoR@50² + D), where D = P_ref² − P_ctrl².\n\nThe correction is applied to the LOCATION MEAN, not shot by shot, so a noisy individual shot cannot leak in through the square root.\n\nPeak location is read off the measured values, never off the curve on the chart — that curve is a smoothed spline through four or five points and can bulge slightly past the highest one."],
   axis: ["The vertical axis",
@@ -249,7 +249,13 @@ function resetAll(){
   }
   if(!confirm('Clear this session and start a new one? The draft is deleted.')) return;
   try{ localStorage.removeItem(DRAFT); }catch(e){}
-  S=JSON.parse(JSON.stringify(DEFAULT)); S.paddles=[blankPaddle(),blankPaddle()]; render(); }
+  S=JSON.parse(JSON.stringify(DEFAULT)); S.paddles=[blankPaddle(),blankPaddle()]; render();
+  // Re-read the shelf. The ball's counts are the FIRST thing the new session takes off the
+  // registry, and the copy in memory is as old as the page — it does not see a session row
+  // logged since, nor a correction typed into Other prior. Starting a session from a stale
+  // shelf understates the ball's age, and the number is copied into the draft by applyBall
+  // where nothing later questions it.
+  if(REGID) loadShelf(); }
 
 const STEPS = [
   {t:'Session',  s:'ball, anchor, paddles'},

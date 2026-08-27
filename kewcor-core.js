@@ -184,34 +184,59 @@
     return { a: tl.agePre, b: tl.agePost, Da: dPre, Db: dPost };
   }
 
-  // ── PER LOCATION BLOCK, not per paddle ────────────────────────────────────
-  // The ball keeps decaying while a paddle is being shot, and because locations
-  // are shot in blocks from the top of the face downward, one D per paddle would
-  // leave that decay behind as a gradient across the face map. Each block gets
-  // its own D, taken at the moment that block of ten was actually fired.
+  // ── ONE D PER PADDLE — A DELIBERATE, DOCUMENTED BIAS ──────────────────────
+  // READ THIS BEFORE CHANGING ANYTHING HERE. This is not the unbiased choice and
+  // was never claimed to be by anyone who checked. John's call, 2026-08-27, with
+  // the cost on the table.
+  //
+  // Each location block used to get its own D, taken where that block was fired.
+  // That was the CORRECTIVE, not the artifact. Locations are shot in order, 3 in
+  // first, so the top of the face meets the freshest ball of that paddle and the
+  // bottom meets the most worn one. Raw PBCoR is therefore inflated at 3 in and
+  // deflated at 6 in. Per-block D compensates exactly: it adds least where the raw
+  // is already high and most where it is low.
+  //
+  // On a flat-truth simulation — same true COR at every location, ball decaying on
+  // the wear curve, zero measurement noise — the two methods return:
+  //
+  //     per-BLOCK   error  -0.0002 -0.0003 -0.0002 -0.0001   (flat, correct)
+  //     per-PADDLE  error  +0.0093 +0.0026 -0.0029 -0.0075   (0.017 tilt)
+  //
+  // So one D per paddle leans the face map TOWARD THE TOP by about 0.017 across a
+  // 3–6 in run. It moves peaks off 6 in, which is what John wanted, and it does it
+  // by reintroducing a known bias rather than by removing one. Accepted because it
+  // keeps new results comparable with the archive of old ones, which were computed
+  // this way. It is not defensible as an unbiased face map and must never be
+  // described as one — in a report, a client conversation, or a comment.
+  //
+  // The honest fix, if this ever needs to be unbiased again, is shooting the
+  // locations in rotation (3,4,5,6, 3,4,5,6), which turns the gradient into a
+  // common offset. That costs forty cannon moves per paddle and needs the
+  // shot-to-location assignment reworked. See Design Notes.
+  //
+  // The ramp BETWEEN paddles stays. Paddle 1 and paddle 4 sat at genuinely
+  // different points on the wear curve, that difference IS bracketed by measured
+  // control blocks, and collapsing it would read paddle 1 low against paddle 4 —
+  // on the ramp fixture, D 0.0224 against 0.0413, about 0.022 in KewCOR at 0.40.
+  //
   // blockCounts is how many shots ACTUALLY landed in each location block, in firing
   // order. The workbook has to assume a fixed ten per block because it assigns shots
   // to locations by row position; the runner knows the real counts because each
-  // location has its own box. With ten everywhere the two agree exactly, which is
-  // what the fixtures check — where they differ, the runner is the more correct one.
+  // location has its own box. Only the paddle's total matters now, so the two agree
+  // wherever the totals do.
   function blockCorrections({ slot, tl, dPre, dMid, dPost, ramp, pooled,
                               shotsFired, nLocations, blockCounts }) {
-    const start = tl.paddleStart[slot];
     const counts = blockCounts || Array.from({ length: nLocations }, (_, i) =>
       Math.min(C.perLoc, Math.max(0, shotsFired - i * C.perLoc)));
+    const n = nLocations || counts.length;
+    if (!ramp) return Array.from({ length: n }, () => pooled);
+    const start = tl.paddleStart[slot];
     const total = blockCounts ? counts.reduce((a, b) => a + b, 0) : shotsFired;
-    const out = [];
-    let offset = 0;
-    for (let i = 0; i < (nLocations || counts.length); i++) {
-      const n = counts[i] || 0;
-      if (!ramp) { out.push(pooled); offset += n; continue; }
-      const mid = start + offset + n / 2;
-      const seg = segmentFor(start + total / 2, tl, dPre, dMid, dPost);
-      const f = curveFraction(mid - seg.a, seg.b - seg.a);
-      out.push(seg.Da + (seg.Db - seg.Da) * f);
-      offset += n;
-    }
-    return out;
+    const mid = start + total / 2;                  // the PADDLE's midpoint, once
+    const seg = segmentFor(mid, tl, dPre, dMid, dPost);
+    const f = curveFraction(mid - seg.a, seg.b - seg.a);
+    const d = seg.Da + (seg.Db - seg.Da) * f;
+    return Array.from({ length: n }, () => d);
   }
 
   // ── the published number ──────────────────────────────────────────────────
