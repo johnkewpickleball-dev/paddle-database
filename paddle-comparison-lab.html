@@ -1398,12 +1398,12 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   var CURVES_CUTOFF = new Date(2026,7,27).getTime(); // 2026-08-27
   function isNewPipelinePaddle(p){ var d=dateKey(p.dateEntered); return !isNaN(d) && d>=CURVES_CUTOFF; }
 
-  // Curves tab on the Ball Registry — one row per paddle-test, written automatically by the
-  // KewCOR session runner (kewcor-session.html). See brief section 3.
-  // TODO(John): replace REPLACE_WITH_BALL_REGISTRY_SHEET_ID with the real Ball Registry
-  // sheet ID once the Curves tab exists. Until then this fetch just fails quietly and the
-  // Ball Speed in Play section stays hidden — nothing else on the page is affected.
-  var CURVES_CSV='https://docs.google.com/spreadsheets/d/REPLACE_WITH_BALL_REGISTRY_SHEET_ID/gviz/tq?tqx=out:csv&sheet=Curves';
+  // "Curves" tab, one row per paddle-test, written automatically by the KewCOR session
+  // runner (kewcor-session.html). NOT a tab on the Ball Registry itself — a separate
+  // link-readable sheet ("KewCOR Curves (website feed)") the endpoint keeps in sync so the
+  // registry's Shelf/Sessions data (every ball, the whole test log) never has to be
+  // link-readable. See CURVES-FEED-HANDOFF.md.
+  var CURVES_CSV='https://docs.google.com/spreadsheets/d/1xet-q5iP5Mvs-kk8acsxRsMCrBOPQ8_DevpVjiUzll4/gviz/tq?tqx=out:csv&sheet=Curves';
   var CURVES_MAP={}; // "Company||Paddle" -> {length,swingWeight,weight,balance,points:[[loc,kewcor],...]}
 
   var OZ2KG=0.0283495, IN2CM=2.54, BALL_KG=0.92*OZ2KG, CLAMP_IN=2.00;
