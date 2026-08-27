@@ -274,7 +274,7 @@ const PM_SHEET='1LyJMxNydRdoCbguGYDE6b77hz6_pBsPMI6IF3oolBcg', PM_TAB='Source En
 // Setup C38-C43 for the two the math needs, C48-C53 for the six the client report
 // shows. 1 = column A of the Source Entry tab.
 const PM_COL={name:1, date:2, swing:5, length:10, mfr:23,
-              defl:3, wt:4, tw:6, bp:7, w:12, hl:15};
+              defl:3, wt:4, tw:6, bp:7, w:12, hl:15, thick:8};
 let PM={rows:[], state:'idle', msg:''};
 function csv(text){
   const out=[]; let row=[], f='', q=false;
@@ -361,7 +361,11 @@ function forgetRegistry(){
  * so the moment build 3 went live it warned about the CORRECT build, in a blue banner,
  * with wording about features build 3 actually has. A hardcoded "current" is a landmine
  * with a timer on it; a hardcoded EXPECTED is just a fact this page knows about itself. */
-const WANT_BUILD = 4;
+// Must track VERSION in kewcor-endpoint.gs. It was left at 4 while the endpoint went to
+// 6, which had this check about to announce that the RUNNER was the stale one — the exact
+// opposite of the truth, and a full afternoon of looking for a newer page that does not
+// exist. If you bump one, bump the other.
+const WANT_BUILD = 6;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -385,6 +389,15 @@ function forgetEndpoint(){
   EP={url:'',secret:''};
   try{ localStorage.removeItem(EP_KEY); }catch(e){}
   WR={busy:'',tone:'',msg:'',detail:''}; render();
+}
+
+/* Long opaque identifiers are the thing hand-copying gets wrong, and a Google sheet id
+ * that is one character off produces an empty feed rather than an error. */
+function copyText(btn, value){
+  const was=btn.textContent;
+  navigator.clipboard.writeText(value).then(
+    ()=>{ btn.textContent='Copied'; setTimeout(()=>{btn.textContent=was;},1600); },
+    ()=>{ btn.textContent='Could not copy — select it above'; });
 }
 
 function post(op, payload){
@@ -426,10 +439,27 @@ function pingEndpoint(){
   post('ping').then(j=>{
     const v = j.version || 1;
     const ok = v === WANT_BUILD;
-    WR={busy:'', tone: ok ? 'ok' : 'warn',
+    // Everything a deploy can get wrong, in the order it goes wrong. The build number is
+    // only the first of them: a right build with the placeholder secret still fails every
+    // write, and a right build without the Drive scope still fails every archive.
+    const notes=[];
+    if(j.secretChanged===false)
+      notes.push('The SECRET is still the placeholder. Every write will come back "bad '
+        + 'secret" — put your own secret back on line 11 of the script and redeploy.');
+    if(j.canWriteDrive===false)
+      notes.push('The script is not authorized for Drive, so archiving will fail on a '
+        + 'permission error. Open the script, Run authorizeArchive once, accept the '
+        + 'prompt, then redeploy.');
+    if('curvesSheetId' in j)
+      notes.push(j.curvesSheetId
+        ? 'Curves feed for the website: ' + j.curvesSheetId
+        : 'No Curves feed yet — it is created the first time you archive a paddle.');
+    WR={busy:'', tone: (ok && j.secretChanged!==false && j.canWriteDrive!==false)
+                       ? 'ok' : 'warn',
         msg:'Endpoint answered — build '+v+'.',
-        detail: ok ? ''
-          : v < WANT_BUILD
+        copy: j.curvesSheetId ? {label:'Copy the Curves sheet ID', value:j.curvesSheetId} : null,
+        detail: (ok ? '' :
+          v < WANT_BUILD
             ? 'This page expects build '+WANT_BUILD+', so the deployment is behind it. '
             + 'Some of what the page asks for will not be there — paste the current script '
             + 'into Apps Script, then Deploy > Manage deployments > pencil > New version. '
@@ -437,7 +467,7 @@ function pingEndpoint(){
             + 'from that list re-deploys OLD code.'
             : 'The deployment is NEWER than this page, which expects build '+WANT_BUILD+'. '
             + 'This copy of the runner is the stale one — reload it, and if that does not '
-            + 'change anything, get the current page.'};
+            + 'change anything, get the current page.') + (notes.length?'  '+notes.join('  '):'')};
     render();
   }).catch(e=>{ WR={busy:'', tone:'bad', msg:'No.', detail:e.message}; render(); });
 }
@@ -552,7 +582,11 @@ function loadPaddles(){
                   // display only — the report shows these, nothing computes from them
                   spec:{ defl:parseFloat(r[PM_COL.defl-1]), wt:parseFloat(r[PM_COL.wt-1]),
                          tw:parseFloat(r[PM_COL.tw-1]),   bp:parseFloat(r[PM_COL.bp-1]),
-                         w:parseFloat(r[PM_COL.w-1]),     hl:parseFloat(r[PM_COL.hl-1]) }}))
+                         w:parseFloat(r[PM_COL.w-1]),     hl:parseFloat(r[PM_COL.hl-1]),
+                         // Thickness is display-only here but the website uses it as the
+                         // tiebreak between two builds of the same model, so it travels
+                         // with the archive rather than being typed again later.
+                         thick:parseFloat(r[PM_COL.thick-1]) }}))
         .filter(x=>x.name);
       PM = rows.length
         ? {rows, state:'ok', url, msg:`${rows.length} paddles`}
@@ -908,6 +942,9 @@ function wrBanner(scope){
       </div>`:''}
     ${WR.stale?`<div class="row" style="margin-top:8px">
       <button class="ghost" onclick="loadShelf()">Re-read the shelf</button></div>`:''}
+    ${WR.copy?`<div class="row" style="margin-top:8px">
+      <button class="ghost" onclick="copyText(this,'${esc(WR.copy.value)}')">${
+        esc(WR.copy.label)}</button></div>`:''}
     </div></div>`;
 }
 
@@ -1639,13 +1676,21 @@ function archivePayload(idx){
     a:{
       date:S.date, person:S.person||'', temp:S.temp===''?'':+S.temp,
       mfr:p.mfr||'', model:p.name||'', ball:S.ballId, anchor:S.anchor,
-      mode: R.dm.ramp ? 'RAMP - one D per location block' : 'POOLED - one D for the session',
+      // ONE D PER PADDLE since 2026-08-27, flat across every location. The old label
+      // said "per location block" and was left behind by that change; an archive sheet
+      // that describes its own arithmetic wrongly is worse than one that says nothing.
+      mode: R.dm.ramp ? 'RAMP - one D per paddle, taken at its own midpoint'
+                      : 'POOLED - one D for the session',
       sp:{ sw:num(p.sw), len:num(p.len), w:num(sp.w), wt:num(sp.wt),
            tw:num(sp.tw), bp:num(sp.bp) },
       pre:{n:pre.n||'', mean:n6(pre.mean), se:n6(pre.se)},
       mid:{n:mid.n||'', mean:n6(mid.mean), se:n6(mid.se)},
       post:{n:post.n||'', mean:n6(post.mean), se:n6(post.se)},
       loc:R.res.map(r=>r.location),
+      thick:num(sp.thick),
+      // Carried for the website's Curves row, not for the archive sheet, which recomputes
+      // its own se from the raw shots. Rounded: nothing divides into it.
+      se:R.res.map(r=>n6(r.se)),
       // FULL PRECISION, deliberately. D is not a display value — the sheet's KewCOR
       // formula divides into it, so rounding it here would put a real difference between
       // what the archive says and what was published, in the last places where the two
@@ -1672,10 +1717,21 @@ function archivePaddle(idx){
   post('archive', req)
     .then(j=>{
       S.paddles[idx].archive={url:j.url, name:j.name};
-      WR={busy:'', tone:'ok', msg:'Archived as '+j.name+'.',
+      // The Curves row is the website's copy of this face map. It is written in the same
+      // call, but it is not what the archive is FOR, so a failure there is reported
+      // without pretending the archive failed too.
+      const curve = j.curveError
+        ? ' The website Curves row was NOT written: ' + j.curveError
+        + ' The archive itself is fine — retry the row from the Ball registry tab.'
+        : (j.curveRow ? ' Curves row ' + j.curveRow + ' written for the website.' : '');
+      const stray = (j.curveStray && j.curveStray.length)
+        ? ' Note: ' + j.curveStray.join(', ') + ' in has no column on the Curves tab, so '
+        + 'the website will not show it. The archive has it.'
+        : '';
+      WR={busy:'', tone:j.curveError?'warn':'ok', msg:'Archived as '+j.name+'.',
           detail:j.shots+' shots across '+j.locations+' locations, in the '+j.folder
                + ' folder. Open it and check the Agrees? column reads "agrees" on every '
-               + 'row before you rely on it.'};
+               + 'row before you rely on it.' + curve + stray};
       render();
     })
     .catch(e=>{
