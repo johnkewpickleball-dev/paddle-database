@@ -131,6 +131,8 @@ const NOTES = {
     "ANCHOR 2 (TFG-4) is the working control. ANCHOR 3 (TFW-3) is the spare and sits on the same published scale, so switching needs no adjustment.\n\nANCHOR 1 (TFG-1) is RETIRED — reference only. Its face is worn and its P_ref no longer describes it. Pick it only to re-run a paddle entered before the changeover.\n\nP_ref is a CONSTANT for each paddle, never recomputed. Anchors 2 and 3 were derived from Anchor 1 by direct crossover, which is what puts all three on one scale."],
   prior: ["Prior impacts and the @70 box",
     "Two boxes, on purpose. On the left, impacts this ball has taken at 50 mph — the running total from the registry. On the right, shots from an accelerated wear phase at 70 mph.\n\nA 70 mph wear shot counts as 0.44 of a 50 mph impact — LESS, not more. The wear rig clamps the paddle at 30 degrees so it can throw the spin-off durability testing records, so those are glancing blows. Only the square-on component of the closing speed compresses the core, and at 30 degrees that is 35 mph.\n\nSo a standard 100-shot wear phase leaves a ball around 44 effective impacts old: still on the steep part of the wear curve."],
+  control: ["The weekly control block",
+    "Ten shots at 6 in from the tip, in the same session as the control blocks, so ball, temperature and cannon all cancel in the difference.\n\nIt was going to be the mirror image of the crosshair across the centerline — same distance from the pivot, identical in every way except wear. The rig aims along the paddle's long axis only, so that point cannot be reached. 6 in is 1.9 in clear of the 4.07 crosshair, so the worn zone can never reach it.\n\nThe price is that it is a genuinely different location: different pivot-to-impact distance, different effective mass, different intrinsic PBCoR. So the raw gap is mostly face map, not wear. Only the CHANGE in the gap across readings measures anything, and only while the spot never moves.\n\nWhy weekly and not every session: the control has to stay less worn than the crosshair. At one session in three the wear ratio is 7:1 and the measured gap under-reads by about 14%; shot every session it is 2:1 and under-reads by half."],
   deflection: ["Deflection — the anchor monitor",
     "Takes a minute, costs no shots, and is the tripwire for the anchor going soft.\n\nPress the gauge at the SAME spot every time, and as near the crosshair as the rig allows. The anchor's wear is uniquely concentrated — twenty-odd shots a session at one point, where a test paddle spreads them over four — so a reading taken at the geometric center can be blind to exactly the damage you are watching for.\n\nAcross 211 paddles, 1 lb of deflection is worth about 0.0012 of KewCOR, so the 0.005 that matters is roughly 4 lbs. That conversion is cross-sectional and provisional: it says how deflection and KewCOR vary BETWEEN designs, not how they move together within one paddle over time."],
   paste: ["Pasting gate data",
@@ -160,6 +162,9 @@ const DEFAULT = {
   anchor:'Anchor 2', ballId:'LT-89', prior:133, wear:100, deflection:'',
   paddles:[blankPaddle(),blankPaddle()],
   pre:'', mid:'', post:'', mirror:'', midAfter:2, endedEarly:false,
+  // Which spot the weekly control block was shot at. Logged on every anchor row so a
+  // change is visible in the record instead of silently stepping the series.
+  controlSpot:6,
   registryUrl:'', step:0, mode:'session',
   // What has already reached the registry, kept in the draft so that a refresh — or a
   // second click on a button that already worked — cannot produce a second row.
@@ -170,7 +175,79 @@ let S = (()=>{ try{ const j=JSON.parse(localStorage.getItem(DRAFT)); if(j&&j.pad
 let saveTimer=null;
 function save(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{
   try{ localStorage.setItem(DRAFT, JSON.stringify(S)); }catch(e){} },250); }
-function resetAll(){ if(!confirm('Clear this session and start a new one? The draft is deleted.')) return;
+/* ── the draft is the only copy ────────────────────────────────────────────
+ * Until a paddle is archived, its raw shots exist in this browser's localStorage and
+ * nowhere else. Not on the sheet, not in Drive, not in the session row — that row
+ * carries the corrections, not the shots. A cleared profile, a different machine, or
+ * one press of "Finish and start a new session" ends them.
+ *
+ * This was not hypothetical. A whole session was lost that way and had to be pulled
+ * back out of the browser's write-ahead log. So: the draft goes to a file and comes
+ * back from one, and the button that deletes it refuses while anything is unsaved. */
+function atRisk(){
+  const out=[];
+  S.paddles.forEach((p,i)=>{
+    if(paddleResults(i) && !p.archive)
+      out.push('• '+(p.name || ('Paddle '+(i+1)))+' has results and has NOT been archived.');
+  });
+  if(S.paddles.some((p,i)=>paddleResults(i)) && !S.sent.session)
+    out.push('• The session row has NOT been logged to the registry.');
+  return out;
+}
+function draftFileName(){ return 'kewcor-draft-'+(S.date||'undated')+'.json'; }
+function exportDraft(btn){
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));
+  a.download=draftFileName();
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  if(btn){ const t=btn.textContent; btn.textContent='Saved as '+draftFileName();
+           setTimeout(()=>{ btn.textContent=t; },2800); }
+}
+function restoreDraft(input){
+  const f=input.files && input.files[0]; input.value='';
+  if(!f) return;
+  const fr=new FileReader();
+  fr.onload=()=>{
+    let j;
+    try{ j=JSON.parse(fr.result); }
+    catch(e){ alert('That file could not be read as JSON, so nothing was changed.\n\n'+e.message); return; }
+    // A draft has paddles. Anything else is some other file with a .json name, and
+    // loading it would replace a live session with nonsense.
+    if(!j || !Array.isArray(j.paddles)){
+      alert('That does not look like a KewCOR draft — a draft carries a list of paddles.\n\nNothing was changed.');
+      return; }
+    const risk=atRisk();
+    if(risk.length && !confirm('Restoring replaces the session that is open now:\n\n'
+        +risk.join('\n')+'\n\nReplace it anyway?')) return;
+    S=Object.assign({},DEFAULT,j);
+    if(!S.paddles.length) S.paddles=[blankPaddle(),blankPaddle()];
+    // A draft restored onto a machine that has never seen the registry can still send,
+    // because the draft brought the registry with it.
+    if(!REGID && S.registryUrl){ const id=sheetId(S.registryUrl);
+      if(id){ REGID=id; try{ localStorage.setItem(REG_KEY,id); }catch(e){}
+              RG.state='idle'; loadShelf(); } }
+    WR={busy:'',tone:'ok',msg:'Restored '+f.name+'.',
+        detail:(S.date||'undated')+' · '+(S.ballId||'no ball')+' · '
+             +S.paddles.filter(p=>p.name).length+' paddles. Read this screen before sending '
+             +'anything — a restored draft remembers what it had already sent, and any row '
+             +'sent before a correction still holds the old numbers.'};
+    WRSCOPE='reset'; go(0);
+  };
+  fr.readAsText(f);
+}
+function resetAll(){
+  const risk=atRisk();
+  if(risk.length){
+    // Refused, not warned. Everything on that list is gone by the time a confirm box has
+    // been dismissed, and a confirm box gets dismissed by reflex.
+    WR={busy:'',tone:'bad',msg:'Not yet — this session is not stored anywhere else.',
+        detail:risk.join('  ')+'  Clearing now deletes the only copy of those shots. '
+             +'Archive each paddle, then send the session row. If you have to stop before '
+             +'that, save the draft to a file first and keep the file.'};
+    WRSCOPE='reset'; render(); return;
+  }
+  if(!confirm('Clear this session and start a new one? The draft is deleted.')) return;
   try{ localStorage.removeItem(DRAFT); }catch(e){}
   S=JSON.parse(JSON.stringify(DEFAULT)); S.paddles=[blankPaddle(),blankPaddle()]; render(); }
 
@@ -234,10 +311,24 @@ function setRegistry(v){
   if(!id){ RG={rows:[],state:'badurl',msg:'That does not look like a Google Sheets link. '
       + 'Open the registry and copy the whole URL from the address bar.'}; return render(); }
   REGID=id; try{ localStorage.setItem(REG_KEY,id); }catch(e){}
+  // Carry it in the draft too. The draft is the thing that gets saved to a file and
+  // opened somewhere else; a draft that knows its own registry reconnects on arrival
+  // instead of arriving unable to send.
+  S.registryUrl=id; save();
   loadShelf();
 }
 function forgetRegistry(){
+  // This button sits next to the ball picker and used to disconnect on one click, with
+  // no confirmation and nothing on screen afterwards to say the connection was gone.
+  // Every write reads the sheet back to confirm itself, so disconnecting mid-session
+  // does not degrade the writes — it refuses them. That is very likely what ended the
+  // session of 2026-08-26: the anchor row went in, the registry was dropped, and the
+  // session row was then refused for a reason that read like a failure of the network.
+  if(!confirm('Disconnect the ball registry?\n\nNothing can be sent to it until it is '
+    + 'connected again — not the session row, not the anchor reading, not an archive. '
+    + 'Do this between sessions, not during one.')) return;
   REGID=''; try{ localStorage.removeItem(REG_KEY); }catch(e){}
+  S.registryUrl=''; save();
   RG={rows:[],state:'unset',msg:''}; render();
 }
 
@@ -264,7 +355,7 @@ function forgetRegistry(){
  * so the moment build 3 went live it warned about the CORRECT build, in a blue banner,
  * with wording about features build 3 actually has. A hardcoded "current" is a landmine
  * with a timer on it; a hardcoded EXPECTED is just a fact this page knows about itself. */
-const WANT_BUILD = 3;
+const WANT_BUILD = 4;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -521,7 +612,15 @@ function parseShots(txt){
   }).filter(s=>isFinite(s.vin));
 }
 const A = () => K.ANCHORS[S.anchor];
-const ctrlBlock = txt => K.summarize(parseShots(txt), A().swingWt, K.controlQ());
+/* PRE, MID and POST are all shot at the crosshair, so they use the fixture's own Q.
+   The weekly control block is NOT — it is 6 in from the tip, which is a different
+   pivot-to-impact distance and therefore a different effective mass. On Anchor 2 the two
+   differ by 54%. Passing the crosshair's q for that block would not fail, it would just
+   be wrong, which is worse. */
+const ctrlBlock = (txt, qIn) => K.summarize(parseShots(txt), A().swingWt,
+                                            qIn == null ? K.controlQ() : qIn);
+const controlSpotQ = () => K.qForLocation(A().length, +S.controlSpot || K.C.controlSpot);
+const controlBlock = () => ctrlBlock(S.mirror, controlSpotQ());
 const effAge = () => K.effectiveAge(parseFloat(S.prior)||0, parseFloat(S.wear)||0);
 const locsFor = p => p.use7 ? LOC_ALL : LOC_ALL.slice(0,4);
 const groupsFor = p => locsFor(p).map(l=>parseShots(p.shots[l]||''));
@@ -618,17 +717,20 @@ function sessionRowValues(){
    hits, which this page has no way to know — both are left out rather than guessed at.
    The crosshair block is the PRE block; it is never typed twice. */
 function anchorRowValues(){
-  const pre=ctrlBlock(S.pre), mir=ctrlBlock(S.mirror);
+  const pre=ctrlBlock(S.pre), mir=controlBlock();
   return [
     S.date, S.anchor, numOrBlank(S.deflection), numOrBlank(S.temp),
     mir.n||'', mir.n?n6(mir.mean):'', mir.n?n6(mir.se):'',
     pre.n||'', pre.n?n6(pre.mean):'', pre.n?n6(pre.se):'',
     '', '',
-    S.ballId, S.person ? ('logged by '+S.person) : ''
+    S.ballId, S.person ? ('logged by '+S.person) : '',
+    // Column O. Without it a change of spot is invisible in the record and the tilt line
+    // would go on subtracting readings taken at different places on the face.
+    mir.n ? (+S.controlSpot || K.C.controlSpot) : ''
   ];
 }
 const anchorHasSomething = () =>
-  S.deflection!=='' || ctrlBlock(S.mirror).n || ctrlBlock(S.pre).n;
+  S.deflection!=='' || controlBlock().n || ctrlBlock(S.pre).n;
 
 /* ── the writes ────────────────────────────────────────────────────────────
  * Each one is: post, read the row back, and only then say it is done. The read is the
@@ -636,9 +738,13 @@ const anchorHasSomething = () =>
  * the sheet is the only thing that can tell you what happened.                        */
 function needRegistry(){
   if(REGID) return false;
-  WR={busy:'', tone:'bad', msg:'The registry is not connected.',
-      detail:'Paste its Google Sheets URL on the Ball registry tab first — the write goes '
-           + 'through the endpoint, but reading it back to confirm goes through the sheet.'};
+  WR={busy:'', tone:'bad', msg:'The registry is not connected — nothing was sent.',
+      detail:'This is a setting on this machine, not a problem with the network or the '
+           + 'endpoint, and nothing you do on this screen will fix it. Go to the Ball '
+           + 'registry tab, paste the registry\'s Google Sheets URL, then come back and '
+           + 'send. The write goes through the endpoint, but reading it back to confirm '
+           + 'goes through the sheet, so without the sheet there is no confirmation and '
+           + 'the send is refused rather than left unverified.'};
   render(); return true;
 }
 function wrFail(e){
@@ -844,28 +950,44 @@ function endpointForm(){
 /* The weekly one. Ten shots at the mirror-image point, in the same session as the
    control blocks, so ball, temperature and cannon all cancel in the difference. The
    crosshair half of that difference is the PRE block — never shot or typed twice. */
-function mirrorCard(){
-  const mir=ctrlBlock(S.mirror), pre=ctrlBlock(S.pre);
-  const gap = (mir.n && pre.n) ? pre.mean - mir.mean : null;
-  return `<div class="card"><h3>Mirror spot — weekly ${ib_('deflection')}</h3>
+function controlCard(){
+  const ctl=controlBlock(), pre=ctrlBlock(S.pre);
+  const gap = (ctl.n && pre.n) ? pre.mean - ctl.mean : null;
+  const spot = +S.controlSpot || K.C.controlSpot;
+  return `<div class="card"><h3>Control spot — weekly ${ib_('control')}</h3>
     <p class="muted" style="margin-top:-6px">First session of the week only. Ten shots at the
-      mirror-image point across the centerline, and move to a fresh spot each time — the
-      control only works while it stays less worn than the crosshair. Leave it empty the
-      rest of the week. The crosshair half is the PRE block above; it is never shot twice.</p>
+      control spot, in the same session as the blocks above so ball, temperature and cannon
+      all cancel in the difference. Leave it empty the rest of the week.</p>
+    <div class="grid" style="margin-bottom:10px">
+      <div><label>Spot (in from tip)</label>
+        <select id="f-controlSpot" onchange="S.controlSpot=+this.value;render()">
+          ${[3,5,6].map(v=>`<option value="${v}" ${v===spot?'selected':''}>${v} in</option>`).join('')}
+        </select></div>
+      <div><label>Pivot to impact</label><div class="out">${controlSpotQ().toFixed(2)} in
+        <span class="muted">vs ${K.controlQ().toFixed(2)} at the crosshair</span></div></div>
+    </div>
+    ${spot!==K.C.controlSpot?`<div class="banner b-bad"><div>
+      <b>This is not the spot the series was built on.</b> The settled spot is
+      ${K.C.controlSpot} in. A different distance from the tip has a different effective
+      mass and a different intrinsic PBCoR, so switching puts a step of roughly 0.02 into
+      the trend — four times the drift that matters. Change it only deliberately, and
+      expect the tilt line to be meaningless until four readings exist at the new spot.</div></div>`:''}
     <textarea id="t-mirror" class="paste" style="min-height:88px"
-      placeholder="ten shots at the mirror spot — Inbound  Outbound  COR"
+      placeholder="ten shots at ${spot} in — Inbound  Outbound  COR"
       oninput="S.mirror=this.value;render()">${esc(S.mirror)}</textarea>
-    ${mir.n?`<div class="kpi" style="margin-top:10px">
-      <div><b>${mir.n}</b><span>used</span></div>
-      <div><b>${f(mir.mean)}</b><span>P mirror</span></div>
-      <div><b>${f(mir.se)}</b><span>se</span></div>
-      ${gap!=null?`<div><b>${f(gap,4)}</b><span>crosshair − mirror</span></div>`:''}
-    </div>${gap!=null&&Math.abs(gap)>=0.005?`<div class="banner b-warn" style="margin:10px 0 0">
-      <div><b>That gap is past the threshold that matters.</b> ${f(Math.abs(gap),4)} against the
-      0.005 where anchor drift stops being invisible against a published se near 0.0077. A
-      single check cannot see below about 0.012, so this is one point and not a verdict —
-      but if the next one agrees, run a crossover against the spare anchor before publishing
-      anything else.</div></div>`:''}`:''}</div>`;
+    ${ctl.n?`<div class="kpi" style="margin-top:10px">
+      <div><b>${ctl.n}</b><span>used</span></div>
+      <div><b>${f(ctl.mean)}</b><span>P control</span></div>
+      <div><b>${f(ctl.se)}</b><span>se</span></div>
+      ${gap!=null?`<div><b>${f(gap,4)}</b><span>crosshair − control</span></div>`:''}
+    </div>
+    ${gap!=null?`<div class="banner b-mute" style="margin:10px 0 0"><div>
+      <b>That gap is not a wear figure on its own.</b> The two spots are at different
+      distances from the pivot, so most of it is the paddle's own face map — on this anchor
+      they differ before any wear at all. What matters is how the gap CHANGES across
+      readings, which is the line the registry's Anchors panel computes once four readings
+      at this spot exist. One number here tells you nothing; the series does.</div></div>`:''}`
+    :''}</div>`;
 }
 
 /* ── screens ──────────────────────────────────────────────────────────────── */
@@ -982,6 +1104,19 @@ function scSession(){
 
   ${adv?`<div class="banner ${adv.verdict==='SHOOT IT'?'b-warn':'b-mute'}">
      <b>MID block: ${adv.verdict}.</b> ${adv.why}${ib_('mid')}</div>`:''}
+  <div class="card"><h3>This draft</h3>
+    <p class="muted" style="margin-top:-6px">The shots you paste are held in this browser on
+      this machine, and nowhere else, until each paddle is archived. Not on the sheet — the
+      session row carries the corrections, not the shots. Save the draft to a file at the end
+      of a session and it survives a cleared profile, a wiped browser, or the wrong button.</p>
+    <div class="row">
+      <button class="ghost" onclick="exportDraft(this)">Save the draft to a file</button>
+      <button class="ghost" onclick="document.getElementById('draftfile').click()">Restore a draft from a file</button>
+      <input id="draftfile" type="file" accept=".json,application/json" style="display:none"
+        onchange="restoreDraft(this)">
+      <span class="muted">Restoring replaces whatever is open now.</span>
+    </div>${wrBanner('reset')}</div>
+
   <div class="row"><button onclick="go(1)">Start the session →</button>
     <button class="ghost" onclick="resetAll()">New session</button>
     <span class="muted">Saved to this browser as you type.</span></div>`;
@@ -1052,7 +1187,7 @@ function scControl(which){
     <p class="muted" style="margin-bottom:0">Rejected shots stay in — the ball felt them.${ib_('window')}</p></div>
   ${sum.n?ctrlPanel(sum,which+' summary'):''}
   <div class="card"><h3>Shots</h3>${shotTable(sum)}</div>
-  ${which==='PRE'?mirrorCard():''}
+  ${which==='PRE'?controlCard():''}
   ${which==='MID'&&sum.n?`<div class="row"><button class="ghost" onclick="endEarly()">End the session here →</button>
      <span class="muted">Turns this block into the POST block and skips paddles 3 and 4.</span></div>`:''}
   <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
@@ -1243,8 +1378,19 @@ function scResults(){
       <p class="muted" style="margin-bottom:0">Exactly what the button writes — same numbers
         either way. For the manual path: Sessions tab, the row the red number names,
         Paste special → Values only.</p></details></div>
+  <div class="card"><h3>Where these shots are</h3>
+    <p class="muted" style="margin-top:-6px">In this browser, on this machine, and nowhere
+      else. Archiving a paddle is what writes its raw shots to Drive; the session row above
+      carries the corrections, not the shots. Until every paddle here shows an archive, this
+      browser is the only copy.</p>
+    <div class="row">
+      <button class="ghost" onclick="exportDraft(this)">Save the draft to a file</button>
+      <span class="muted">A second copy, in case something happens to this browser.</span>
+    </div></div>
+
   <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
-    <button class="ghost" onclick="resetAll()">Finish and start a new session</button></div>`;
+    <button class="ghost" onclick="resetAll()">Finish and start a new session</button></div>
+  ${wrBanner('reset')}`;
 }
 function copyRow(btn){
   const t=document.getElementById('sessrow');

@@ -31,6 +31,22 @@
     wearFactor: 0.44,       // Setup C25, a 70 mph glancing wear shot in 50 mph impacts
     tau: 52.0,              // Setup C26, wear-curve time constant
     locations: [3, 4, 5, 6, 7],
+    /* THE ANCHOR'S CONTROL SPOT — where the weekly reference block is shot.
+     *
+     * It was going to be the mirror image of the crosshair across the centerline: same
+     * distance from the pivot, same effective mass, identical in every way except wear,
+     * so crosshair minus control was wear and nothing else. The rig aims along the
+     * paddle's long axis only, so that point cannot be reached.
+     *
+     * 6 in instead — John's call, 2026-08-25. It is 1.9 in clear of the 4.07 crosshair,
+     * so the worn zone can never reach it. The cost: a different q, therefore a
+     * different effective mass and a genuinely different intrinsic PBCoR. On Anchor 2
+     * the two differ by about 0.003 before any wear at all.
+     *
+     * SO THE RAW GAP IS NOT A WEAR FIGURE. Only its CHANGE over time is, and only while
+     * the spot never moves — a switch to 3 in would put a step of roughly 0.02 into the
+     * series, four times the drift that matters. Pick one, log it, keep it. */
+    controlSpot: 6.0,
     breakInGate: 40,        // registry Settings B5 — has the ball had its wear phase
     plateau: 190,           // past here the ramp and a straight line agree
     retire: 600
