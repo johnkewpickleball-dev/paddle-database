@@ -95,6 +95,29 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       </h2>
       <p class="pcl__sublead">KewCOR (power) measured along the centerline of the paddle face, from the tip downward.</p>
       <div class="pcl__row" id="rowSurface"></div>
+
+      <div class="pcl__bsp-section" id="bspSection" hidden>
+        <h2 class="pcl__h2 pcl__h2-row">Ball Speed in Play
+          <span class="kc-info" role="button" tabindex="0" title="About Ball Speed in Play" aria-label="About Ball Speed in Play" onclick="openBspInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
+        </h2>
+        <p class="pcl__sublead">Converts the KewCOR face-response curve into the ball speed a swung paddle would produce. Only covers paddles entered on or after Aug 27, 2026 &mdash; not applied retroactively. <b>An estimate, not a measurement</b> &mdash; see the assumptions below.</p>
+        <div class="pcl-bsp-controls" id="bspControls">
+          <div class="pcl-bsp-slider">
+            <label for="bspDaxis">Swing axis: <span id="bspDaxisVal">8</span> in behind the hand</label>
+            <input type="range" id="bspDaxis" min="4" max="16" step="1" value="8">
+          </div>
+          <div class="pcl-bsp-slider">
+            <label for="bspVref">Paddle speed at 4 in: <span id="bspVrefVal">45</span> mph</label>
+            <input type="range" id="bspVref" min="30" max="60" step="1" value="45">
+          </div>
+          <div class="pcl-bsp-slider">
+            <label for="bspVball">Incoming ball speed: <span id="bspVballVal">25</span> mph</label>
+            <input type="range" id="bspVball" min="10" max="35" step="1" value="25">
+          </div>
+        </div>
+        <div class="pcl__row" id="rowBallSpeed"></div>
+      </div>
+
       <h2 class="pcl__h2 pcl__h2-row">Paddle Feel Map
         <span class="kc-info" role="button" tabindex="0" title="About the Feel Map" aria-label="About the Feel Map" onclick="openFeelInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
       </h2>
@@ -172,6 +195,20 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-surf .kc-val{fill:#0d1f2d;font-size:7px;font-weight:600;font-family:'DM Sans',sans-serif;paint-order:stroke;stroke:#fff;stroke-width:1.8px}
   .pcl-surf .kc-title{fill:#0d1f2d;font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif}
   .pcl-surf-empty{background:var(--white);border:1px dashed var(--border);border-radius:var(--radius);padding:30px 14px;text-align:center;color:var(--muted);font-size:13px;display:flex;align-items:center;justify-content:center;min-height:150px}
+
+  /* ---- Ball Speed in Play (own axis/units, never mixed onto the KewCOR chart) ---- */
+  .pcl-surf .bsp-axis{stroke:#cbd5e1;stroke-width:1}
+  .pcl-surf .bsp-drop{stroke:#cbd5e1;stroke-width:1}
+  .pcl-surf .bsp-line{fill:none;stroke:#eb6834;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:6 4}
+  .pcl-surf .bsp-ylab,.pcl-surf .bsp-xlab{fill:#64748b;font-size:6.5px;font-family:'DM Sans',sans-serif}
+  .pcl-surf .bsp-axtitle{fill:#64748b;font-size:7.5px;font-family:'DM Sans',sans-serif}
+  .pcl-surf .bsp-val{fill:#0d1f2d;font-size:7px;font-weight:600;font-family:'DM Sans',sans-serif;paint-order:stroke;stroke:#fff;stroke-width:1.8px}
+  .pcl-surf .bsp-title{fill:#0d1f2d;font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif}
+  .pcl-bsp-controls{display:flex;flex-wrap:wrap;gap:14px 22px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px}
+  .pcl-bsp-slider{flex:1 1 200px;min-width:170px;font-size:11.5px}
+  .pcl-bsp-slider label{display:block;margin-bottom:5px;color:var(--navy);font-weight:600}
+  .pcl-bsp-slider label span{color:#eb6834;font-weight:700}
+  .pcl-bsp-slider input[type=range]{width:100%;accent-color:#eb6834}
 
   /* ---- Speed Gauges ---- */
   .pcl-gcard{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 8px 10px}
@@ -489,6 +526,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .pcl-gauge-cardtitle{color:var(--text)}
   [data-theme="dark"] .pcl-surf .kc-ylab,[data-theme="dark"] .pcl-surf .kc-xlab,[data-theme="dark"] .pcl-surf .kc-axtitle{fill:var(--muted)}
   [data-theme="dark"] .pcl-surf-empty{border-color:var(--border);color:var(--muted)}
+  [data-theme="dark"] .pcl-surf .bsp-axis,[data-theme="dark"] .pcl-surf .bsp-drop{stroke:#3a4c5e}
+  [data-theme="dark"] .pcl-surf .bsp-line{stroke:#d95926}
+  [data-theme="dark"] .pcl-surf .bsp-val{fill:var(--text);stroke:var(--white)}
+  [data-theme="dark"] .pcl-surf .bsp-title{fill:var(--text)}
+  [data-theme="dark"] .pcl-surf .bsp-ylab,[data-theme="dark"] .pcl-surf .bsp-xlab,[data-theme="dark"] .pcl-surf .bsp-axtitle{fill:var(--muted)}
+  [data-theme="dark"] .pcl-bsp-controls{background:var(--white);border-color:var(--border)}
+  [data-theme="dark"] .pcl-bsp-slider label{color:var(--text)}
+  [data-theme="dark"] .pcl-bsp-slider label span{color:#d95926}
+  [data-theme="dark"] .pcl-bsp-slider input[type=range]{accent-color:#d95926}
   [data-theme="dark"] .pcl-gauge-svg .gband-blue{fill:#3b82f6}
   [data-theme="dark"] .pcl-gauge-svg .gband-teal{fill:#2dd4bf}
   [data-theme="dark"] .pcl-gauge-svg .gband-orange{fill:#f59e0b}
@@ -1067,7 +1113,13 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     return d;
   }
   function surfaceSVG(p){
-    var data=SURFACE_MAP[p.key]; if(!data||!data.length) return null;
+    var data=SURFACE_MAP[p.key];
+    // New-pipeline paddles (entered on/after the cutoff) won't be in the old hand-maintained
+    // sheet at all — for THOSE ONLY, fall back to the Curves tab's own KewCOR points so the
+    // chart isn't blank. Historical paddles never touch CURVES_MAP, so this changes nothing
+    // for anything entered before the cutoff.
+    if((!data||!data.length) && isNewPipelinePaddle(p) && CURVES_MAP[p.key] && CURVES_MAP[p.key].points && CURVES_MAP[p.key].points.length) data=CURVES_MAP[p.key].points;
+    if(!data||!data.length) return null;
     var inches=data.map(function(d){return d[0];}), vals=data.map(function(d){return d[1];});
     var win=yWindow(vals), lo=win[0], hi=win[1];
     var PX0=50, PX1=282, PY0=22, PY1=176, minI=Math.min.apply(null,inches), maxI=Math.max.apply(null,inches);
@@ -1118,6 +1170,103 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   window.openKcInfo=function(){ document.getElementById('kcInfoOverlay').classList.add('open'); };
   window.closeKcInfo=function(){ document.getElementById('kcInfoOverlay').classList.remove('open'); };
+
+  // ---- Ball Speed in Play chart (mirrors surfaceSVG's structure; own axis, own units) ----
+  function bspYWindow(vals){
+    var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals);
+    var lo=Math.floor((mn-1)/2)*2, hi=Math.ceil((mx+1)/2)*2;
+    if(hi<=lo) hi=lo+2;
+    return [lo,hi];
+  }
+  function bspCurveFor(p){
+    var cu=CURVES_MAP[p.key]; if(!cu) return null;
+    if(cu.length==null||cu.swingWeight==null||cu.weight==null||cu.balance==null) return null;
+    return playSpeedCurve({length_in:cu.length, swing_weight:cu.swingWeight, static_oz:cu.weight, balance_cm:cu.balance}, cu.points, BSP_OPTS);
+  }
+  function bspReason(p){
+    var cu=CURVES_MAP[p.key];
+    if(!cu) return 'No Ball Speed in Play data for this paddle yet.';
+    if(cu.length==null||cu.swingWeight==null||cu.weight==null) return 'Incomplete swing specs on file for this test — ball speed in play unavailable.';
+    if(cu.balance==null) return 'No balance point on file for this test — ball speed in play unavailable.';
+    return 'Swing specs on file don’t produce a usable moment of inertia — ball speed in play unavailable.';
+  }
+  function playSpeedSVGFromCurve(p,curve,win){
+    var inches=curve.map(function(d){return d[0];}), vals=curve.map(function(d){return d[1];});
+    var w=win||bspYWindow(vals), lo=w[0], hi=w[1];
+    var PX0=50, PX1=282, PY0=22, PY1=176, minI=Math.min.apply(null,inches), maxI=Math.max.apply(null,inches);
+    function xS(i){ return maxI===minI ? (PX0+PX1)/2 : PX0+(i-minI)/(maxI-minI)*(PX1-PX0); }
+    function yS(v){ return PY1-(v-lo)/(hi-lo)*(PY1-PY0); }
+    var spread=(PX1-PX0)||1;
+    var axis='<line class="bsp-axis" x1="'+PX0+'" y1="'+PY1+'" x2="'+PX1+'" y2="'+PY1+'"/>';
+    var step=(hi-lo)<=6?1:2, yl='';
+    for(var t=lo; t<=hi+1e-9; t+=step){ var tv=Math.round(t);
+      yl+='<text class="bsp-ylab" x="'+(PX0-5)+'" y="'+(yS(tv)+3).toFixed(1)+'" text-anchor="end">'+tv+'</text>'; }
+    var drops='', vlab='', xl='', sp=[];
+    curve.forEach(function(d){
+      var x=xS(d[0]), y=yS(d[1]), tnorm=((x-PX0)/spread).toFixed(3);
+      sp.push([x,y]);
+      drops+='<line class="bsp-drop" x1="'+x.toFixed(1)+'" y1="'+y.toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+PY1+'" data-t="'+tnorm+'" style="opacity:0"/>';
+      vlab+='<text class="bsp-val" x="'+x.toFixed(1)+'" y="'+(y-7).toFixed(1)+'" text-anchor="middle" data-t="'+tnorm+'" style="opacity:0">'+d[1].toFixed(1)+'</text>';
+      xl+='<text class="bsp-xlab" x="'+x.toFixed(1)+'" y="'+(PY1+13)+'" text-anchor="middle">'+d[0]+' in</text>';
+    });
+    var line='<path class="bsp-line" d="'+smoothPath(sp)+'"/>';
+    var titles='<text class="bsp-axtitle" transform="translate(11,'+((PY0+PY1)/2).toFixed(0)+') rotate(-90)" text-anchor="middle">Ball speed (mph)</text>'
+      + '<text class="bsp-axtitle" x="'+((PX0+PX1)/2).toFixed(0)+'" y="206" text-anchor="middle">Inches from top of paddle</text>'
+      + '<text class="bsp-title" x="'+((PX0+PX1)/2).toFixed(0)+'" y="13" text-anchor="middle">'+esc(p.company+' '+p.paddle)+'</text>';
+    return '<svg class="bsp-svg" viewBox="0 0 300 212" preserveAspectRatio="xMidYMid meet">'+axis+yl+drops+line+vlab+xl+titles+'</svg>';
+  }
+  function bspCol(p,win){
+    if(!isNewPipelinePaddle(p)) return '<div class="pcl-surf-empty">Ball Speed in Play only covers paddles entered on or after Aug 27, 2026 — not applied retroactively.</div>';
+    var curve=bspCurveFor(p);
+    if(!curve) return '<div class="pcl-surf-empty">'+esc(bspReason(p))+'</div>';
+    return '<div class="pcl-surf pcl-bsp">'+playSpeedSVGFromCurve(p,curve,win)+'</div>';
+  }
+  function refreshBallSpeed(){
+    var sel=selectedIdx(); var section=document.getElementById('bspSection'); if(!section) return;
+    if(!sel.length){ section.hidden=true; return; }
+    var ps=sel.map(function(i){return PADDLES[i];});
+    if(!ps.some(isNewPipelinePaddle)){ section.hidden=true; return; }
+    section.hidden=false;
+    var curves=[]; ps.forEach(function(p){ if(isNewPipelinePaddle(p)){ var c=bspCurveFor(p); if(c) curves.push(c); } });
+    var win=null;
+    if(curves.length){ var allVals=[]; curves.forEach(function(c){ c.forEach(function(pt){ allVals.push(pt[1]); }); }); win=bspYWindow(allVals); }
+    var el=document.getElementById('rowBallSpeed');
+    if(el){ el.innerHTML = ps.map(function(p){ return bspCol(p,win); }).join(''); observeBallSpeed(); }
+  }
+  function animateBallSpeed(svg){
+    if(!svg || svg.dataset.animated) return; svg.dataset.animated='1';
+    var line=svg.querySelector('.bsp-line'); if(!line) return;
+    var L=line.getTotalLength(); line.style.strokeDasharray=L; line.style.strokeDashoffset=L;
+    var els=[].slice.call(svg.querySelectorAll('[data-t]')), dur=1100, t0=null;
+    function frame(now){ if(t0==null)t0=now; var k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
+      line.style.strokeDashoffset=(L*(1-e)).toFixed(1);
+      els.forEach(function(el){ var tt=+el.getAttribute('data-t'); el.style.opacity=Math.max(0,Math.min(1,(e-tt*0.82)*6)).toFixed(2); });
+      if(k<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  var bspObserver=null;
+  function observeBallSpeed(){
+    var host=document.getElementById('rowBallSpeed'); if(!host) return;
+    var svgs=host.querySelectorAll('.bsp-svg');
+    if(!('IntersectionObserver' in window)){ [].forEach.call(svgs,animateBallSpeed); return; }
+    if(!bspObserver) bspObserver=new IntersectionObserver(function(ents){ ents.forEach(function(en){ if(en.isIntersecting){ animateBallSpeed(en.target); bspObserver.unobserve(en.target); } }); },{threshold:.3});
+    [].forEach.call(svgs,function(s){ bspObserver.observe(s); });
+  }
+  function wireBspControls(){
+    var dEl=document.getElementById('bspDaxis'), dVal=document.getElementById('bspDaxisVal');
+    var rEl=document.getElementById('bspVref'), rVal=document.getElementById('bspVrefVal');
+    var bEl=document.getElementById('bspVball'), bVal=document.getElementById('bspVballVal');
+    if(!dEl||!rEl||!bEl) return;
+    function upd(){
+      BSP_OPTS.d_axis=+dEl.value; BSP_OPTS.v_ref=+rEl.value; BSP_OPTS.v_ball=+bEl.value;
+      dVal.textContent=dEl.value; rVal.textContent=rEl.value; bVal.textContent=bEl.value;
+      refreshBallSpeed();
+    }
+    dEl.addEventListener('input',upd); rEl.addEventListener('input',upd); bEl.addEventListener('input',upd);
+  }
+  window.openBspInfo=function(){ document.getElementById('bspInfoOverlay').classList.add('open'); };
+  window.closeBspInfo=function(){ document.getElementById('bspInfoOverlay').classList.remove('open'); };
 
   // ---- Speed Gauges (Firepower + KewCOR speedometers) ----
   function gClamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
@@ -1242,6 +1391,136 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // fuzzy matcher below to tell apart. List them here so they always show "No data" instead of borrowing
   // another paddle's curve.  "Company||Paddle": true
   var SURFACE_EXCLUDE={'Vatic Pro||V-Sol Pro Bloom':1};
+  // ---- Ball Speed in Play (added 2026-08-27, per BALL-SPEED-IN-PLAY-BRIEF.md) ----
+  // Applies ONLY to paddles entered into the database on/after this cutoff. Historical
+  // paddles keep the exact KewCOR-only pipeline above, byte-for-byte untouched — per John's
+  // explicit instruction this is not retroactive.
+  var CURVES_CUTOFF = new Date(2026,7,27).getTime(); // 2026-08-27
+  function isNewPipelinePaddle(p){ var d=dateKey(p.dateEntered); return !isNaN(d) && d>=CURVES_CUTOFF; }
+
+  // Curves tab on the Ball Registry — one row per paddle-test, written automatically by the
+  // KewCOR session runner (kewcor-session.html). See brief section 3.
+  // TODO(John): replace REPLACE_WITH_BALL_REGISTRY_SHEET_ID with the real Ball Registry
+  // sheet ID once the Curves tab exists. Until then this fetch just fails quietly and the
+  // Ball Speed in Play section stays hidden — nothing else on the page is affected.
+  var CURVES_CSV='https://docs.google.com/spreadsheets/d/REPLACE_WITH_BALL_REGISTRY_SHEET_ID/gviz/tq?tqx=out:csv&sheet=Curves';
+  var CURVES_MAP={}; // "Company||Paddle" -> {length,swingWeight,weight,balance,points:[[loc,kewcor],...]}
+
+  var OZ2KG=0.0283495, IN2CM=2.54, BALL_KG=0.92*OZ2KG, CLAMP_IN=2.00;
+  var BSP_OPTS={d_axis:8.0, v_ref:45.0, ref_loc:4, v_ball:25.0}; // brief 4.6 defaults; sliders override live
+
+  // Reference implementation from BALL-SPEED-IN-PLAY-BRIEF.md section 5.1, ported verbatim.
+  // Validated against both fixture tables in section 6 to 3dp before shipping.
+  function playSpeedCurve(spec, points, opts){
+    var o=opts||{};
+    var dAxis=o.d_axis!=null?o.d_axis:8.0;
+    var vRef =o.v_ref !=null?o.v_ref :45.0;
+    var refL =o.ref_loc!=null?o.ref_loc:4;
+    var vBall=o.v_ball!=null?o.v_ball:25.0;
+    var M=spec.static_oz*OZ2KG;
+    var dcm=spec.balance_cm-CLAMP_IN*IN2CM;
+    var Icm=spec.swing_weight-M*dcm*dcm;
+    if(!(Icm>0)) return null; // bad specs; caller shows KewCOR only
+    var omega=vRef/((spec.length_in-refL-CLAMP_IN)+dAxis);
+    return points.map(function(pt){
+      var loc=pt[0], e=pt[1];
+      var b=(spec.length_in-loc)*IN2CM-spec.balance_cm;
+      var Me=1/(1/M + b*b/Icm);
+      var k=BALL_KG/Me;
+      var eA=(e-k)/(1+k);
+      var vp=omega*((spec.length_in-CLAMP_IN-loc)+dAxis);
+      return [loc, eA*vBall+(1+eA)*vp];
+    });
+  }
+
+  // Header-name-driven parser — never assumes a fixed set of locations (some paddles run
+  // 2-7in, most 3-6in). Reads whatever K<n> / se<n> columns exist by NAME, not by letter.
+  function parseCurvesRows(rows){
+    var head=rows[0]; if(!head) return [];
+    var idx={}; head.forEach(function(h,i){ idx[norm(h)]=i; });
+    var iCompany=idx['company'], iPaddle=idx['paddle'];
+    if(iCompany==null || iPaddle==null) return [];
+    var iThick=idx[norm('Thickness (mm)')], iDate=idx[norm('Test date')],
+        iLen=idx[norm('Length (in)')], iSw=idx[norm('Swing weight')],
+        iWt=idx[norm('Static weight (oz)')], iBal=idx[norm('Balance point (cm)')];
+    var locCols=[];
+    head.forEach(function(h,i){ var m=String(h||'').trim().match(/^K(\d+)$/i); if(m) locCols.push({loc:+m[1],col:i}); });
+    locCols.sort(function(a,b){return a.loc-b.loc;});
+    var out=[];
+    for(var r=1;r<rows.length;r++){
+      var row=rows[r]; if(!row) continue;
+      var company=(row[iCompany]||'').trim(), paddle=(row[iPaddle]||'').trim();
+      if(!company || !paddle) continue;
+      var pts=[];
+      locCols.forEach(function(lc){ var v=(row[lc.col]||'').trim(); if(v==='') return; var n=parseFloat(v); if(!isNaN(n)) pts.push([lc.loc,n]); });
+      if(!pts.length) continue;
+      out.push({
+        company:company, paddle:paddle,
+        thickness: iThick!=null ? num(row[iThick]) : null,
+        testDate: iDate!=null ? (row[iDate]||'').trim() : '',
+        length: iLen!=null ? num(row[iLen]) : null,
+        swingWeight: iSw!=null ? num(row[iSw]) : null,
+        weight: iWt!=null ? num(row[iWt]) : null,
+        balance: iBal!=null ? num(row[iBal]) : null,
+        points: pts
+      });
+    }
+    return out;
+  }
+
+  // Exact Company||Paddle match first (the runner writes both from the same Paddle Metrics
+  // source PADDLES[] comes from, so this should hit almost always); the token/brand/thickness
+  // fuzzy scorer below — identical in spirit to buildSurfaceMap's — is a fallback only, kept
+  // for the historical backlog, never deleted. Newest test date wins on a retest.
+  function buildCurvesMap(rows){
+    var pKeyIndex={}; PADDLES.forEach(function(p){ pKeyIndex[p.key.toLowerCase()]=p; });
+    var unmatched=[];
+    function assign(key,row){
+      var prev=CURVES_MAP[key];
+      var newMs=row.testDate?dateKey(row.testDate):NaN;
+      if(prev && prev._testDateMs!=null && !isNaN(prev._testDateMs) && !isNaN(newMs) && newMs<prev._testDateMs) return;
+      CURVES_MAP[key]={length:row.length,swingWeight:row.swingWeight,weight:row.weight,balance:row.balance,points:row.points,_testDateMs:isNaN(newMs)?null:newMs};
+    }
+    rows.forEach(function(row){
+      var p=pKeyIndex[(row.company+'||'+row.paddle).toLowerCase()];
+      if(p){ assign(p.key,row); } else { unmatched.push(row); }
+    });
+    if(unmatched.length){
+      var rowP=unmatched.map(function(row){
+        var st={}; sToks(row.company+' '+row.paddle).forEach(function(w){st[w]=1;});
+        return {set:st, th:row.thickness, row:row};
+      });
+      PADDLES.forEach(function(p){
+        if(CURVES_MAP[p.key]) return;
+        var dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
+        var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
+        var dbth=(p.thickness!=null&&p.thickness!=='')?parseFloat(p.thickness):null;
+        var b=sBrand(p.company), best=null, bs=0;
+        rowP.forEach(function(rp){
+          var sj=Object.keys(rp.set).join('');
+          if(sj.indexOf(b)<0 && (b.length<6 || sj.indexOf(b.slice(0,6))<0)) return;
+          var shcore=Object.keys(rp.set).filter(function(w){return !S_GEN[w];});
+          if(!dbcore.some(function(w){return rp.set[w];})) return;
+          var dbSub=dbcore.every(function(w){return rp.set[w];}), shSub=shcore.every(function(w){return dbt[w];});
+          if(!dbSub && !shSub) return;
+          var uni={}; Object.keys(dbt).forEach(function(w){uni[w]=1;}); Object.keys(rp.set).forEach(function(w){uni[w]=1;});
+          var inter=Object.keys(dbt).filter(function(w){return rp.set[w];}).length;
+          var sc=inter/Object.keys(uni).length + ((dbcore.length===shcore.length&&dbSub&&shSub)?0.1:0);
+          if(dbth!=null && rp.th!=null) sc += (Math.abs(dbth-rp.th)<0.3?0.1:-0.15);
+          if(sc>bs){ bs=sc; best=rp.row; }
+        });
+        if(best && bs>=0.62) assign(p.key,best);
+      });
+    }
+  }
+  function loadCurves(url,fb){
+    if(!window.Papa) return;
+    Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
+      if(res.data && res.data.length>1){ try{ var rows=parseCurvesRows(res.data); if(rows.length){ buildCurvesMap(rows); refreshSurface(); refreshBallSpeed(); } }catch(e){} }
+      else if(fb){ loadCurves(fb,null); }
+    }, error:function(){ if(fb) loadCurves(fb,null); }});
+  }
+
   var S_ALI={addias:'adidas',aiero:'aireo',babalot:'babolat',falcolos:'facolos',packle:'pakle',franlkin:'franklin'};
   var S_SYN={wb:'widebody',el:'elongated',elong:'elongated',hyb:'hybrid',std:'standard',blak:'black',paris:'pariss'};
   var S_GEN={pro:1,power:1,'new':1,solid:1,foam:1,full:1,paddle:1,co:1,company:1,pickleball:1,the:1,of:1,and:1,b:1,w:1,c:1,t:1,s:1,v:1,x:1,e:1,'16':1,'14':1,'13':1,'15':1,'18':1,'19':1,'10':1};
@@ -1460,6 +1739,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       observeRadars();
       observeGauges();
       observeSurface();
+      refreshBallSpeed();
       renderFeel();
     }
   }
@@ -1728,7 +2008,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     applyDeepLink();
     syncSlots();
     render();
+    wireBspControls();
     loadSurface(WORKER_BASE+'/csv/surface', SURFACE_CSV);
+    loadCurves(WORKER_BASE+'/csv/curves', CURVES_CSV);
     var fcsv=WORKER_BASE+'/csv/feel?cb='+Date.now();
     loadFeel(fcsv, FEEL_CSV+'&cb='+Date.now());
     loadStats();
@@ -1755,6 +2037,16 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     <p>The KewCOR Curve maps paddle power along the centerline of the face, typically from 3&ndash;6 inches below the tip. It shows how consistently the paddle returns energy across the hitting surface.</p>
     <p>A flat, smooth curve indicates a more uniform response and a longer sweet spot, while a steep curve suggests a concentrated hot spot with a sharper drop-off in power away from the optimal contact zone.</p>
     <p>Higher values indicate greater energy return at that location on the paddle face.</p>
+  </div>
+</div>
+
+<div class="dur-info-overlay" id="bspInfoOverlay" onclick="if(event.target===this)closeBspInfo()">
+  <div class="dur-info-box">
+    <h3>Ball Speed in Play<button class="dur-info-close" onclick="closeBspInfo()" aria-label="Close">&times;</button></h3>
+    <p><b>Ball speed in play</b> converts the measured face response into the ball speed a swung paddle would produce, using Nathan's collision-efficiency relation. The lab test fires a ball at a stationary paddle, so it measures what the face returns and is blind to head speed &mdash; which is highest at the tip. This curve puts that back. It assumes a swing axis 8&nbsp;in behind the hand, 45&nbsp;mph of paddle speed at the 4-inch location, and a 25&nbsp;mph incoming ball by default; the sliders above change those assumptions and the curve changes with them.</p>
+    <p>The model is rigid-body. Real paddles lose energy to flex, most of it near the tip &mdash; exactly where this curve is most generous. Treat the tip end as an upper bound.</p>
+    <p>This is a second, derived quantity &mdash; not a corrected KewCOR. KewCOR stays the comparable, ball-normalized measurement of the face itself; ball speed in play adds head speed back in under the stated swing assumptions. Based on Nathan, A.&nbsp;M., <i>Characterizing the performance of baseball bats</i>, American Journal of Physics 71, 134 (2003).</p>
+    <p>Only available for paddles entered on or after Aug 27, 2026, tested under the new KewCOR session runner &mdash; not applied to historical paddles.</p>
   </div>
 </div>
 
