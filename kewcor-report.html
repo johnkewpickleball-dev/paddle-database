@@ -73,11 +73,24 @@
   button{font:inherit;font-size:13.5px;padding:7px 15px;border-radius:7px;border:1px solid var(--navy);
          background:#fff;color:var(--navy);cursor:pointer;font-weight:600}
   button.solid{background:var(--navy);color:#fff}
+  /* Print the fills. Without this the band strip prints as four empty boxes and the
+     reader loses the only thing that places this paddle against LOW / MID / HIGH. The
+     -webkit- prefix is still the one Chrome and Safari act on. */
+  .strip,.strip div,th,header,.kpi,.banner,.b-warn,.b-bad,.b-mute{
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
   @media print{
+    html,body{-webkit-print-color-adjust:exact; print-color-adjust:exact}
     body{background:#fff}
     .tools{display:none}
     .sheet{box-shadow:none;margin:0;max-width:none;border-radius:0}
     h2{break-after:avoid} table{break-inside:avoid} .kpi{break-inside:avoid}
+    /* Belt and braces: if a driver drops the fills anyway, the strip still reads as a
+       strip, because the divisions and the pointer are line work rather than color. */
+    .strip{border:1px solid #1f3864}
+    .strip div + div{border-left:1px solid #1f3864}
+    .pointer{font-weight:700}
+    .strip,.ticks,.pointer{break-inside:avoid}
   }
 </style>
 </head>
@@ -173,15 +186,18 @@ function strip(max){
   const shades = ['--b1','--b2','--b3','--b4'];
   const cells = K.BANDS.map((b,i)=>{
     const w = (b.to-b.from)/span*100;
-    return `<div style="flex:0 0 ${w}%;background:var(${shades[i]});color:${i>1?'#fff':'#1f3864'}">
-      ${b.name}</div>`;
+    // The two darker bands take white text on screen. In a fill-less print that would be
+    // white on white, so they get a dark text-shadow-free fallback: print rules below
+    // restore the fill, and the border keeps the cell visible either way.
+    return `<div style="flex:0 0 ${w}%;background:var(${shades[i]});color:${i>1?'#fff':'#1f3864'};
+      border-right:${i<3?'1px solid #1f3864':'none'}">${b.name}</div>`;
   }).join('');
   const ticks = K.BANDS.map((b,i)=>{
     const w = (b.to-b.from)/span*100;
     return `<div style="flex:0 0 ${w}%;text-align:right">${b.to.toFixed(3)}</div>`;
   }).join('');
   return `<h2>Where this paddle sits</h2>
-    ${pos==null?'':`<div style="position:relative;height:20px">
+    ${pos==null?'':`<div class="pointer" style="position:relative;height:20px">
       <div style="position:absolute;left:${(pos*100).toFixed(2)}%;transform:translateX(-50%);
         white-space:nowrap;font-size:11.5px;font-weight:700;color:var(--navy)">
         ${max.toFixed(3)} ▼</div></div>`}

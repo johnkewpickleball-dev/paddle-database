@@ -184,17 +184,117 @@ function save(){ clearTimeout(saveTimer); saveTimer=setTimeout(()=>{
  * This was not hypothetical. A whole session was lost that way and had to be pulled
  * back out of the browser's write-ahead log. So: the draft goes to a file and comes
  * back from one, and the button that deletes it refuses while anything is unsaved. */
+/* A cheap content signature, so "saved to Drive" can mean "THIS session is saved" rather
+   than "some earlier version of it was". Not a hash anyone should rely on for security —
+   it exists to answer "has anything changed since the last save". */
+function sigOf(s){
+  const t=JSON.stringify(s); let h=5381;
+  for(let i=0;i<t.length;i++) h=((h*33) ^ t.charCodeAt(i)) >>> 0;
+  return t.length+'-'+h.toString(36);
+}
+function cloudCurrent(){
+  return !!(S.cloud && S.cloud.id && S.cloud.sig === sigOf(Object.assign({}, S, {cloud:null})));
+}
+
 function atRisk(){
   const out=[];
   S.paddles.forEach((p,i)=>{
     if(paddleResults(i) && !p.archive)
-      out.push('• '+(p.name || ('Paddle '+(i+1)))+' has results and has NOT been archived.');
+      out.push('• '+(p.name || ('Paddle '+(i+1)))+' has results and has NOT been saved.');
   });
   if(S.paddles.some((p,i)=>paddleResults(i)) && !S.sent.session)
     out.push('• The session row has NOT been logged to the registry.');
+  // Saving to Drive is the one that makes the others recoverable rather than merely
+  // recorded. It is last in the list and first in importance.
+  if(S.paddles.some((p,i)=>paddleResults(i)) && !cloudCurrent())
+    out.push(S.cloud && S.cloud.id
+      ? '• The copy in Drive is OLDER than what is on screen — save it again.'
+      : '• This session has NOT been saved to Drive, so it exists only in this browser.');
   return out;
 }
+
+/* ── the session, in Drive ─────────────────────────────────────────────────
+ * localStorage is one cleared profile from gone, and on 2026-08-26 it very nearly was.
+ * A session saved here reopens on any machine that has the endpoint set.               */
+let CLOUD={busy:'', msg:'', tone:'', list:null};
+function saveToDrive(){
+  WRSCOPE='cloud';
+  if(!EP.url){ CLOUD={busy:'',tone:'bad',msg:'No write endpoint — set one above.',list:CLOUD.list};
+    return render(); }
+  const body=Object.assign({}, S, {cloud:null});
+  const json=JSON.stringify(body,null,1);
+  CLOUD={busy:'save', msg:'', tone:'', list:CLOUD.list}; render();
+  post('saveSession', {date:S.date, ball:S.ballId, json})
+    .then(j=>{
+      // The endpoint reads the file back and reports whether the bytes match. Anything
+      // else is taking a 200 as proof, which is the habit this whole page argues against.
+      if(!j.matches) throw new Error('Drive accepted the file but it read back different.');
+      S.cloud={id:j.id, name:j.name, url:j.url, at:j.savedAt, sig:sigOf(body)};
+      CLOUD={busy:'', tone:'ok', list:CLOUD.list,
+             msg:'Saved to Drive as '+j.name+' at '+j.savedAt+' ('+j.bytes+' bytes, read back and matched).'};
+      render();
+    })
+    .catch(e=>{ CLOUD={busy:'', tone:'bad', list:CLOUD.list,
+      msg:'Not saved to Drive: '+e.message}; render(); });
+}
+function listDrive(){
+  WRSCOPE='cloud';
+  CLOUD={busy:'list', msg:'', tone:'', list:null}; render();
+  post('listSessions')
+    .then(j=>{ CLOUD={busy:'', tone:j.files.length?'ok':'warn', list:j.files,
+      msg:j.files.length ? j.files.length+' session'+(j.files.length===1?'':'s')+' in '+j.folder
+                         : 'The folder is empty.'}; render(); })
+    .catch(e=>{ CLOUD={busy:'', tone:'bad', list:null,
+      msg:'Could not read the sessions folder: '+e.message}; render(); });
+}
+function openFromDrive(id, name){
+  const risk=atRisk();
+  if(risk.length && !confirm('Opening '+name+' replaces what is on screen.\n\n'
+      + risk.join('\n') + '\n\nOpen it anyway?')) return;
+  CLOUD={busy:'load', msg:'', tone:'', list:CLOUD.list}; render();
+  post('loadSession', {id})
+    .then(j=>{
+      const o=JSON.parse(j.json);
+      if(!o || !Array.isArray(o.paddles)) throw new Error('that file is not a session');
+      S=Object.assign(JSON.parse(JSON.stringify(DEFAULT)), o);
+      S.cloud={id:j.id, name:j.name, at:'(just opened)', sig:sigOf(Object.assign({},S,{cloud:null}))};
+      CLOUD={busy:'', tone:'ok', list:CLOUD.list, msg:'Opened '+j.name+'.'};
+      if(REGID) loadShelf();
+      render();
+    })
+    .catch(e=>{ CLOUD={busy:'', tone:'bad', list:CLOUD.list,
+      msg:'Could not open it: '+e.message}; render(); });
+}
+function cloudPanel(){
+  const cur=cloudCurrent();
+  const rows=(CLOUD.list||[]).map(f=>`<div class="row" style="margin-top:6px">
+    <button class="ghost" onclick="openFromDrive('${esc(f.id)}','${esc(f.name)}')">Open</button>
+    <span>${esc(f.name)}</span><span class="muted">${esc(f.updated)}</span></div>`).join('');
+  return `<div class="card"><h3>This session, in Drive</h3>
+    ${cur
+      ? `<div class="banner b-ok"><div><b>Saved.</b> ${esc((S.cloud&&S.cloud.name)||'')}
+          — what is on screen matches what is in Drive.</div></div>`
+      : `<div class="banner b-warn"><div><b>${S.cloud&&S.cloud.id
+          ? 'The copy in Drive is out of date.'
+          : 'Not saved to Drive.'}</b> This session exists only in this browser until you
+          save it. Clearing the session is refused until you do.</div></div>`}
+    <div class="row">
+      <button class="${cur?'ghost':''}" ${EP.url?'':'disabled'} onclick="saveToDrive()">${
+        CLOUD.busy==='save'?'Saving…':'Save this session to Drive'}</button>
+      <button class="ghost" ${EP.url?'':'disabled'} onclick="listDrive()">${
+        CLOUD.busy==='list'?'Reading…':'Open a saved session'}</button>
+      ${S.cloud&&S.cloud.url?`<button class="ghost"
+        onclick="window.open('${esc(S.cloud.url)}','_blank','noopener')">Open the file →</button>`:''}
+    </div>
+    ${CLOUD.msg?`<div class="banner ${CLOUD.tone==='ok'?'b-ok':CLOUD.tone==='bad'?'b-bad':'b-warn'}"
+      style="margin-top:10px"><div>${esc(CLOUD.msg)}</div></div>`:''}
+    ${rows?`<div style="margin-top:8px">${rows}</div>`:''}
+    <p class="muted" style="margin-top:10px">One file per date and ball, overwritten as you
+      go. The archive sheets and the registry row are separate and append-only — this is
+      the work in progress, not the record.</p></div>`;
+}
 function draftFileName(){ return 'kewcor-draft-'+(S.date||'undated')+'.json'; }
+// S.cloud = {id, name, url, at, sig} once this session has been written to Drive.
 function exportDraft(btn){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify(S,null,1)],{type:'application/json'}));
@@ -365,7 +465,7 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 6;
+const WANT_BUILD = 7;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -645,10 +745,17 @@ function pickPaddle(i,name){
 }
 
 /* ── parsing, and the shape of the session ────────────────────────────────── */
+/* A line beginning with `x` is a shot that happened and should not count toward the
+   average: it hit the frame, the gate double-triggered, whatever. The numbers are still
+   parsed and still kept, because the BALL does not care that we threw the reading away —
+   deleting the line would make the ball look younger than it is, and ball age is what the
+   whole correction rests on. Marking beats deleting. */
 function parseShots(txt){
   return String(txt||'').split(/\r?\n/).map(l=>l.trim()).filter(Boolean).map(line=>{
-    const p=line.split(/[\t,;]+|\s+/).map(x=>x.trim()).filter(x=>x!=='').map(Number);
-    return {vin:p[0], vout:p[1], gateCor:p.length>2?p[2]:null};
+    const drop=/^x[\s,;\t]*/i.test(line);
+    const body=drop ? line.replace(/^x[\s,;\t]*/i,'') : line;
+    const p=body.split(/[\t,;]+|\s+/).map(x=>x.trim()).filter(x=>x!=='').map(Number);
+    return {vin:p[0], vout:p[1], gateCor:p.length>2?p[2]:null, dropped:drop};
   }).filter(s=>isFinite(s.vin));
 }
 const A = () => K.ANCHORS[S.anchor];
@@ -695,14 +802,25 @@ function pfield(i,lbl,k,attrs){
 }
 function shotTable(sum){
   if(!sum.rows.length) return '<p class="muted">Nothing pasted yet.</p>';
-  const cls={'USE':'s-use','REJECT vel':'s-rej','MISSING Vout':'s-bad','PASTE MISALIGNED':'s-bad'};
+  const cls={'USE':'s-use','REJECT vel':'s-rej','MISSING Vout':'s-bad',
+             'PASTE MISALIGNED':'s-bad','DROPPED':'s-rej'};
+  const flagged=sum.rows.filter(r=>r.suspect).length;
   return `<table><thead><tr><th>#</th><th>Inbound</th><th>Outbound</th><th>Gate COR</th>
     <th>PBCoR raw</th><th>PBCoR @50</th><th>Status</th></tr></thead><tbody>`+
     sum.rows.map((r,i)=>`<tr class="${r.status==='USE'?'':(r.status==='REJECT vel'?'rej':'bad')}">
       <td>${i+1}</td><td>${f(r.vin,2)}</td><td>${f(r.vout,2)}</td><td>${f(r.gateCor,3)}</td>
       <td>${f(r.pRaw)}</td><td>${f(r.p50)}</td>
-      <td><span class="status ${cls[r.status]||''}">${r.status}</span></td></tr>`).join('')+
-    `</tbody></table>`;
+      <td><span class="status ${cls[r.status]||''}">${r.status}</span>${
+        r.suspect?' <span class="status s-rej">LOW — look at it</span>':''}</td></tr>`).join('')+
+    `</tbody></table>` + (flagged
+      ? `<p class="muted"><b>${flagged} shot${flagged===1?'':'s'} came back well under the
+         middle of this block</b> — the usual cause is a mishit off the frame. The threshold
+         is relative to this location's own median, because a healthy rebound ratio is about
+         0.098 at 2 in and 0.291 at 6 in and no single number fits both. Nothing has been
+         excluded: to drop one, put <b>x</b> at the front of its line above. The shot still
+         counts against the ball's age, which deleting the line would not.</p>`
+      : '') + `<p class="muted">Put <b>x</b> at the front of a line to drop that shot from
+         the average while keeping it on the record and counted against the ball.</p>`;
 }
 function ctrlPanel(sum,title){
   return `<div class="card"><h3>${title}</h3><div class="kpi">
@@ -1037,6 +1155,33 @@ function controlCard(){
 // The registry's own effective age is recomputed from the two figures we pulled. If
 // they disagree the pull is stale or a column has moved — say so rather than quietly
 // running on numbers that do not add up. The workbook carries the same guard.
+/* Everything this session intends to fire at the ball: the paddles, plus the control
+   blocks. Used before anything is shot, so the paddle counts are the planned ones. */
+function plannedImpacts(){
+  const paddles=paddleShotCounts().reduce((a,n)=>a+n,0);
+  const blocks=K.C.perLoc * (S.midAfter ? 3 : 2);        // PRE, POST, and MID if planned
+  return paddles + blocks;
+}
+
+/* A ball that runs out mid-session is not a small problem. The shots after it crosses
+   retirement are outside the range the wear curve was fitted on, and there is no way to
+   tell afterwards which paddle they belonged to. Catch it before the first shot. */
+function retirementGuard(){
+  const b=S.regBall; if(!b || RG.state!=='ok') return '';
+  const planned=plannedImpacts(), room=Math.round(b.room);
+  if(!isFinite(room) || planned<=room) return '';
+  const fits=Math.max(0, Math.floor((room - K.C.perLoc*(S.midAfter?3:2)) / (K.C.perLoc*4)));
+  return `<div class="banner b-bad"><div>
+    <b>THIS SESSION WOULD RETIRE ${esc(b.id)} PART WAY THROUGH.</b>
+    It has <b>${room}</b> impacts left before it reaches ${K.C.retire}, and today plans
+    <b>${planned}</b> — ${planned-room} too many. Shots taken past retirement sit outside
+    the range the wear curve was fitted on, and afterwards there is no way to say which
+    paddle they landed on.
+    Either put a fresh ball on and re-pick it above, or run
+    <b>${fits} paddle${fits===1?'':'s'}</b> today and finish the rest on the next ball.
+    </div></div>`;
+}
+
 function ballGuard(){
   const b=S.regBall; if(!b || RG.state!=='ok') return '';
   const onFile = Math.round(b.otherPrior + b.logged), wearOnFile = Math.round(b.wear);
@@ -1056,7 +1201,7 @@ function ballGuard(){
     `${onFile} impacts at 50 plus ${wearOnFile} wear shots at 70. ` +
     `Stage ${esc(b.stage||'—')}, ${Math.round(b.room)} left before it retires, ` +
     `room for about ${Math.round(b.paddles)} more paddle${b.paddles===1?'':'s'}.` +
-    `${b.lastUsed?` Last used ${esc(b.lastUsed)}.`:''}</div></div>`;
+    `${b.lastUsed?` Last used ${esc(b.lastUsed)}.`:''}</div></div>` + retirementGuard();
 }
 
 function regPanel(){
@@ -1386,14 +1531,18 @@ function scResults(){
         ? 'The whole report travels in the link, so it works for anyone you send it to.'
         : 'It will open, and it will be stamped DRAFT until the POST block is shot and the session is logged.'}</span>
     </div>
+    ${p.archive?'':`<div class="banner b-warn"><div><b>NOT SAVED YET.</b>
+      This paddle's results exist only in this browser. Nothing outside this machine has
+      them until you press the button below.</div></div>`}
     <div class="row" style="margin-top:8px">
-      <button class="ghost" ${EP.url?'':'disabled'} onclick="archivePaddle(${p._i})">${
-        p.archive?'Archive again':'Archive this paddle'}</button>
+      <button class="${p.archive?'ghost':''}" ${EP.url?'':'disabled'}
+        onclick="archivePaddle(${p._i})">${
+        p.archive?'Save it again':'Save this paddle'}</button>
       ${p.archive?`<button class="ghost"
         onclick="window.open('${esc(p.archive.url)}','_blank','noopener')">Open ${esc(p.archive.name)} →</button>`:''}
       <span class="muted">${p.archive
-        ? 'A second archive keeps the first — the old one is the record of what was reported at the time.'
-        : 'The internal record: every shot, the specs, and the ball correction, as live formulas you can correct later.'}</span>
+        ? 'Saved. A second save keeps the first — the old one is the record of what was reported at the time.'
+        : 'Writes the internal record: every shot, the specs, and the ball correction, as live formulas you can correct later.'}</span>
     </div>${wrBanner('archive')}</div>`).join('')}
   <div class="card"><h3>Send it to the registry</h3>
     ${S.sent.session
@@ -1421,14 +1570,16 @@ function scResults(){
       <p class="muted" style="margin-bottom:0">Exactly what the button writes — same numbers
         either way. For the manual path: Sessions tab, the row the red number names,
         Paste special → Values only.</p></details></div>
+  ${cloudPanel()}
   <div class="card"><h3>Where these shots are</h3>
-    <p class="muted" style="margin-top:-6px">In this browser, on this machine, and nowhere
-      else. Archiving a paddle is what writes its raw shots to Drive; the session row above
-      carries the corrections, not the shots. Until every paddle here shows an archive, this
-      browser is the only copy.</p>
+    <p class="muted" style="margin-top:-6px">Three separate places, and they are not
+      interchangeable. <b>Saving a paddle</b> writes its raw shots to its own archive sheet.
+      <b>The session row</b> above carries the corrections, not the shots. <b>Saving to
+      Drive</b> keeps the half-finished session itself, which is the only one of the three
+      that can be reopened and carried on.</p>
     <div class="row">
-      <button class="ghost" onclick="exportDraft(this)">Save the draft to a file</button>
-      <span class="muted">A second copy, in case something happens to this browser.</span>
+      <button class="ghost" onclick="exportDraft(this)">Save the draft to a file too</button>
+      <span class="muted">A third copy, on this machine, for when Drive is not reachable.</span>
     </div></div>
 
   <div class="row"><button class="ghost" onclick="go(S.step-1)">← Back</button>
@@ -1728,7 +1879,7 @@ function archivePaddle(idx){
         ? ' Note: ' + j.curveStray.join(', ') + ' in has no column on the Curves tab, so '
         + 'the website will not show it. The archive has it.'
         : '';
-      WR={busy:'', tone:j.curveError?'warn':'ok', msg:'Archived as '+j.name+'.',
+      WR={busy:'', tone:j.curveError?'warn':'ok', msg:'Saved as '+j.name+'.',
           detail:j.shots+' shots across '+j.locations+' locations, in the '+j.folder
                + ' folder. Open it and check the Agrees? column reads "agrees" on every '
                + 'row before you rely on it.' + curve + stray};
@@ -1739,7 +1890,7 @@ function archivePaddle(idx){
       // script was pasted but never re-authorized, and the error is about permissions
       // rather than about anything on this page.
       const scope=/PERMISSION|authoriz|scope|Drive/i.test(e.message||'');
-      WR={busy:'', tone:'bad', msg:'The archive was not created.',
+      WR={busy:'', tone:'bad', msg:'The paddle was NOT saved.',
           detail:(scope
             ? 'This looks like the script not being authorized for Drive. Creating a sheet '
             + 'needs a permission the earlier version never asked for: open the script, '

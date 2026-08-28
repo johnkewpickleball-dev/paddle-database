@@ -7,3 +7,6 @@ images/ronbus-ripple-v2-r1.png
 images/ronbus-ripple-v2-r2.png
 images/ronbus-ripple-v2-r4.png
 images/ronbus-ripple-v2-r5.png
+
+# Dead git lock files moved aside for deletion. Never belongs in the repo.
+_to_delete_git_locks/

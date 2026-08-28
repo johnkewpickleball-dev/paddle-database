@@ -94,6 +94,10 @@
   // sheet's column M so the two can be compared row for row while both exist.
   function classify(shot) {
     if (shot.vin == null || !isFinite(shot.vin)) return 'EMPTY';
+    // Dropped by hand, with `x` at the front of the line. Checked BEFORE the automatic
+    // statuses so a person's judgment is never overridden by a rule, and checked AFTER
+    // EMPTY so an `x` on a blank line is still just a blank line.
+    if (shot.dropped) return 'DROPPED';
     if (shot.vout == null || !isFinite(shot.vout)) return 'MISSING Vout';
     if (shot.gateCor != null && isFinite(shot.gateCor) &&
         Math.abs(shot.gateCor - shot.vout / shot.vin) > 0.02) return 'PASTE MISALIGNED';
@@ -101,11 +105,35 @@
     return 'USE';
   }
 
+  // The middle value of whatever is there. Median rather than mean on purpose: the thing
+  // being looked for is an outlier, and an outlier drags a mean toward itself, which is
+  // how an outlier detector ends up excusing the outlier.
+  function median(xs) {
+    const v = xs.filter(x => x != null && isFinite(x)).sort((a, b) => a - b);
+    if (!v.length) return null;
+    const m = Math.floor(v.length / 2);
+    return v.length % 2 ? v[m] : (v[m - 1] + v[m]) / 2;
+  }
+
+  // How far below its block's median a rebound ratio has to sit before the shot is worth
+  // a second look. RELATIVE, because the ratio itself runs about 0.098 at 2 in and 0.291
+  // at 6 in -- any fixed floor either flags every shot at the top of the face or none at
+  // the bottom. A mishit sheds speed, so only the low side is flagged.
+  const MISHIT_FLOOR = 0.65;
+
   function summarize(shots, swingWt, qIn) {
-    const rows = shots.map(s => {
+    const ratios = shots.map(s => (s.vin && s.vout != null && isFinite(s.vout))
+                                  ? s.vout / s.vin : null);
+    const mid = median(ratios);
+    const rows = shots.map((s, i) => {
       const status = classify(s);
       const raw = status === 'USE' ? pbcor(s.vin, s.vout, swingWt, qIn) : null;
-      return { ...s, status, pRaw: raw, p50: raw == null ? null : correctTo50(raw, s.vin) };
+      // Advisory only. It never changes the status and never leaves a shot out -- a
+      // number is only dropped when a person types `x` in front of it.
+      const suspect = status === 'USE' && mid != null && ratios[i] != null
+                      && ratios[i] < MISHIT_FLOOR * mid;
+      return { ...s, status, suspect, blockMedianRatio: mid,
+               pRaw: raw, p50: raw == null ? null : correctTo50(raw, s.vin) };
     });
     const used = rows.filter(r => r.status === 'USE');
     const n = used.length;
@@ -374,7 +402,7 @@
   }
 
   return { C, ANCHORS, effMass, pbcor, correctTo50, qForLocation, controlQ, strikeLocation,
-           classify, summarize,
+           classify, summarize, median, MISHIT_FLOOR,
            effectiveAge, D, curveFraction, driftMode, pooledD, ballTimeline, segmentFor,
            blockCorrections, locationResults, faceSummary, midAdvice, ballStage,
            BANDS, BAND_LO, BAND_HI, bandPosition, reportAxis, encodeReport, decodeReport };
