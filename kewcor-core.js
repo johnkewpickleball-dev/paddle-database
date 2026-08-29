@@ -273,15 +273,23 @@
   // shots is either a flat array (sliced into blocks of perLoc, as the workbook does)
   // or an array of per-location arrays, which is what the runner's separate paste
   // boxes give and which cannot be mis-assigned by an extra shot somewhere.
-  function locationResults(shots, paddleLength, swingWt, locations, blockD) {
+  /* `missed` is how many shots the speed gate failed to record at each location. They
+     have no numbers, so they can never be `used`; they are counted in `impacts` because
+     the ball aged for them. Keeping the two apart is the whole point: `used` drives the
+     average, `impacts` drives the wear curve, and conflating them is wrong either way
+     round. */
+  function locationResults(shots, paddleLength, swingWt, locations, blockD, missed) {
     const grouped = Array.isArray(shots[0]);
+    const miss = missed || [];
     return locations.map((loc, i) => {
       const qIn = qForLocation(paddleLength, loc);
       const slice = grouped ? (shots[i] || []) : shots.slice(i * C.perLoc, (i + 1) * C.perLoc);
       const s = summarize(slice, swingWt, qIn);
       const d = blockD[i];
+      const m = Math.max(0, Math.round(Number(miss[i]) || 0));
       return {
         location: loc, q: qIn, fired: s.fired, used: s.n, meanVin: s.meanVin,
+        missed: m, impacts: s.fired + m,
         p50: s.mean, sd: s.sd, se: s.se, D: d,
         kewcor: s.mean == null || d == null ? null : Math.sqrt(s.mean * s.mean + d),
         rows: s.rows

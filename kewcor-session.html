@@ -154,8 +154,10 @@ function bubble(k){ const [h,b]=NOTES[k]; ih.textContent=h; ib.textContent=b; in
 
 /* ── session state, with a local draft so a refresh cannot cost you the day ── */
 const LOC_ALL = [3,4,5,6,7];
+// `missed` is keyed by location, like `shots`: how many impacts the speed gate did not
+// record there. Impacts that happened and produced no numbers.
 const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',pmNote:'',pmWarn:'',use7:false,
-                            spec:{}, shots:{}, archive:null});
+                            spec:{}, shots:{}, missed:{}, archive:null});
 const DEFAULT = {
   regBall:null,
   date:new Date().toISOString().slice(0,10), person:'', temp:'',
@@ -465,7 +467,7 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 7;
+const WANT_BUILD = 8;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -771,11 +773,21 @@ const controlBlock = () => ctrlBlock(S.mirror, controlSpotQ());
 const effAge = () => K.effectiveAge(parseFloat(S.prior)||0, parseFloat(S.wear)||0);
 const locsFor = p => p.use7 ? LOC_ALL : LOC_ALL.slice(0,4);
 const groupsFor = p => locsFor(p).map(l=>parseShots(p.shots[l]||''));
+// Shots the gate missed, per location. Whole numbers, never negative — a typo here
+// silently ages the ball, so it is clamped rather than trusted.
+const missedFor = p => locsFor(p).map(l=>{
+  const n = Math.round(parseFloat((p.missed||{})[l]));
+  return isFinite(n) && n > 0 ? n : 0;
+});
+const missedTotal = p => missedFor(p).reduce((a,n)=>a+n,0);
 const STD_RUN = K.C.perLoc * 4;
 function paddleShotCounts(){
   return S.paddles.map(p=>{
-    const n=groupsFor(p).reduce((a,g)=>a+g.length,0);
-    return n || (p.name ? (p.use7?STD_RUN+K.C.perLoc:STD_RUN) : 0);
+    const rec=groupsFor(p).reduce((a,g)=>a+g.length,0), miss=missedTotal(p);
+    // The ball aged for the missed ones too, so they belong in the total that positions
+    // this paddle on the wear curve. Only the ESTIMATE for an unstarted paddle ignores
+    // them — there is nothing to have missed yet.
+    return rec ? rec + miss : (p.name ? (p.use7?STD_RUN+K.C.perLoc:STD_RUN) : 0);
   });
 }
 function timeline(){
@@ -1396,15 +1408,16 @@ function paddleResults(idx){
   const tl=timeline();
   const dm=K.driftMode({pre,post:post.n?post:null});
   const pooled=K.pooledD(A().pRef,pre,post.n?post:null);
-  const locs=locsFor(p), groups=groupsFor(p);
+  const locs=locsFor(p), groups=groupsFor(p), miss=missedFor(p);
   if(!groups.some(g=>g.length)) return null;
   const bD=K.blockCorrections({slot:idx, tl,
     dPre:K.D(A().pRef,pre.mean),
     dMid:mid.n?K.D(A().pRef,mid.mean):null,
     dPost:post.n?K.D(A().pRef,post.mean):null,
     ramp:dm.ramp, pooled, nLocations:locs.length,
-    blockCounts:groups.map(g=>g.length)});
-  const res=K.locationResults(groups,len,sw,locs,bD);
+    // The wear curve cares about impacts, not about which of them produced numbers.
+    blockCounts:groups.map((g,i)=>g.length + miss[i])});
+  const res=K.locationResults(groups,len,sw,locs,bD,miss);
   return {res, summary:K.faceSummary(res), dm, bD};
 }
 
@@ -1460,10 +1473,20 @@ function scPaddle(idx){
   ${NOSORT}${WINDOW_NOTE('ten per location')}
   ${locs.map(l=>{
     const n=parseShots(p.shots[l]||'').length;
-    return `<div class="card"><h3>${l} in ${n?`<span class="pill ${n===10?'use':'warn'}">${n} shots</span>`:''}</h3>
+    const m=Math.max(0, Math.round(parseFloat((p.missed||{})[l]))||0);
+    const tot=n+m;
+    return `<div class="card"><h3>${l} in ${tot?`<span class="pill ${tot===10?'use':'warn'}">${
+        n} shot${n===1?'':'s'}${m?` + ${m} missed`:''}</span>`:''}</h3>
       <textarea id="s${idx}-${l}" class="paste" style="min-height:88px"
         placeholder="ten shots at ${l} in — Inbound  Outbound  COR"
-        oninput="S.paddles[${idx}].shots[${l}]=this.value;render()">${esc(p.shots[l]||'')}</textarea></div>`;
+        oninput="S.paddles[${idx}].shots[${l}]=this.value;render()">${esc(p.shots[l]||'')}</textarea>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <label style="margin:0;font-size:13px;color:var(--ink)">Shots the gate did not record</label>
+        <input id="m${idx}-${l}" type="text" inputmode="numeric" autocomplete="off"
+          style="width:72px" value="${esc((p.missed||{})[l]||'')}"
+          oninput="S.paddles[${idx}].missed[${l}]=this.value;render()">
+        <span class="muted">Impacts that happened with no numbers. They age the ball and
+          are left out of the average.</span></div></div>`;
   }).join('')}
   <div class="card" style="padding:11px 18px"><label style="display:flex;gap:9px;align-items:center;margin:0;font-size:14px;color:var(--ink)">
     <input type="checkbox" style="width:auto" ${p.use7?'checked':''}
@@ -1472,12 +1495,18 @@ function scPaddle(idx){
     <p class="muted" style="margin:5px 0 0">Chasing a trend out toward the bottom of the paddle. Adds ten shots and one more block.</p></div>
   ${!R?`<div class="banner b-mute">Fill in the paddle's length and swing weight, shoot the PRE block, then paste to see results.</div>`:`
   <div class="card"><h3>By location ${ib_('block')}</h3>
-    <table><thead><tr><th>Loc (in)</th><th>Fired</th><th>Used</th><th>Mean Vin</th>
-      <th>PBCoR @50</th><th>se</th><th>D applied</th><th>KewCOR</th></tr></thead><tbody>
-      ${R.res.map(r=>`<tr><td><b>${r.location}</b></td><td>${r.fired}</td><td>${r.used}</td>
+    <table><thead><tr><th>Loc (in)</th><th>Recorded</th><th>Gate missed</th><th>Used</th>
+      <th>Mean Vin</th><th>PBCoR @50</th><th>se</th><th>D applied</th><th>KewCOR</th></tr></thead><tbody>
+      ${R.res.map(r=>`<tr><td><b>${r.location}</b></td><td>${r.fired}</td>
+        <td>${r.missed?`<b>${r.missed}</b>`:'—'}</td><td>${r.used}</td>
         <td>${f(r.meanVin,1)}</td><td>${f(r.p50)}</td><td>${f(r.se)}</td>
         <td>${f(r.D,5)}</td><td><b>${f(r.kewcor,3)}</b></td></tr>`).join('')}
     </tbody></table>
+    ${R.res.some(r=>r.missed)?`<p class="muted"><b>${
+      R.res.reduce((a,r)=>a+r.missed,0)} impact${R.res.reduce((a,r)=>a+r.missed,0)===1?'':'s'}
+      the gate did not record.</b> They are counted against the ball's age and against this
+      paddle's position on the wear curve, and left out of every average — a shot with no
+      numbers cannot be averaged, but it still happened.</p>`:''}
     <p class="muted" style="margin-bottom:0">${R.dm.ramp
       ? 'Each block is corrected at its own moment in the life of the ball — the spread down the D column is the face-map gradient this removes.'
       : 'POOLED: one correction for the whole session, so every block shows the same D. That is correct, not a bug.'}</p></div>
@@ -1838,6 +1867,11 @@ function archivePayload(idx){
       mid:{n:mid.n||'', mean:n6(mid.mean), se:n6(mid.se)},
       post:{n:post.n||'', mean:n6(post.mean), se:n6(post.se)},
       loc:R.res.map(r=>r.location),
+      missed:R.res.map(r=>r.missed),
+      // The y-axis for the sheet's chart, computed HERE by the same function the client
+      // report uses, so the two windows cannot drift apart. Sending it beats
+      // reimplementing reportAxis in Apps Script and hoping the two stay in step.
+      axis:K.reportAxis(R.res.map(r=>r.kewcor)),
       thick:num(sp.thick),
       // Carried for the website's Curves row, not for the archive sheet, which recomputes
       // its own se from the raw shots. Rounded: nothing divides into it.
