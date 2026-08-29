@@ -146,8 +146,18 @@
   }
 
   // ── the ball ──────────────────────────────────────────────────────────────
-  // A 70 mph wear shot is a GLANCING blow off a 30-degree clamp, so it counts for
-  // LESS than a 50 mph impact, not more. See the wear-phase note in Design Notes.
+  // TWO REGIMES, SHARP BOUNDARY. Before a ball enters the KewCOR queue it takes exactly
+  // 100 shots at 70 mph against a paddle clamped at 30 degrees — the accelerated wear
+  // protocol, angled so it throws the spin-off durability testing measures. From the
+  // moment it enters the queue every impact is 50 mph against a SQUARE, 90-degree clamp.
+  // KewCOR itself is never measured at an angle.
+  //
+  // So a 70 mph wear shot counts for LESS than a 50 mph impact, not more: only the
+  // square-on component compresses the core, and 70 x sin(30) = 35 mph.
+  //
+  // The protocol never varies, so this term is the same for every ball that has ever run
+  // — a constant offset of about 44 impacts, which cannot rank one ball against another.
+  // It does not reach a published KewCOR at all; see fixes_test.js #34.
   const effectiveAge = (prior, wearShots) => (prior || 0) + (wearShots || 0) * C.wearFactor;
 
   const D = (pRef, pCtrl) => pRef * pRef - pCtrl * pCtrl;
@@ -184,7 +194,7 @@
   }
 
   // ── where each paddle and each location block sits in the ball's life ─────
-  // Ages are measured in impacts. A block of shots characterises the ball at its
+  // Ages are measured in impacts. A block of shots characterizes the ball at its
   // own MIDPOINT, never at its start or end.
   function ballTimeline({ prior, wearShots, preFired, midFired, postFired, paddleShots, midAfterPaddle }) {
     const base = effectiveAge(prior, wearShots);
