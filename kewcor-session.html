@@ -161,7 +161,12 @@ const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',pmNote:'',pmWarn:'',use7
 const DEFAULT = {
   regBall:null,
   date:new Date().toISOString().slice(0,10), person:'', temp:'',
-  anchor:'Anchor 2', ballId:'LT-89', prior:133, wear:100, deflection:'',
+  // NO BALL AND NO FIGURES. The ball is chosen from the shelf on load — see pickLiveBall.
+  // These used to be seeded with LT-89 and its impact counts from the day they were
+  // typed; while the registry answers, applyBall overwrites them within a second and
+  // nobody notices, but when it does NOT answer they sit there looking exactly like this
+  // ball's real history and the correction is computed from them. Blank is honest.
+  anchor:'Anchor 2', ballId:'', prior:'', wear:'', deflection:'',
   paddles:[blankPaddle(),blankPaddle()],
   pre:'', mid:'', post:'', mirror:'', midAfter:2, endedEarly:false,
   // Which spot the weekly control block was shot at. Logged on every anchor row so a
@@ -351,7 +356,8 @@ function resetAll(){
   }
   if(!confirm('Clear this session and start a new one? The draft is deleted.')) return;
   try{ localStorage.removeItem(DRAFT); }catch(e){}
-  S=JSON.parse(JSON.stringify(DEFAULT)); S.paddles=[blankPaddle(),blankPaddle()]; render();
+  S=JSON.parse(JSON.stringify(DEFAULT)); S.paddles=[blankPaddle(),blankPaddle()];
+  BALLPICK=''; render();
   // Re-read the shelf. The ball's counts are the FIRST thing the new session takes off the
   // registry, and the copy in memory is as old as the page — it does not see a session row
   // logged since, nor a correction typed into Other prior. Starting a session from a stale
@@ -467,7 +473,7 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 9;
+const WANT_BUILD = 10;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -638,6 +644,10 @@ function loadShelf(){
              + 'starts its table at row 15.'};
       // if the chosen ball is on the shelf, take its figures now
       if(RG.state==='ok' && S.ballId){ const hit=RG.rows.find(b=>b.id===S.ballId); if(hit) applyBall(hit,true); }
+      // Nothing chosen — a new session, or one whose ball is no longer on the shelf.
+      // ONLY fills a blank: a restored draft or a session opened from Drive keeps the
+      // ball it came with, even a retired one, because that is what it was shot on.
+      autoPickBall();
       render();
    })
    .catch(e=>{
@@ -646,6 +656,36 @@ function loadShelf(){
           ? 'Opened from disk — see the red banner at the top of the page.'
           : 'Could not reach the registry: '+e.message)};
       render(); });
+}
+
+/* The ball a new session should open on.
+ *
+ * IN ROTATION only — RESERVED is a ball being kept back, RETIRED and CRACKED are done.
+ * Past its wear phase, because a ball still breaking in is on the steep part of the
+ * curve where a session's own drift is largest. Not already at retirement.
+ *
+ * Among what is left, the one with the LEAST room: finish a ball, do not open a fresh
+ * one each session. That is how the shelf is meant to be worked through, and it is also
+ * what keeps the number of part-used balls down.
+ *
+ * Returns null rather than guessing when nothing qualifies. */
+/* Fill the ball in, but only if it is empty. Split out of loadShelf so it can be tested
+   without a network round trip — the rule matters more than the fetch around it. */
+function autoPickBall(){
+  if(RG.state!=='ok' || S.ballId) return '';
+  const b=pickLiveBall();
+  if(b){ applyBall(b,true); BALLPICK=b.id; }
+  else BALLPICK='none';
+  return BALLPICK;
+}
+
+function pickLiveBall(){
+  const live = RG.rows.filter(b =>
+    b.status === 'IN ROTATION' &&
+    b.age >= K.C.breakInGate &&
+    b.room > 0);
+  if(!live.length) return null;
+  return live.slice().sort((a,b) => a.room - b.room)[0];
 }
 
 // PRIOR IMPACTS AT 50 IS "other prior" PLUS "impacts logged" — the registry keeps
@@ -984,6 +1024,9 @@ const refusedNote = j => (j.refused && j.refused.length)
 
 /* ── the shelf, written to ─────────────────────────────────────────────── */
 let NB={id:'', since:new Date().toISOString().slice(0,10), wear:'', otherPrior:'', status:'IN ROTATION'};
+// Set when the runner chose the ball rather than the operator, so the choice is stated
+// on screen instead of just appearing in the box.
+let BALLPICK='';
 let RB={id:'', status:'RETIRED', why:'', retiredOn:new Date().toISOString().slice(0,10),
         crackAt:'', notes:''};
 
@@ -1194,6 +1237,21 @@ function retirementGuard(){
     </div></div>`;
 }
 
+/* When the runner picked the ball, say so. An auto-filled field that looks typed is how
+   a session gets run on the wrong ball without anyone deciding to. */
+function ballPickNote(){
+  if(RG.state!=='ok') return '';
+  if(BALLPICK==='none')
+    return `<div class="banner b-warn"><div><b>No ball is ready to use.</b>
+      Nothing on the shelf is IN ROTATION, past its wear phase and still short of
+      ${K.C.retire} impacts. Break one in, or pick one below and know why you did.</div></div>`;
+  if(BALLPICK && BALLPICK===S.ballId)
+    return `<div class="banner b-mute"><div><b>${esc(BALLPICK)} was chosen for you</b> —
+      it is the ball in rotation with the least room left, so it gets finished before a
+      fresh one is opened. Change it below if that is not today's ball.</div></div>`;
+  return '';
+}
+
 function ballGuard(){
   const b=S.regBall; if(!b || RG.state!=='ok') return '';
   const onFile = Math.round(b.otherPrior + b.logged), wearOnFile = Math.round(b.wear);
@@ -1284,7 +1342,7 @@ function scSession(){
     </div>${wrBanner('anchor')}</div>
 
   <div class="card"><h3>Ball ${ib_('prior')}</h3>
-    ${regPanel()}
+    ${regPanel()}${ballPickNote()}
     <div class="grid">
     ${RG.state==='ok'
       ? `<div><label>Ball ID</label><select id="ballsel" onchange="const b=RG.rows.find(x=>x.id===this.value); if(b) applyBall(b);">
