@@ -467,7 +467,7 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 8;
+const WANT_BUILD = 9;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -1570,7 +1570,9 @@ function scResults(){
       ${p.archive?`<button class="ghost"
         onclick="window.open('${esc(p.archive.url)}','_blank','noopener')">Open ${esc(p.archive.name)} →</button>`:''}
       <span class="muted">${p.archive
-        ? 'Saved. A second save keeps the first — the old one is the record of what was reported at the time.'
+        ? 'Saved. A second save writes a NEW archive sheet and keeps this one — the old one '
+          + 'is the record of what was reported at the time. The website row is corrected in '
+          + 'place instead, and the registry row is not touched: fix that cell by hand.'
         : 'Writes the internal record: every shot, the specs, and the ball correction, as live formulas you can correct later.'}</span>
     </div>${wrBanner('archive')}</div>`).join('')}
   <div class="card"><h3>Send it to the registry</h3>
@@ -1908,7 +1910,13 @@ function archivePaddle(idx){
       const curve = j.curveError
         ? ' The website Curves row was NOT written: ' + j.curveError
         + ' The archive itself is fine — retry the row from the Ball registry tab.'
-        : (j.curveRow ? ' Curves row ' + j.curveRow + ' written for the website.' : '');
+        : (j.curveRow
+            ? (j.curveReplaced
+                ? ' Curves row ' + j.curveRow + ' CORRECTED for the website — same paddle, '
+                  + 'same date, so it replaced the earlier figures rather than adding a '
+                  + 'second row the site would have to choose between.'
+                : ' Curves row ' + j.curveRow + ' written for the website.')
+            : '');
       const stray = (j.curveStray && j.curveStray.length)
         ? ' Note: ' + j.curveStray.join(', ') + ' in has no column on the Curves tab, so '
         + 'the website will not show it. The archive has it.'
