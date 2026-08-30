@@ -88,7 +88,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       <h2 class="pcl__h2 pcl__h2-row">Speed Gauges
         <span class="kc-info" role="button" tabindex="0" title="About the Speed Gauges" aria-label="About the Speed Gauges" onclick="openGaugeInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
       </h2>
-      <p class="pcl__sublead">Firepower (overall shot power, 0&ndash;100) and KewCOR (power at the sweet spot, 0.340&ndash;0.470).</p>
+      <p class="pcl__sublead">Tilt (which way the paddle leans, pop to power) and KewCOR (power at the sweet spot, 0.340&ndash;0.470).</p>
       <div class="pcl__row" id="rowGauges"></div>
       <h2 class="pcl__h2 pcl__h2-row">KewCOR Paddle Surface Map
         <span class="kc-info" role="button" tabindex="0" title="About the KewCOR Curve" aria-label="About the KewCOR Curve" onclick="openKcInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
@@ -228,6 +228,19 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-gauge-svg .gband-teal{fill:#0d9488}
   .pcl-gauge-svg .gband-orange{fill:#d97706}
   .pcl-gauge-svg .gband-red{fill:#dc2626}
+  /* Tilt: diverging ramp separated by LIGHTNESS (dark at both ends, pale in the middle), not
+     by hue alone, so the five segments stay distinguishable in grayscale/color-blind view.
+     tilt1=pop-leaning (darkest blue) ... tilt3=balanced (palest) ... tilt5=power-leaning (darkest amber). */
+  .gauge-tilt1{background:#1e3a5f}
+  .gauge-tilt2{background:#6d93be}
+  .gauge-tilt3{background:#e4dfd3}
+  .gauge-tilt4{background:#c98a4b}
+  .gauge-tilt5{background:#6b350f}
+  .pcl-gauge-svg .gband-tilt1{fill:#1e3a5f}
+  .pcl-gauge-svg .gband-tilt2{fill:#6d93be}
+  .pcl-gauge-svg .gband-tilt3{fill:#e4dfd3}
+  .pcl-gauge-svg .gband-tilt4{fill:#c98a4b}
+  .pcl-gauge-svg .gband-tilt5{fill:#6b350f}
   .pcl-gauge-svg .gneedle{fill:#1a2535}
   .pcl-gauge-svg .ghub{fill:#1a2535;stroke:var(--white);stroke-width:2}
   .pcl-gauge-svg .gtitle{fill:var(--navy);font-size:11px;font-weight:700;font-family:'DM Sans',sans-serif}
@@ -539,6 +552,11 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .pcl-gauge-svg .gband-teal{fill:#2dd4bf}
   [data-theme="dark"] .pcl-gauge-svg .gband-orange{fill:#f59e0b}
   [data-theme="dark"] .pcl-gauge-svg .gband-red{fill:#f87171}
+  [data-theme="dark"] .pcl-gauge-svg .gband-tilt1{fill:#3b6ea8}
+  [data-theme="dark"] .pcl-gauge-svg .gband-tilt2{fill:#8fb4de}
+  [data-theme="dark"] .pcl-gauge-svg .gband-tilt3{fill:#ddd6c4}
+  [data-theme="dark"] .pcl-gauge-svg .gband-tilt4{fill:#dba25e}
+  [data-theme="dark"] .pcl-gauge-svg .gband-tilt5{fill:#9a5a24}
   [data-theme="dark"] .pcl-gauge-svg .gneedle{fill:var(--text)}
   [data-theme="dark"] .pcl-gauge-svg .ghub{fill:var(--text);stroke:var(--white)}
   [data-theme="dark"] .pcl-gauge-svg .gtick{fill:var(--muted)}
@@ -652,7 +670,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     spinRPM:['spinrpm','rpm'], serveSpeed:['servespeedmphpower','servespeed','servemph'],
     punchVolley:['punchvolleyspeedmphpop','punchvolley','volley'],
     firepower:['firepower'], swingResist:['handspeedindex0100','handspeedindex','swingresistance0100','swingresistance','swingresist'],
-    kewcor:['kewcor'],
+    kewcor:['kewcor'], tiltZ:['tiltz'], tiltBand:['tiltband'],
     length:['lengthin','length'], width:['widthin','width'], handleLength:['handlelengthin','handlelength'],
     weight:['staticweightoz','staticweight','weight'], swingWeight:['swingweight'],
     twistWeight:['twistweight'], balance:['balancepointcm','balancepoint','balance'],
@@ -664,7 +682,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     spinZ:['spinzscore'], powerZ:['powerzscore'], popZ:['popzscore'],
     swingZ:['swingweightzscore'], twistZ:['twistweightzscore'], balanceZ:['balancepointzscore']
   };
-  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,spinDurTier:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1};
+  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,spinDurTier:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1,tiltBand:1};
 
   function norm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
   function num(v){ if(v==null) return null; var x=String(v).replace(/[^0-9.\-]/g,''); if(x===''||x==='-'||x==='.') return null; var n=parseFloat(x); return isNaN(n)?null:n; }
@@ -1283,12 +1301,31 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       +' L'+iB[0].toFixed(2)+' '+iB[1].toFixed(2)
       +' A'+rI+' '+rI+' 0 '+large+' 0 '+iA[0].toFixed(2)+' '+iA[1].toFixed(2)+' Z';
   }
-  var FIREPOWER_BANDS=[{a:0,b:34,cls:'blue'},{a:34,b:67,cls:'teal'},{a:67,b:100,cls:'orange'}];
   var KEWCOR_BANDS=[{a:0.340,b:0.370,cls:'blue'},{a:0.370,b:0.400,cls:'teal'},{a:0.400,b:0.447,cls:'orange'},{a:0.447,b:0.470,cls:'red'}];
   var GCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626'};
-  function firepowerCat(v){ if(v==null) return null; if(v<=33) return {label:'Low',cls:'blue'}; if(v<=66) return {label:'Medium',cls:'teal'}; return {label:'High',cls:'orange'}; }
+  // Tilt: fixed -1.5..+1.5 scale, five bands read straight from the sheet's `Tilt Band` text
+  // (never recomputed here). Boundaries are asymmetric on purpose (outer bands 0.75 wide,
+  // inner bands 0.5 wide) -- this matches the published band definitions, not an even split.
+  var TILT_BANDS=[
+    {a:-1.5,b:-0.75,cls:'tilt1'},{a:-0.75,b:-0.25,cls:'tilt2'},{a:-0.25,b:0.25,cls:'tilt3'},
+    {a:0.25,b:0.75,cls:'tilt4'},{a:0.75,b:1.5,cls:'tilt5'}
+  ];
+  // Text-readout accent colors (reinforcement only -- the band name in words is what carries
+  // the meaning). "Balanced" uses the theme's default text color since it is the neutral case.
+  var TCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626',
+    tilt1:'#1d4ed8',tilt2:'#2563eb',tilt3:'var(--text)',tilt4:'#d97706',tilt5:'#b45309'};
+  var TILT_BAND_LABEL={'pop-leaning':'Pop-Leaning','slightly pop':'Slightly Pop','balanced':'Balanced','slightly power':'Slightly Power','power-leaning':'Power-Leaning'};
+  var TILT_BAND_CLS={'pop-leaning':'tilt1','slightly pop':'tilt2','balanced':'tilt3','slightly power':'tilt4','power-leaning':'tilt5'};
   function kewcorCat(v){ if(v==null) return null; if(v<0.370) return {label:'Control',cls:'blue'}; if(v<0.400) return {label:'All-Court',cls:'teal'}; if(v<0.447) return {label:'Power',cls:'orange'}; return {label:'Beyond Spec',cls:'red'}; }
-  function gaugeSVG(id,title,value,min,max,bands,cat,unit,decimals){
+  // Matches on the exact lowercase-hyphenated string from `Tilt Band`; does not recompute the band.
+  function tiltCat(band){
+    if(band==null) return null;
+    var k=String(band).trim().toLowerCase();
+    if(!TILT_BAND_LABEL.hasOwnProperty(k)) return null;
+    return {label:TILT_BAND_LABEL[k], cls:TILT_BAND_CLS[k]};
+  }
+  function gaugeSVG(id,title,value,min,max,bands,cat,unit,decimals,opts){
+    opts=opts||{};
     var cx=100,cy=100,rO=88,rI=63;
     var hasVal=value!=null;
     var minLbl='<text class="gtick" x="'+(cx-rO+2)+'" y="'+(cy+15)+'" text-anchor="start">'+(decimals?min.toFixed(decimals):min)+'</text>';
@@ -1298,7 +1335,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       var needleLen0=rO-8;
       var grayNeedle='<g transform="rotate(180 '+cx+' '+cy+')"><polygon class="gneedle-disabled" points="'+cx+','+(cy-4)+' '+(cx+needleLen0)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
       var grayHub='<circle class="ghub-disabled" cx="'+cx+'" cy="'+cy+'" r="7"/>';
-      var naTxt='<text class="gunavail" x="'+cx+'" y="'+(cy+32)+'" text-anchor="middle"><tspan x="'+cx+'" dy="0">'+esc(title)+' value</tspan><tspan x="'+cx+'" dy="14">not available</tspan></text>';
+      var naLines=opts.naLines||[esc(title)+' value','not available'];
+      var naTxt='<text class="gunavail" x="'+cx+'" y="'+(cy+32)+'" text-anchor="middle"><tspan x="'+cx+'" dy="0">'+naLines[0]+'</tspan><tspan x="'+cx+'" dy="14">'+naLines[1]+'</tspan></text>';
       return '<svg class="pcl-gauge-svg pcl-gauge-svg--disabled" data-gauge="'+id+'" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'
         +grayBands+grayNeedle+grayHub+minLbl+maxLbl+naTxt+'</svg>';
     }
@@ -1309,34 +1347,36 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var needle='<g class="gneedle-grp" data-cx="'+cx+'" data-cy="'+cy+'" data-frac="'+frac.toFixed(4)+'" transform="rotate(180 '+cx+' '+cy+')">'
       +'<polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx+needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
     var hub='<circle class="ghub" cx="'+cx+'" cy="'+cy+'" r="7"/>';
-    var numTxt=decimals?value.toFixed(decimals):Math.round(value);
-    var valueTxt='<text class="gnum" x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="'+(cat?GCOLOR[cat.cls]:'var(--text)')+'">'+numTxt+(unit?'<tspan class="gunit"> '+unit+'</tspan>':'')+'</text>';
-    var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+GCOLOR[cat.cls]+'">'+esc(cat.label)+'</text>':'';
+    var numTxt;
+    if(opts.signed){ numTxt=(value>=0?'+':'')+value.toFixed(decimals); }
+    else { numTxt=decimals?value.toFixed(decimals):Math.round(value); }
+    var valueTxt='<text class="gnum" x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="'+(cat?TCOLOR[cat.cls]:'var(--text)')+'">'+numTxt+(unit?'<tspan class="gunit"> '+unit+'</tspan>':'')+'</text>';
+    var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+TCOLOR[cat.cls]+'">'+esc(cat.label)+'</text>':'';
     return '<svg class="pcl-gauge-svg" data-gauge="'+id+'" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'
       +bandsSVG+needle+hub+minLbl+maxLbl+valueTxt+catTxt+'</svg>';
   }
   var GINFO='<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="{{T}}" onclick="event.stopPropagation();{{FN}}()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg>';
   function ginfo(title,fn){ return GINFO.replace('{{T}}',title).replace('{{FN}}',fn); }
   function gaugeCol(p){
-    var fpCat=firepowerCat(p.firepower), kcCat=kewcorCat(p.kewcor);
-    var fpSVG=gaugeSVG('firepower','Firepower',p.firepower,0,100,FIREPOWER_BANDS,fpCat,null,0);
+    var kcCat=kewcorCat(p.kewcor), tCat=tiltCat(p.tiltBand);
     var kcSVG=gaugeSVG('kewcor','KewCOR',p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,null,3);
-    var fpLegend='<div class="pcl-gauge-legend"><span class="pcl-gl-item"><i class="gauge-blue"></i>Low</span><span class="pcl-gl-item"><i class="gauge-teal"></i>Medium</span><span class="pcl-gl-item"><i class="gauge-orange"></i>High</span></div>';
+    var tSVG=gaugeSVG('tilt','Tilt',p.tiltZ,-1.5,1.5,TILT_BANDS,tCat,null,2,{signed:true,naLines:['Not tested on','the cannon']});
     var kcLegend='<div class="pcl-gauge-legend"><span class="pcl-gl-item"><i class="gauge-blue"></i>Control</span><span class="pcl-gl-item"><i class="gauge-teal"></i>All-Court</span><span class="pcl-gl-item"><i class="gauge-orange"></i>Power</span><span class="pcl-gl-item"><i class="gauge-red"></i>Beyond Spec</span></div>';
-    var fpHead='<div class="pcl-gauge-head">Firepower'+ginfo('About Firepower','openFpMethodInfo')+'</div>';
+    var tLegend='<div class="pcl-gauge-legend"><span class="pcl-gl-item"><i class="gauge-tilt1"></i>Pop-Leaning</span><span class="pcl-gl-item"><i class="gauge-tilt2"></i>Slightly Pop</span><span class="pcl-gl-item"><i class="gauge-tilt3"></i>Balanced</span><span class="pcl-gl-item"><i class="gauge-tilt4"></i>Slightly Power</span><span class="pcl-gl-item"><i class="gauge-tilt5"></i>Power-Leaning</span></div>';
     var kcHead='<div class="pcl-gauge-head">KewCOR'+ginfo('About KewCOR','openKcMethodInfo')+'</div>';
-    var fpCls='pcl-gauge'+(p.firepower==null?' pcl-gauge--disabled':'');
+    var tHead='<div class="pcl-gauge-head">Tilt'+ginfo('About Tilt','openTiltMethodInfo')+'</div>';
     var kcCls='pcl-gauge'+(p.kewcor==null?' pcl-gauge--disabled':'');
+    var tCls='pcl-gauge'+(p.tiltZ==null?' pcl-gauge--disabled':'');
     var cardTitle='<div class="kc-title pcl-gauge-cardtitle">'+esc(p.company+' '+p.paddle)+'</div>';
     return '<div class="pcl-gcard">'+cardTitle+'<div class="pcl-gauges">'
-      +'<div class="'+fpCls+'">'+fpHead+fpSVG+fpLegend+'</div>'
       +'<div class="'+kcCls+'">'+kcHead+kcSVG+kcLegend+'</div>'
+      +'<div class="'+tCls+'">'+tHead+tSVG+tLegend+'</div>'
       +'</div></div>';
   }
-  window.openFpMethodInfo=function(){ document.getElementById('fpMethodOverlay').classList.add('open'); };
-  window.closeFpMethodInfo=function(){ document.getElementById('fpMethodOverlay').classList.remove('open'); };
   window.openKcMethodInfo=function(){ document.getElementById('kcMethodOverlay').classList.add('open'); };
   window.closeKcMethodInfo=function(){ document.getElementById('kcMethodOverlay').classList.remove('open'); };
+  window.openTiltMethodInfo=function(){ document.getElementById('tiltMethodOverlay').classList.add('open'); };
+  window.closeTiltMethodInfo=function(){ document.getElementById('tiltMethodOverlay').classList.remove('open'); };
   function setNeedleAngle(g,cx,cy,angleDeg){ g.setAttribute('transform','rotate('+(-angleDeg).toFixed(3)+' '+cx+' '+cy+')'); }
   function animateNeedleGroup(g,onDone){
     if(!g){ if(onDone) onDone(); return; }
@@ -1365,9 +1405,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   function animateGaugeCard(card){
     if(card.dataset.gaugesAnimated) return; card.dataset.gaugesAnimated='1';
-    var fp=card.querySelector('[data-gauge="firepower"] .gneedle-grp');
     var kc=card.querySelector('[data-gauge="kewcor"] .gneedle-grp');
-    animateNeedleGroup(fp, function(){ animateNeedleGroup(kc); });
+    var tt=card.querySelector('[data-gauge="tilt"] .gneedle-grp');
+    animateNeedleGroup(kc, function(){ animateNeedleGroup(tt); });
   }
   var gaugeObserver=null;
   function observeGauges(){
@@ -2053,16 +2093,17 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <div class="dur-info-overlay" id="gaugeInfoOverlay" onclick="if(event.target===this)closeGaugeInfo()">
   <div class="dur-info-box">
     <h3>Speed Gauges<button class="dur-info-close" onclick="closeGaugeInfo()" aria-label="Close">&times;</button></h3>
-    <p><b>Firepower</b> is an overall 0&ndash;100 shot-power rating: <b>Low</b> 0&ndash;33, <b>Medium</b> 34&ndash;66, <b>High</b> 67&ndash;100.</p>
     <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.470 scale: <b>Control</b> 0.340&ndash;0.369, <b>All-Court</b> 0.370&ndash;0.399, <b>Power</b> 0.400&ndash;0.446, <b>Beyond Spec</b> 0.447&ndash;0.470.</p>
     <p>Scores outside 0.340&ndash;0.470 are shown bottoming out or topping out at the nearest edge of the gauge.</p>
+    <p><b>Tilt</b> shows which way a paddle's firepower leans, from Pop to Power, on a &minus;1.5 to +1.5 scale: <b>Pop-Leaning</b> &minus;1.5 to &minus;0.75, <b>Slightly Pop</b> &minus;0.75 to &minus;0.25, <b>Balanced</b> &minus;0.25 to +0.25, <b>Slightly Power</b> +0.25 to +0.75, <b>Power-Leaning</b> +0.75 to +1.5.</p>
+    <p>Paddles without a KewCOR curve have not been tested on the cannon, so Tilt is not available for them.</p>
   </div>
 </div>
 
-<div class="dur-info-overlay" id="fpMethodOverlay" onclick="if(event.target===this)closeFpMethodInfo()">
+<div class="dur-info-overlay" id="tiltMethodOverlay" onclick="if(event.target===this)closeTiltMethodInfo()">
   <div class="dur-info-box">
-    <h3>Firepower<button class="dur-info-close" onclick="closeFpMethodInfo()" aria-label="Close">&times;</button></h3>
-    <p>Recorded with a radar gun on human-generated serves and punch volleys. Value represents scaled Z-score.</p>
+    <h3>Tilt<button class="dur-info-close" onclick="closeTiltMethodInfo()" aria-label="Close">&times;</button></h3>
+    <p>Which way a paddle's firepower leans, from Pop to Power. Measured in standard deviations across the tested fleet, so 0 is the fleet average and +1.0 leans one standard deviation toward Power. Driven mostly by swing weight.</p>
   </div>
 </div>
 
