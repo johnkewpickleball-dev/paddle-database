@@ -772,14 +772,17 @@ function applyFilters(forcedSort){
       if(!ok) return false;
     }
     if(f.balance.length){
-      const ps=p.powerScaled??p.powerScore, pp=p.popScaled??p.popScore;
-      if(ps==null || pp==null) return false;
-      const diff=ps-pp;
-      const ok=f.balance.some(b =>
-        b==='Power-Leaning' ? (diff>10) :
-        b==='Balanced'      ? (Math.abs(diff)<=10) :
-        b==='Pop-Leaning'   ? (-diff>10) : false);
-      if(!ok) return false;
+      // Sourced from the sheet's Tilt Band (five exact lowercase-hyphenated strings),
+      // collapsed onto this filter's three existing chips. This replaced a hand-rolled
+      // powerScaled-minus-popScaled diff (>10 pts each way) that was calibrated against
+      // the pre-2026-08-30 scale, where Pop ran about 13 points high fleet-wide and biased
+      // nearly every paddle toward reading "pop-leaning" even when it was not.
+      const tb=(p.tiltBand||'').trim().toLowerCase();
+      if(!tb) return false;
+      const cat = (tb==='power-leaning'||tb==='slightly power') ? 'Power-Leaning'
+        : (tb==='pop-leaning'||tb==='slightly pop') ? 'Pop-Leaning'
+        : tb==='balanced' ? 'Balanced' : null;
+      if(!cat || !f.balance.includes(cat)) return false;
     }
     return true;
   });
@@ -1620,6 +1623,7 @@ applyPaddleDeepLink();
       ['powerScaled',['powerscaledzscore','powerscaledscore','powerscaled']],
       ['popScaled',['popscaledzscore','popscaledscore','popscaled']],
       ['popScore',['popscore','pop']],['firepower',['firepower']],['kewcor',['kewcor','kewcorscore']],
+      ['tiltBand',['tiltband']],
       ['dateEntered',['dateentered','dateadded','entrydate','dateentered','added']],
       ['link',['linktopurchase','link','url','affiliatelink']],
     ];
@@ -1678,7 +1682,8 @@ applyPaddleDeepLink();
         dateEntered:g(row,'dateEntered')||null,
         spinScaled:parseNum(g(row,'spinScaled')), powerScaled:parseNum(g(row,'powerScaled')),
         popScaled:parseNum(g(row,'popScaled')),
-        firepower:parseNum(g(row,'firepower')), kewcor:parseNum(g(row,'kewcor')), link,
+        firepower:parseNum(g(row,'firepower')), kewcor:parseNum(g(row,'kewcor')),
+        tiltBand:g(row,'tiltBand')||null, link,
       };
     }).filter(p => p.company && p.paddle);
   }

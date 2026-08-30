@@ -1040,9 +1040,14 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
 
   // ---- Z-Score bullet chart (RAW z-scores; fixed dataset ranges; outliers shown on -4..4 axis) ----
+  // Power/Pop lo/hi match the sheet's Power Z Min/Max and Pop Z Min/Max anchors as of the
+  // 2026-08-30 scale fix: both now share a single symmetric half-width of +/-2.75, so a
+  // perfectly average paddle (z=0) sits dead center in the "Medium" third of each bar. These
+  // were previously -2.51/2.03 and -3.01/1.87 (asymmetric, pre-fix) -- update again if the
+  // sheet's anchors are ever retuned.
   var BULLET=[
-    {label:'Power',        key:'powerZ',   lo:-2.51, hi:2.03},
-    {label:'Pop',          key:'popZ',     lo:-3.01, hi:1.87},
+    {label:'Power',        key:'powerZ',   lo:-2.75, hi:2.75},
+    {label:'Pop',          key:'popZ',     lo:-2.75, hi:2.75},
     {label:'Spin',         key:'spinZ',    lo:-3.64, hi:1.65},
     {label:'Twist Weight', key:'twistZ',   lo:-3.56, hi:2.62},
     {label:'Swing Weight', key:'swingZ',   lo:-3.39, hi:3.50},
@@ -2104,6 +2109,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   <div class="dur-info-box">
     <h3>Tilt<button class="dur-info-close" onclick="closeTiltMethodInfo()" aria-label="Close">&times;</button></h3>
     <p>Which way a paddle's firepower leans, from Pop to Power. Measured in standard deviations across the tested fleet, so 0 is the fleet average and +1.0 leans one standard deviation toward Power. Driven mostly by swing weight.</p>
+    <p>Shape is a strong predictor of lean: elongated paddles tend to run heavier in swing weight and land Power-leaning, while widebody paddles tend to run lighter and land Pop-leaning. That is why the same model can land on opposite sides of balanced across its shape variants.</p>
   </div>
 </div>
 
