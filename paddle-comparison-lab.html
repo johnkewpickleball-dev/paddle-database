@@ -344,6 +344,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-radar .ax-line{stroke:#d6deea;stroke-width:1}
   .pcl-radar .ax-label{fill:#0d1f2d;font-weight:700;font-size:13px;font-family:'DM Sans',sans-serif}
   .pcl-radar .radar-fill{fill:url(#pclRadarGrad);fill-opacity:.92;stroke:#a21d77;stroke-width:1.5;stroke-opacity:.5}
+  .pcl-radar--disabled .ax-line{stroke-opacity:.5}
+  .pcl-radar--disabled .ax-label{opacity:.45}
+  .pcl-radar-svg .radar-unavail{fill:var(--muted);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif}
   .pcl-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 12px;margin-top:8px;font-size:11.5px;color:var(--muted)}
   .pcl-legend b{color:var(--navy);font-weight:600;font-variant-numeric:tabular-nums}
   /* radar <-> bullet flip */
@@ -1008,31 +1011,42 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function pt(ang,rad){ var a=ang*Math.PI/180; return [RCX+rad*Math.cos(a), RCY-rad*Math.sin(a)]; }
 
   function radarSVG(p){
-    var lines='', labels='', target=[];
+    var lines='', labels='';
     // 3 diameters
     [[0,180],[60,240],[120,300]].forEach(function(pr){
       var a=pt(pr[0],RR), b=pt(pr[1],RR);
       lines+='<line class="ax-line" x1="'+a[0].toFixed(1)+'" y1="'+a[1].toFixed(1)+'" x2="'+b[0].toFixed(1)+'" y2="'+b[1].toFixed(1)+'"/>';
     });
     AX.forEach(function(ax){
-      var v=Math.max(0,Math.min(100, p[ax.key]==null?0:p[ax.key]));
-      var tp=pt(ax.ang, RR*v/100); target.push(tp[0].toFixed(1)+','+tp[1].toFixed(1));
       // label
       var lp=pt(ax.ang, RR+16), c=Math.cos(ax.ang*Math.PI/180);
       var anchor = c>0.3?'start':(c<-0.3?'end':'middle');
       var words=ax.label.split(' ');
       var ty=lp[1];
       if(words.length>1){
-        var dy=(Math.sin(ax.ang*Math.PI/180) < -0.1)? 0 : (Math.sin(ax.ang*Math.PI/180)>0.1?-6:-6);
         labels+='<text class="ax-label" x="'+lp[0].toFixed(1)+'" y="'+(ty-6).toFixed(1)+'" text-anchor="'+anchor+'">'
               + esc(words[0])+'</text><text class="ax-label" x="'+lp[0].toFixed(1)+'" y="'+(ty+8).toFixed(1)+'" text-anchor="'+anchor+'">'+esc(words.slice(1).join(' '))+'</text>';
       } else {
         labels+='<text class="ax-label" x="'+lp[0].toFixed(1)+'" y="'+(ty+4).toFixed(1)+'" text-anchor="'+anchor+'">'+esc(ax.label)+'</text>';
       }
     });
+    // Power and Pop are computed from KewCOR, so a paddle with no cannon test has no Power or
+    // Pop score at all (not a low one). Plotting those axes at 0 would draw a real-looking
+    // hexagon that reads as "weak at power and pop" instead of "never measured" -- so for these
+    // paddles, skip the polygon entirely rather than defaulting missing axes to 0.
+    if(p.kewcor==null){
+      var naTxt='<text class="radar-unavail" x="'+RCX+'" y="'+(RCY-5)+'" text-anchor="middle"><tspan x="'+RCX+'" dy="0">Not tested on</tspan><tspan x="'+RCX+'" dy="15">the cannon</tspan></text>';
+      return '<svg class="pcl-radar-svg pcl-radar-svg--disabled" viewBox="0 0 '+RW+' '+RH+'" preserveAspectRatio="xMidYMid meet">'
+        + lines + labels + naTxt + '</svg>';
+    }
+    var target=[];
+    AX.forEach(function(ax){
+      var v=Math.max(0,Math.min(100, p[ax.key]==null?0:p[ax.key]));
+      var tp=pt(ax.ang, RR*v/100); target.push(tp[0].toFixed(1)+','+tp[1].toFixed(1));
+    });
     // polygon starts collapsed at center; data-pts holds the targets to animate to
     var startPts=AX.map(function(){return RCX+','+RCY;}).join(' ');
-    return '<svg viewBox="0 0 '+RW+' '+RH+'" preserveAspectRatio="xMidYMid meet">'
+    return '<svg class="pcl-radar-svg" viewBox="0 0 '+RW+' '+RH+'" preserveAspectRatio="xMidYMid meet">'
       + lines
       + '<polygon class="radar-fill" points="'+startPts+'" data-pts="'+target.join(' ')+'" data-cx="'+RCX+'" data-cy="'+RCY+'"></polygon>'
       + labels
@@ -1111,7 +1125,11 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     return AX.slice().sort(function(a,b){return ['Power','Spin','Pop','Swing Weight','Twist Weight','Balance Point'].indexOf(a.label)-['Power','Spin','Pop','Swing Weight','Twist Weight','Balance Point'].indexOf(b.label);})
       .map(function(ax){var v=p[ax.key];return ax.label+' <b>'+(v==null?'—':Math.round(v))+'</b>';}).join(' · ');
   }
-  function radarBlock(p){ return '<div class="pcl-cap">Z-score scaled values</div><div class="pcl-radar">'+radarSVG(p)+'</div><div class="pcl-legend">'+radarLegend(p)+'</div>'; }
+  function radarBlock(p){
+    var disabled = p.kewcor==null;
+    var legend = disabled ? 'Not tested on the cannon' : radarLegend(p);
+    return '<div class="pcl-cap">Z-score scaled values</div><div class="pcl-radar'+(disabled?' pcl-radar--disabled':'')+'">'+radarSVG(p)+'</div><div class="pcl-legend">'+legend+'</div>';
+  }
   function bulletBlock(p){ return '<div class="pcl-cap">Z-score raw values</div><div class="pcl-bullet">'+bulletSVG(p)+'</div>'; }
 
   // ---- KewCOR Paddle Surface Map (centerline curve) ----
