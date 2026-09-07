@@ -845,9 +845,13 @@ function durTierBadge(p){
   const label = m ? ('Spin T'+m[0]) : t;
   return `<span class="badge badge-tier ${cls}" title="Spin Durability Tier">${label}<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openDurInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>`;
 }
-function openDurInfo(){ document.getElementById('durInfoOverlay').classList.add('open'); }
+// Reparent a full-viewport overlay to be a direct child of <body> the first time it opens.
+// See the matching comment in openModal() — same Squarespace stacking issue applies to
+// every fixed, full-viewport overlay on this page, not just the paddle detail modal.
+function toBodyChild(el){ if(el && el.parentElement!==document.body) document.body.appendChild(el); }
+function openDurInfo(){ const el=document.getElementById('durInfoOverlay'); toBodyChild(el); el.classList.add('open'); }
 function closeDurInfo(){ document.getElementById('durInfoOverlay').classList.remove('open'); }
-function openFeelInfo(){ document.getElementById('feelInfoOverlay').classList.add('open'); }
+function openFeelInfo(){ const el=document.getElementById('feelInfoOverlay'); toBodyChild(el); el.classList.add('open'); }
 function closeFeelInfo(){ document.getElementById('feelInfoOverlay').classList.remove('open'); }
 
 // Paddle Feel Map quadrant (populated from the feel-map sheet at load).
@@ -1396,6 +1400,18 @@ function openModal(idx){
     </div>
   `;
   const modalOverlayEl = document.getElementById('modalOverlay');
+  // Re-parent to a direct child of <body> the first time the modal opens. On the live
+  // Squarespace page this app shares the page with other Code Blocks (e.g. the two
+  // "jk-intro-wrap" tip boxes near the top). Those blocks sit in their own nested
+  // Squarespace/Fluid-Engine wrapper divs which, combined with lockBodyScroll() below
+  // setting body.style.position='fixed', can end up painting above this modal even
+  // though the modal is position:fixed with a much higher z-index. Moving the modal
+  // to be a direct child of <body> removes every intervening ancestor that could ever
+  // create a competing stacking context, so it always renders on top. Safe to do only
+  // once: the same node (with its listeners) is just moved, never cloned.
+  if(modalOverlayEl.parentElement!==document.body){
+    document.body.appendChild(modalOverlayEl);
+  }
   modalOverlayEl.classList.add('open');
   modalOverlayEl.scrollTop = 0;
   lockBodyScroll();
@@ -1819,7 +1835,7 @@ applyPaddleDeepLink();
   }
   function refreshPzLayout(){ syncViewport(); updatePzMaxSize(); updateBaseOffset(); }
   function settleAtBase(){ refreshPzLayout(); if(scale<=1){ tx=baseTx; ty=baseTy; } apply(); }
-  window.openPaddleZoom=function(src){ if(!src)return; img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
+  window.openPaddleZoom=function(src){ if(!src)return; if(ov.parentElement!==document.body) document.body.appendChild(ov); img.src=src; ov.classList.add('open'); if(window.lockBodyScroll) window.lockBodyScroll(); else document.body.style.overflow='hidden'; refreshPzLayout(); scale=1; tx=baseTx; ty=baseTy; apply();
     // iOS Safari (and the iframe embed) can report metrics that haven't settled in the same
     // tick the overlay becomes visible, so re-measure a few times just after opening — this
     // is what previously required a manual drag to "fix"; now it settles on its own.
