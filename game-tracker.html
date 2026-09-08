@@ -363,7 +363,7 @@ function initPaddleData(){
       setDataStatus(PADDLE_OPTIONS.length + ' paddles (cached ' + (ageMin<1?'just now':ageMin+'m ago') + ')', false);
     }
   }catch(e){}
-  loadPapaParse(function(){ fetchPaddles(WORKER_BASE+'/csv/paddles', CSV_URL); });
+  loadPapaParse(function(){ fetchPaddles(WORKER_BASE+'/csv/paddles', CSV_URL+'&cb='+Date.now()); });
 }
 
 // ---------- combobox ----------
