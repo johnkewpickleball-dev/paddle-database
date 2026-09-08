@@ -109,6 +109,7 @@
 <header>
   <h1>KewCOR</h1>
   <div class="sub" id="hdrsub">prototype — the arithmetic is checked against the workbook</div>
+  <div class="sub" id="hdrbuild"></div>
   <div class="modes" id="modes"></div>
 </header>
 
@@ -120,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js"></script>
+<script src="kewcor-core.js?v=2"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -474,6 +475,11 @@ function forgetRegistry(){
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
 const WANT_BUILD = 10;
+/* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
+   change the other. If the loaded core reports a different BUILD, the browser served a
+   cached file and the header says so in plain words. */
+const CORE_V = 2;
+let EP_BUILD = null;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -562,6 +568,7 @@ function pingEndpoint(){
       notes.push(j.curvesSheetId
         ? 'Curves feed for the website: ' + j.curvesSheetId
         : 'No Curves feed yet — it is created the first time you archive a paddle.');
+    EP_BUILD = v;
     WR={busy:'', tone: (ok && j.secretChanged!==false && j.canWriteDrive!==false)
                        ? 'ok' : 'warn',
         msg:'Endpoint answered — build '+v+'.',
@@ -915,7 +922,7 @@ function sessionRowValues(){
     S.date, S.ballId, S.anchor, numOrBlank(S.temp),
     pre.n||'',  pre.n?n6(pre.mean):'',  pre.n?n6(pre.se):'',
     post.n||'', post.n?n6(post.mean):'', post.n?n6(post.se):'',
-    n6(K.pooledD(A().pRef, pre, post.n?post:null)),
+    n6(K.pooledD(A().pRef, pre, post.n?post:null, mid.n?mid:null)),
     Math.round(tl.ageAfter), fired,
     mid.n||'',  mid.n?n6(mid.mean):'',  mid.n?n6(mid.se):'',
     mid.n?Math.round(tl.ageMid):'',
@@ -1423,12 +1430,15 @@ function scControl(which){
   if(which==='POST'){
     const pre=ctrlBlock(S.pre);
     if(pre.n && sum.n){
-      const dm=K.driftMode({pre,post:sum});
+      const dm=K.driftMode({pre,post:sum,ballAge:timeline().agePre});
       verdict=`<div class="banner ${dm.ramp?'b-warn':'b-ok'}"><b>${dm.mode}</b> —
         P_post − P_pre = ${f(dm.diff)} ± ${f(dm.sed)}, t = ${f(dm.t,2)}.
         ${dm.ramp?'The ball moved. Each paddle, and each location block, is corrected at its own point on the wear curve.'
+                 :dm.flag?''
                  :'The ball did not move enough to distinguish the paddles; one correction is used for the whole session.'}
-        ${ib_('drift')}</div>`;
+        ${ib_('drift')}</div>
+        ${dm.flag?`<div class="banner b-warn"><b>Look at this session before you trust it.</b>
+          ${esc(dm.flag)}</div>`:''}`;
     }
   }
   return `<h2>${which} ball correction</h2>
@@ -1464,8 +1474,8 @@ function paddleResults(idx){
   const pre=ctrlBlock(S.pre); if(!pre.n) return null;
   const post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
   const tl=timeline();
-  const dm=K.driftMode({pre,post:post.n?post:null});
-  const pooled=K.pooledD(A().pRef,pre,post.n?post:null);
+  const dm=K.driftMode({pre,post:post.n?post:null,ballAge:tl.agePre});
+  const pooled=K.pooledD(A().pRef,pre,post.n?post:null,mid.n?mid:null);
   const locs=locsFor(p), groups=groupsFor(p), miss=missedFor(p);
   if(!groups.some(g=>g.length)) return null;
   const bD=K.blockCorrections({slot:idx, tl,
@@ -2021,6 +2031,15 @@ function paint(){
     .map(([k,t])=>`<button class="${S.mode===k?'on':''}" onclick="setMode('${k}')">${t}</button>`)
     .join('');
   document.querySelector('.wrap').classList.toggle('solo', S.mode!=='session');
+  /* Which code is this? The runner is used on a machine at the cannon that cannot be
+     inspected from the authoring side, so the page states its own arithmetic build and
+     the endpoint build it is talking to, side by side, before a shot is fired. Page
+     build comes from kewcor-core.js, which the pages load as ?v=<BUILD>; if these two
+     ever disagree the browser is holding a cached core. */
+  hdrbuild.textContent = 'page build ' + (K.BUILD==null?'unknown - CACHED CORE':K.BUILD)
+    + ' · core ?v=' + CORE_V + (K.BUILD!==CORE_V ? '  MISMATCH - hard reload this page' : '')
+    + (EP_BUILD ? ' · endpoint build ' + EP_BUILD : '');
+  hdrbuild.style.color = (K.BUILD!==CORE_V) ? 'var(--warn, #a15c00)' : '';
   if(S.mode==='registry'){
     rail.innerHTML='';
     main.innerHTML = fileBanner() + scRegistry();

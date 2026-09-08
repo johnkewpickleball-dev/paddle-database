@@ -14,6 +14,21 @@
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
+  /* BUILD — bump on EVERY change to the arithmetic in this file.
+   *
+   * The runner is used on a separate machine at the cannon, over the published
+   * page, and that machine cannot be inspected from the authoring side. The
+   * session header prints this number beside the endpoint build so the operator
+   * can confirm which arithmetic is loaded before firing a shot. The pages also
+   * request this file as kewcor-core.js?v=<BUILD>, so a bump busts the cache.
+   * Leave them out of step and a cached core against a fresh page computes with
+   * old math while looking current, which is the worst failure available here.
+   *
+   *   1  2026-08-29  as shipped
+   *   2  2026-09-08  ball-age gate on RAMP; pooledD prefers MID and POST over PRE
+   */
+  const BUILD = 2;
+
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
     fixtureQ: 10.008,       // Setup C12 — MEASURED pivot-to-aim-point, a fixture
@@ -49,6 +64,41 @@
     controlSpot: 6.0,
     breakInGate: 40,        // registry Settings B5 — has the ball had its wear phase
     plateau: 190,           // past here the ramp and a straight line agree
+    /* RAMP CEILING — above this effective age AUTO refuses to ramp. 2026-09-08.
+     *
+     * Three different age thresholds live in this file and they are NOT interchangeable:
+     *   breakInGate 40   has the ball had its wear phase at all
+     *   rampMaxAge  80   above here, pooling MID and POST beats ramping
+     *   plateau    190   above here the MID block buys nothing
+     *
+     * Why 80. Simulation of a four-paddle session, 45 impacts each, anchor se 0.008,
+     * worst-paddle RMS error in the control value. Pooling MID and POST overtakes a
+     * three-anchor ramp at about age 82 with a clean PRE, and at about age 38 once PRE
+     * carries the measured +0.020 of overnight recovery. 80 is the conservative end, the
+     * value that keeps RAMP alive longest.
+     *
+     * On a plateaued ball with PRE inflated 0.020, worst-paddle RMS:
+     *     RAMP, three anchors        0.0118
+     *     RAMP, MID to POST only     0.0459   <- never do this. Paddle 1 falls outside
+     *                                            the segment and backward extrapolation
+     *                                            on an exponential amplifies noise ~6x.
+     *     POOLED, all three          0.0081
+     *     POOLED, MID and POST only  0.0057   <- the target, and what pooledD now does
+     *
+     * THIS DOES NOT TURN RAMP OFF. At wearFactor 0.44 a wear-phased ball enters at
+     * ~44 effective, on the steepest part of the curve, so a new ball's first session
+     * still ramps and should. The gate bites on the far side of the curve, which is
+     * where it went wrong. Between 44 and 80 the right answer depends on how large the
+     * overnight recovery on PRE really is; 80 keeps the current behavior there until
+     * the OVERNIGHT CHANGE log settles it.
+     *
+     * What went wrong without it: on 2026-08-25 the control moved 0.4321 to 0.3851,
+     * t = -4.32, so AUTO chose RAMP. LT-89 sat at ~177 effective (133 crossover + 100
+     * wear shots x 0.44), where the curve leaves about 0.0015 of decay across a whole
+     * session, roughly thirty times smaller than the move being fitted. The ramp spread
+     * a non-wear move across the session and handed four paddles D from -0.00823 to
+     * +0.02279, a spread of 0.031 that is pure firing order. */
+    rampMaxAge: 80,
     retire: 600
   };
   C.ballKg = C.ballOz * 0.0283495;
@@ -172,25 +222,88 @@
   }
 
   // ── ramp mode ─────────────────────────────────────────────────────────────
-  // AUTO ramps only when PRE and POST differ by more than 2 standard errors.
-  // Below that the difference is noise, and ramping on noise makes every paddle
-  // worse rather than better.
-  function driftMode({ pre, post, forced }) {
+  // AUTO ramps only when the ball is young enough for the move to BE wear, and
+  // then only when PRE and POST differ by more than 2 standard errors.
+  //
+  // The t-test alone is not enough and shipping it alone was the bug. It asks
+  // whether the control moved more than noise. It does not ask whether the move
+  // was WEAR, and only wear licenses a ramp along the wear curve. Past
+  // C.rampMaxAge the curve is flat, so a significant move is evidence of a
+  // problem to investigate, not a gradient to apply. See the C.rampMaxAge note.
+  function driftMode({ pre, post, forced, ballAge }) {
     if (forced === 'RAMP') return { mode: 'RAMP (forced)', ramp: true, t: null };
     if (forced === 'POOLED') return { mode: 'POOLED (forced)', ramp: false, t: null };
     if (!post || !post.n) return { mode: 'POOLED (no POST block yet)', ramp: false, t: null };
+
     const diff = post.mean - pre.mean;
     const sed = Math.sqrt(pre.se ** 2 + post.se ** 2);
     const t = diff / sed;
+    const age = Number(ballAge);
+
+    if (Number.isFinite(age) && age >= C.rampMaxAge) {
+      const out = { mode: 'POOLED (ball is past the curve at ' + Math.round(age) + ' impacts)',
+                    ramp: false, t, diff, sed, ballAge: age };
+      // A control that moves hard on a ball with no decay left is how a cracked
+      // ball, a fixture shift or a bad control block announces itself. Pooling
+      // silently would hide exactly the session worth stopping to look at.
+      if (Math.abs(t) > 2) {
+        out.flag = 'The control moved ' + diff.toFixed(4) + ' (t = ' + t.toFixed(2)
+                 + ') on a ball at ' + Math.round(age) + ' effective impacts, where the wear '
+                 + 'curve leaves almost nothing to decay. That is not wear. Inspect the seam, '
+                 + 'the fixture and the control blocks before trusting this session.';
+      }
+      return out;
+    }
+
     return Math.abs(t) > 2
-      ? { mode: 'RAMP (drift is real)', ramp: true, t, diff, sed }
-      : { mode: 'POOLED (drift is noise)', ramp: false, t, diff, sed };
+      ? { mode: 'RAMP (drift is real)', ramp: true, t, diff, sed, ballAge: age }
+      : { mode: 'POOLED (drift is noise)', ramp: false, t, diff, sed, ballAge: age };
   }
 
-  function pooledD(pRef, pre, post) {
-    const n1 = pre.n, n2 = post && post.n ? post.n : 0;
-    const p = n2 ? (pre.mean * n1 + post.mean * n2) / (n1 + n2) : pre.mean;
-    return D(pRef, p);
+  /* POOLED D — MID and POST set it. PRE does not, unless it is all there is.
+   *
+   * PRE is the first block of the day on a rested ball, and overnight recovery
+   * puts it above the settled level. Across the five sessions of 2026-08-25 to
+   * 09-01 it sat above the next control block by a mean of +0.0202 (sd 0.0214,
+   * t = 2.11 on 4 df). Suggestive rather than settled at n = 5, but the pooling
+   * rule does not depend on the size: a later, settled block is the better
+   * estimate of the ball whether or not the recovery figure firms up.
+   *
+   * This used to pool PRE and POST by n, and MID was never pooled in at all even
+   * when it had been shot. With no POST it fell back to PRE alone, the single most
+   * contaminated block in the session. Both POOLED re-test reports of 2026-09-01
+   * did exactly that: Zen S+ had MID n=8 at 0.3958 and no POST, so D came from PRE
+   * at 0.4020 and shipped 0.4534. Pooling PRE and MID gives 0.4561; MID alone gives
+   * 0.4588. The fallback moved the published number by 0.005.
+   *
+   * Keep shooting PRE. It is how the overnight change gets measured and how a bad
+   * ball gets caught. It just should not set D when a settled block exists.
+   *
+   * BACKWARD COMPATIBILITY. Called as pooledD(pRef, pre, post) with no `mid` it
+   * behaves exactly as it always did, pooling PRE and POST by n. That is what the
+   * workbook does and what the fixtures assert, so the oracle still holds. The new
+   * rule engages only when a `mid` is passed, which is what the runner now does.
+   * Returns a NUMBER, as every caller expects. Use pooledSource() for provenance.
+   */
+  function pooledD(pRef, pre, post, mid) {
+    if (mid === undefined) {                       // legacy path, matches the workbook
+      const n1 = pre.n, n2 = post && post.n ? post.n : 0;
+      const p0 = n2 ? (pre.mean * n1 + post.mean * n2) / (n1 + n2) : pre.mean;
+      return D(pRef, p0);
+    }
+    return D(pRef, pooledSource(pre, post, mid).pCtrl);
+  }
+
+  // Which control blocks set D, and what they averaged to. Report-facing.
+  function pooledSource(pre, post, mid) {
+    const parts = [];
+    if (mid && mid.n) parts.push({ name: 'MID', n: mid.n, mean: mid.mean });
+    if (post && post.n) parts.push({ name: 'POST', n: post.n, mean: post.mean });
+    const preOnly = parts.length === 0;
+    if (preOnly) parts.push({ name: 'PRE', n: pre.n, mean: pre.mean });
+    const n = parts.reduce((a, b) => a + b.n, 0);
+    return { pCtrl: parts.reduce((a, b) => a + b.mean * b.n, 0) / n,
+             from: parts.map(x => x.name).join('+'), n, preOnly };
   }
 
   // ── where each paddle and each location block sits in the ball's life ─────
@@ -419,9 +532,10 @@
     return 'IN SERVICE';
   }
 
-  return { C, ANCHORS, effMass, pbcor, correctTo50, qForLocation, controlQ, strikeLocation,
+  return { BUILD, C, ANCHORS, effMass, pbcor, correctTo50, qForLocation, controlQ, strikeLocation,
            classify, summarize, median, MISHIT_FLOOR,
-           effectiveAge, D, curveFraction, driftMode, pooledD, ballTimeline, segmentFor,
+           effectiveAge, D, curveFraction, driftMode, pooledD, pooledSource,
+           ballTimeline, segmentFor,
            blockCorrections, locationResults, faceSummary, midAdvice, ballStage,
            BANDS, BAND_LO, BAND_HI, bandPosition, reportAxis, encodeReport, decodeReport };
 }));

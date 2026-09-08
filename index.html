@@ -849,10 +849,10 @@ function durTierBadge(p){
 // See the matching comment in openModal() — same Squarespace stacking issue applies to
 // every fixed, full-viewport overlay on this page, not just the paddle detail modal.
 function toBodyChild(el){ if(el && el.parentElement!==document.body) document.body.appendChild(el); }
-function openDurInfo(){ const el=document.getElementById('durInfoOverlay'); toBodyChild(el); el.classList.add('open'); }
-function closeDurInfo(){ document.getElementById('durInfoOverlay').classList.remove('open'); }
-function openFeelInfo(){ const el=document.getElementById('feelInfoOverlay'); toBodyChild(el); el.classList.add('open'); }
-function closeFeelInfo(){ document.getElementById('feelInfoOverlay').classList.remove('open'); }
+function openDurInfo(){ const el=document.getElementById('durInfoOverlay'); toBodyChild(el); el.classList.add('open'); if(window.jkOverlayOpen) window.jkOverlayOpen(); }
+function closeDurInfo(){ document.getElementById('durInfoOverlay').classList.remove('open'); if(window.jkOverlayClose) window.jkOverlayClose(); }
+function openFeelInfo(){ const el=document.getElementById('feelInfoOverlay'); toBodyChild(el); el.classList.add('open'); if(window.jkOverlayOpen) window.jkOverlayOpen(); }
+function closeFeelInfo(){ document.getElementById('feelInfoOverlay').classList.remove('open'); if(window.jkOverlayClose) window.jkOverlayClose(); }
 
 // Paddle Feel Map quadrant (populated from the feel-map sheet at load).
 let FEEL_MAP = {}; // "company||paddle"(lower) -> {x,y}
@@ -1263,6 +1263,19 @@ function render(){
 // already-open modal — closing the zoom must not prematurely unlock scroll for the modal
 // that's still open underneath it.
 let _scrollLockY = 0, _scrollLockCount = 0;
+// On the live Squarespace page, this tool shares the page with a separate Code Block
+// holding the SEO "tip box" intro copy near the top (the two frosted-glass cards,
+// kept in the parent page on purpose for SEO). Re-parenting our own overlays to
+// <body> wasn't reliably enough to keep them on top of that block, so instead every
+// full-screen overlay here (paddle modal, photo zoom, Spin Durability / Feel Quadrant
+// info popovers) flags "something is open" on <body>. The tip-box Code Block (edited
+// directly in the Squarespace page editor, not this repo) has matching CSS that hides
+// on this class: body.jk-modal-open .jk-intro-wrap. Ref-counted since these overlays
+// can nest (e.g. a durability-tier info popover opened from inside the paddle modal),
+// so the class must only clear once every one of them has closed.
+let _jkOverlayCount = 0;
+function jkOverlayOpen(){ _jkOverlayCount++; document.body.classList.add('jk-modal-open'); }
+function jkOverlayClose(){ _jkOverlayCount=Math.max(0,_jkOverlayCount-1); if(_jkOverlayCount===0) document.body.classList.remove('jk-modal-open'); }
 function lockBodyScroll(){
   if(_scrollLockCount===0){
     _scrollLockY = window.scrollY || window.pageYOffset || 0;
@@ -1273,6 +1286,7 @@ function lockBodyScroll(){
     document.body.style.width='100%';
   }
   _scrollLockCount++;
+  jkOverlayOpen();
 }
 function unlockBodyScroll(){
   _scrollLockCount=Math.max(0,_scrollLockCount-1);
@@ -1284,6 +1298,7 @@ function unlockBodyScroll(){
     document.body.style.width='';
     window.scrollTo(0,_scrollLockY);
   }
+  jkOverlayClose();
 }
 window.lockBodyScroll=lockBodyScroll;
 window.unlockBodyScroll=unlockBodyScroll;
