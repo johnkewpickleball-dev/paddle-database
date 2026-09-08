@@ -10,3 +10,6 @@ images/ronbus-ripple-v2-r5.png
 
 # Dead git lock files moved aside for deletion. Never belongs in the repo.
 _to_delete_git_locks/
+
+# macOS Finder metadata. Regenerates locally on every Mac; never belongs in the repo.
+.DS_Store
