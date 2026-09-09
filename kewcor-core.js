@@ -26,8 +26,9 @@
    *
    *   1  2026-08-29  as shipped
    *   2  2026-09-08  ball-age gate on RAMP; pooledD prefers MID and POST over PRE
+   *   3  2026-09-09  PRE is 16 shots, first 6 discarded as overnight warm-up
    */
-  const BUILD = 2;
+  const BUILD = 3;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
@@ -99,6 +100,41 @@
      * a non-wear move across the session and handed four paddles D from -0.00823 to
      * +0.02279, a spread of 0.031 that is pure firing order. */
     rampMaxAge: 80,
+
+    /* THE PRE BLOCK IS 16 SHOTS AND THE FIRST 6 ARE THROWN AWAY. 2026-09-09.
+     *
+     * A ball that has rested overnight reads high. Measured across four saved runner
+     * drafts, 35 gated PRE shots on Anchor 2: PRE sits +0.028 above that session's settled
+     * level, and the SHAPE IS A STEP, not a decay. Elevated for about six impacts, then on
+     * its curve. A step at shot 7 fits at RSS 0.0199 against 0.0275 flat and 0.0220 for the
+     * best exponential, and the exponential fit degenerates toward a straight line, which is
+     * the signature of the wrong functional form. Do not model this as a relaxation.
+     * Discarding the first six leaves a residual bias of +0.0012 (se 0.0051, t = 0.24).
+     *
+     * SIX IS A LOWER BOUND. The baseline it was measured against is the MID and POST mean,
+     * which sits later in the day and is therefore below the true ball state at impact 10.
+     * That biases the measured tail downward, so if anything the boundary is later than 6.
+     *
+     * Why 16 rather than discarding 6 from the old 10. Four usable shots carry se near
+     * 0.012, worse than the 0.008 the block has today, so discarding alone trades one error
+     * for another. 16 clears the recovery AND keeps a full ten-shot measurement. It costs
+     * 6 impacts a session, against the 20 that widening PRE to 30 would have cost.
+     *
+     * THE SPLIT IS POSITIONAL AND HAPPENS BEFORE THE VELOCITY GATE. Warm-up is about how
+     * many times the ball has been struck, not about which strikes the gate liked. In that
+     * four-session set six of the seven PRE gate rejects landed on shots 3 to 5, so gating
+     * first would move the boundary around from session to session.
+     *
+     * This is also why a sorted paste is worse here than anywhere else on the page. Sorted,
+     * the split discards the six SLOWEST shots instead of the six EARLIEST, which is not a
+     * warm-up correction at all.
+     *
+     * Alternatives rejected: lowering rampMaxAge toward 40, which turns RAMP off almost
+     * always since a wear-phased ball enters at ~44; and subtracting the measured offset
+     * from PRE, which bakes a four-session constant into the arithmetic when the offset
+     * ranged from +0.048 to -0.007 across those sessions. */
+    preWarmup: 6,
+    preUsed: 10,
     retire: 600
   };
   C.ballKg = C.ballOz * 0.0283495;
@@ -193,6 +229,18 @@
     const sd = n > 1 ? Math.sqrt(used.reduce((a, r) => a + (r.p50 - mean) ** 2, 0) / (n - 1)) : null;
     return { rows, n, fired, mean, sd, se: sd == null ? null : sd / Math.sqrt(n),
              meanVin: used.reduce((a, r) => a + r.vin, 0) / n };
+  }
+
+  /* Split a PRE paste into the warm-up shots and the shots that make the measurement.
+     Positional, before any gate: see the C.preWarmup note. `short` is how many shots are
+     still missing from a full block, so a caller can say so rather than silently averaging
+     three. Passing a warmup of 0 gives back the whole paste, which is what a pre-BUILD-3
+     session and every existing fixture need. */
+  function splitPre(shots, warmup) {
+    const all = shots || [];
+    const w = warmup == null ? C.preWarmup : Math.max(0, warmup);
+    return { warmup: all.slice(0, w), block: all.slice(w),
+             short: Math.max(0, w + C.preUsed - all.length) };
   }
 
   // ── the ball ──────────────────────────────────────────────────────────────
@@ -309,9 +357,16 @@
   // ── where each paddle and each location block sits in the ball's life ─────
   // Ages are measured in impacts. A block of shots characterizes the ball at its
   // own MIDPOINT, never at its start or end.
-  function ballTimeline({ prior, wearShots, preFired, midFired, postFired, paddleShots, midAfterPaddle }) {
+  function ballTimeline({ prior, wearShots, preFired, midFired, postFired, paddleShots,
+                          midAfterPaddle, preWarmupFired }) {
     const base = effectiveAge(prior, wearShots);
-    const agePre = base + preFired / 2;
+    /* The block characterizes the ball at the midpoint of the shots that are USED. Warm-up
+       shots age the ball but are not part of the measurement, so they push that midpoint
+       later rather than averaging into it. preFired stays the TOTAL, because every one of
+       those impacts happened. Omitted or zero reproduces the pre-BUILD-3 timeline exactly,
+       which is what keeps the workbook oracle and the existing fixtures valid. */
+    const warm = preWarmupFired > 0 ? Math.min(preWarmupFired, preFired) : 0;
+    const agePre = base + warm + (preFired - warm) / 2;
     const before = [];
     let run = base + preFired;
     paddleShots.forEach(n => { before.push(run); run += n; });
@@ -533,7 +588,7 @@
   }
 
   return { BUILD, C, ANCHORS, effMass, pbcor, correctTo50, qForLocation, controlQ, strikeLocation,
-           classify, summarize, median, MISHIT_FLOOR,
+           classify, summarize, median, MISHIT_FLOOR, splitPre,
            effectiveAge, D, curveFraction, driftMode, pooledD, pooledSource,
            ballTimeline, segmentFor,
            blockCorrections, locationResults, faceSummary, midAdvice, ballStage,

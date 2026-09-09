@@ -121,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js?v=2"></script>
+<script src="kewcor-core.js?v=3"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -133,9 +133,11 @@ const NOTES = {
   prior: ["Prior impacts and the @70 box",
     "Two boxes, on purpose. On the left, impacts this ball has taken at 50 mph — the running total from the registry. On the right, shots from an accelerated wear phase at 70 mph.\n\nA BALL'S LIFE HAS TWO REGIMES AND THE BOUNDARY IS SHARP. Before it enters the KewCOR queue it takes exactly 100 shots at 70 mph against a paddle clamped at 30 degrees — the accelerated wear protocol, which is angled so it can throw the spin-off that durability testing records. From the moment it enters the KewCOR queue every impact is 50 mph against a paddle clamped SQUARE, at 90 degrees, and counts one for one.\n\nSo a 70 mph wear shot counts as 0.44 of a 50 mph impact — LESS, not more. Only the square-on component of the closing speed compresses the core, and at 30 degrees that is 70 x sin(30) = 35 mph, below the 50 mph of a KewCOR shot.\n\nA standard 100-shot wear phase therefore leaves a ball around 44 effective impacts old: still on the steep part of the curve. Because the protocol never varies, that 44 is the same for every ball ever run — a constant offset, not something that can rank one ball against another."],
   control: ["The weekly control block",
-    "Ten shots at 6 in from the tip, in the same session as the control blocks, so ball, temperature and cannon all cancel in the difference.\n\nIt was going to be the mirror image of the crosshair across the centerline — same distance from the pivot, identical in every way except wear. The rig aims along the paddle's long axis only, so that point cannot be reached. 6 in is 1.9 in clear of the 4.07 crosshair, so the worn zone can never reach it.\n\nThe price is that it is a genuinely different location: different pivot-to-impact distance, different effective mass, different intrinsic PBCoR. So the raw gap is mostly face map, not wear. Only the CHANGE in the gap across readings measures anything, and only while the spot never moves.\n\nWhy weekly and not every session: the control has to stay less worn than the crosshair. At one session in three the wear ratio is 7:1 and the measured gap under-reads by about 14%; shot every session it is 2:1 and under-reads by half."],
+    "Ten shots at 6 in from the tip, in the same session as the control blocks, so ball, temperature and cannon all cancel in the difference.\n\nIt was going to be the mirror image of the crosshair across the centerline — same distance from the pivot, identical in every way except wear. The rig aims along the paddle's long axis only, so that point cannot be reached. 6 in is 1.9 in clear of the 4.07 crosshair, so the worn zone can never reach it.\n\nThe price is that it is a genuinely different location: different pivot-to-impact distance, different effective mass, different intrinsic PBCoR. So the raw gap is mostly face map, not wear. Only the CHANGE in the gap across readings measures anything, and only while the spot never moves.\n\nSHOOT IT AFTER THE PRE BLOCK, NEVER BEFORE. A rested ball reads about 0.028 high for its first six impacts. Shot first, the control spot carries that recovery and the crosshair does not, and the gap between them moves for a reason that has nothing to do with the paddle. That is overnight ball recovery wearing a disguise, and the disguise is the anchor going soft — the one thing this reading exists to detect.\n\nWhy weekly and not every session: the control has to stay less worn than the crosshair. At one session in three the wear ratio is 7:1 and the measured gap under-reads by about 14%; shot every session it is 2:1 and under-reads by half."],
   deflection: ["Deflection — the anchor monitor",
     "Takes a minute, costs no shots, and is the tripwire for the anchor going soft.\n\nPress the gauge at the SAME spot every time, and as near the crosshair as the rig allows. The anchor's wear is uniquely concentrated — twenty-odd shots a session at one point, where a test paddle spreads them over four — so a reading taken at the geometric center can be blind to exactly the damage you are watching for.\n\nAcross 211 paddles, 1 lb of deflection is worth about 0.0012 of KewCOR, so the 0.005 that matters is roughly 4 lbs. That conversion is cross-sectional and provisional: it says how deflection and KewCOR vary BETWEEN designs, not how they move together within one paddle over time."],
+  preWarmup: ["Why the PRE block is 16 shots",
+    "SIX WARM-UP SHOTS, THEN TEN THAT COUNT.\n\nA ball that has rested overnight comes back hot. Measured across four saved sessions, 35 gated PRE shots on Anchor 2, the first block of the day sits about 0.028 above where that same ball settles later in the session.\n\nThe shape matters: it is a STEP, not a fade. The ball reads high for roughly six impacts and is then on its curve. A step at shot 7 fits the data better than any exponential, and the exponential fit degenerates into a straight line, which is how you know it is the wrong shape. After discarding six, what is left sits +0.0012 from the settled level with a standard error of 0.0051 — indistinguishable from zero.\n\nWHY NOT JUST DISCARD SIX OF THE OLD TEN. That leaves four shots, whose standard error is about 0.012 against the 0.008 a full block gives. You would trade a bias for noise. Sixteen clears the recovery and still measures with ten.\n\nWHY THE ORDER MATTERS MORE HERE THAN ANYWHERE. The split is by POSITION, taken before the velocity gate, because warm-up is about how many times the ball has been hit and not about which hits the gate liked. Paste a sorted PRE block and the page discards the six SLOWEST shots instead of the six EARLIEST, which is not a warm-up correction at all — and it will look perfectly reasonable.\n\nThe warm-up shots are kept, saved with the session, and counted against the ball's age. They just never touch the correction.\n\nCost: six impacts a session. Widening PRE to thirty would have cost twenty."],
   paste: ["Pasting gate data",
     "DO NOT SORT IT. The rows must stay in the order you fired them.\n\nEvery shot is placed in the ball's life by its position in the block, and the correction each location gets is taken at the moment that block was actually fired. Sorting scrambles that, and the damage is silent — the numbers still look reasonable, they are just wrong.\n\nDo not remove the bad shots either. The ball felt every one of them and the wear accounting needs the real count.\n\nThree columns: Inbound, Outbound, COR. Tabs, commas or spaces all work."],
   window: ["Why ±7 mph is safe",
@@ -368,7 +370,7 @@ function resetAll(){
 
 const STEPS = [
   {t:'Session',  s:'ball, anchor, paddles'},
-  {t:'PRE',      s:'10 control shots'},
+  {t:'PRE',      s:'16 control shots'},
   {t:'Paddle 1', s:'by location'},
   {t:'Paddle 2', s:'by location'},
   {t:'MID',      s:'when asked'},
@@ -478,7 +480,7 @@ const WANT_BUILD = 10;
 /* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
    change the other. If the loaded core reports a different BUILD, the browser served a
    cached file and the header says so in plain words. */
-const CORE_V = 2;
+const CORE_V = 3;
 let EP_BUILD = null;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
@@ -815,6 +817,19 @@ const A = () => K.ANCHORS[S.anchor];
    be wrong, which is worse. */
 const ctrlBlock = (txt, qIn) => K.summarize(parseShots(txt), A().swingWt,
                                             qIn == null ? K.controlQ() : qIn);
+/* THE PRE BLOCK IS 16 SHOTS AND ONLY THE LAST 10 MEASURE ANYTHING. The first six clear
+   the ball's overnight recovery; see K.C.preWarmup in the core for the evidence. Three
+   views of the same paste, because three different questions get asked of it:
+     preAll   every shot, which is what ages the ball
+     preCtrl  shots 7 to 16, which is P_pre everywhere it is used
+     preWarm  shots 1 to 6, shown on the page and saved, never averaged
+   Anything that sets a correction must use preCtrl. Anything that counts impacts must
+   use preAll. Getting that backwards is silent, so there is a test for each. */
+const preSplit = () => K.splitPre(parseShots(S.pre));
+const preAll   = () => K.summarize(parseShots(S.pre),  A().swingWt, K.controlQ());
+const preCtrl  = () => K.summarize(preSplit().block,   A().swingWt, K.controlQ());
+const preWarm  = () => K.summarize(preSplit().warmup,  A().swingWt, K.controlQ());
+const PRE_NEED = () => K.C.preWarmup + K.C.preUsed;
 const controlSpotQ = () => K.qForLocation(A().length, +S.controlSpot || K.C.controlSpot);
 const controlBlock = () => ctrlBlock(S.mirror, controlSpotQ());
 const effAge = () => K.effectiveAge(parseFloat(S.prior)||0, parseFloat(S.wear)||0);
@@ -838,9 +853,10 @@ function paddleShotCounts(){
   });
 }
 function timeline(){
-  const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
+  const pre=preAll(), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
   return K.ballTimeline({prior:parseFloat(S.prior)||0, wearShots:parseFloat(S.wear)||0,
     preFired:pre.fired, midFired:mid.fired, postFired:post.fired,
+    preWarmupFired:preSplit().warmup.length,
     paddleShots:paddleShotCounts(), midAfterPaddle:mid.fired?S.midAfter:0});
 }
 
@@ -859,7 +875,10 @@ function pfield(i,lbl,k,attrs){
     autocomplete="off" ${attrs||''} value="${esc(S.paddles[i][k])}"
     oninput="S.paddles[${i}]['${k}']=this.value;render()"></div>`;
 }
-function shotTable(sum){
+// startAt exists so the PRE block's table can number its rows 7 to 16, matching the
+// order they were fired in rather than restarting at 1 and looking like a separate block.
+function shotTable(sum, startAt){
+  const from = startAt || 1;
   if(!sum.rows.length) return '<p class="muted">Nothing pasted yet.</p>';
   const cls={'USE':'s-use','REJECT vel':'s-rej','MISSING Vout':'s-bad',
              'PASTE MISALIGNED':'s-bad','DROPPED':'s-rej'};
@@ -867,7 +886,7 @@ function shotTable(sum){
   return `<table><thead><tr><th>#</th><th>Inbound</th><th>Outbound</th><th>Gate COR</th>
     <th>PBCoR raw</th><th>PBCoR @50</th><th>Status</th></tr></thead><tbody>`+
     sum.rows.map((r,i)=>`<tr class="${r.status==='USE'?'':(r.status==='REJECT vel'?'rej':'bad')}">
-      <td>${i+1}</td><td>${f(r.vin,2)}</td><td>${f(r.vout,2)}</td><td>${f(r.gateCor,3)}</td>
+      <td>${from+i}</td><td>${f(r.vin,2)}</td><td>${f(r.vout,2)}</td><td>${f(r.gateCor,3)}</td>
       <td>${f(r.pRaw)}</td><td>${f(r.p50)}</td>
       <td><span class="status ${cls[r.status]||''}">${r.status}</span>${
         r.suspect?' <span class="status s-rej">LOW — look at it</span>':''}</td></tr>`).join('')+
@@ -915,7 +934,7 @@ const n6 = v => (v==null || !isFinite(v)) ? '' : Math.round(v*1e6)/1e6;
 const numOrBlank = v => (v===''||v==null||!isFinite(+v)) ? '' : +v;
 
 function sessionRowValues(){
-  const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid), tl=timeline();
+  const pre=preCtrl(), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid), tl=timeline();
   const fired = pre.fired + post.fired + mid.fired
               + paddleShotCounts().reduce((a,b)=>a+b,0);
   return [
@@ -934,7 +953,7 @@ function sessionRowValues(){
    hits, which this page has no way to know — both are left out rather than guessed at.
    The crosshair block is the PRE block; it is never typed twice. */
 function anchorRowValues(){
-  const pre=ctrlBlock(S.pre), mir=controlBlock();
+  const pre=preCtrl(), mir=controlBlock();
   return [
     S.date, S.anchor, numOrBlank(S.deflection), numOrBlank(S.temp),
     mir.n||'', mir.n?n6(mir.mean):'', mir.n?n6(mir.se):'',
@@ -947,7 +966,7 @@ function anchorRowValues(){
   ];
 }
 const anchorHasSomething = () =>
-  S.deflection!=='' || controlBlock().n || ctrlBlock(S.pre).n;
+  S.deflection!=='' || controlBlock().n || preAll().n;
 
 /* ── the writes ────────────────────────────────────────────────────────────
  * Each one is: post, read the row back, and only then say it is done. The read is the
@@ -1174,13 +1193,20 @@ function endpointForm(){
    control blocks, so ball, temperature and cannon all cancel in the difference. The
    crosshair half of that difference is the PRE block — never shot or typed twice. */
 function controlCard(){
-  const ctl=controlBlock(), pre=ctrlBlock(S.pre);
+  const ctl=controlBlock(), pre=preCtrl();
   const gap = (ctl.n && pre.n) ? pre.mean - ctl.mean : null;
   const spot = +S.controlSpot || K.C.controlSpot;
   return `<div class="card"><h3>Control spot — weekly ${ib_('control')}</h3>
     <p class="muted" style="margin-top:-6px">First session of the week only. Ten shots at the
       control spot, in the same session as the blocks above so ball, temperature and cannon
       all cancel in the difference. Leave it empty the rest of the week.</p>
+    <div class="banner b-warn"><div><b>Fire the ${PRE_NEED()} PRE shots FIRST, then these.</b>
+      A rested ball reads about 0.028 high for its first six impacts. Shoot the control spot
+      before the PRE block and it carries that recovery while the crosshair does not, so the
+      gap between them moves. It moves in the same direction the anchor going soft would move
+      it, which is the one thing this reading exists to catch. If the control spot was shot
+      first today, say so in the session notes and treat the gap as unusable rather than
+      adding it to the trend.${ib_('preWarmup')}</div></div>
     <div class="grid" style="margin-bottom:10px">
       <div><label>Spot (in from tip)</label>
         <select id="f-controlSpot" onchange="S.controlSpot=+this.value;render()">
@@ -1221,7 +1247,9 @@ function controlCard(){
    blocks. Used before anything is shot, so the paddle counts are the planned ones. */
 function plannedImpacts(){
   const paddles=paddleShotCounts().reduce((a,n)=>a+n,0);
-  const blocks=K.C.perLoc * (S.midAfter ? 3 : 2);        // PRE, POST, and MID if planned
+  // PRE, POST, and MID if planned, plus PRE's six warm-up shots. They never reach the
+  // correction but the ball feels every one of them, so they belong in the budget.
+  const blocks=K.C.perLoc * (S.midAfter ? 3 : 2) + K.C.preWarmup;
   return paddles + blocks;
 }
 
@@ -1232,7 +1260,8 @@ function retirementGuard(){
   const b=S.regBall; if(!b || RG.state!=='ok') return '';
   const planned=plannedImpacts(), room=Math.round(b.room);
   if(!isFinite(room) || planned<=room) return '';
-  const fits=Math.max(0, Math.floor((room - K.C.perLoc*(S.midAfter?3:2)) / (K.C.perLoc*4)));
+  const fits=Math.max(0, Math.floor(
+    (room - K.C.perLoc*(S.midAfter?3:2) - K.C.preWarmup) / (K.C.perLoc*4)));
   return `<div class="banner b-bad"><div>
     <b>THIS SESSION WOULD RETIRE ${esc(b.id)} PART WAY THROUGH.</b>
     It has <b>${room}</b> impacts left before it reaches ${K.C.retire}, and today plans
@@ -1421,14 +1450,40 @@ function paddleCard(){
     </div></div>`;
 }
 
+/* Says what the paste actually contains against what the block needs. The 10-shot case
+   gets its own sentence on purpose: ten is exactly what this block used to be, so it is
+   the one wrong count that will look right to someone running from memory. */
+function preCount(sp){
+  const need=PRE_NEED(), have=sp.warmup.length+sp.block.length;
+  if(!have) return '';
+  if(have===need) return `<div class="banner b-ok"><div><b>${need} shots in.</b>
+    The first ${K.C.preWarmup} clear the ball's overnight recovery and are discarded. The
+    last ${K.C.preUsed} set the correction.${ib_('preWarmup')}</div></div>`;
+  if(have<need) return `<div class="banner b-bad"><div>
+    <b>${have} shot${have===1?'':'s'} pasted. This block needs ${need}.</b>
+    ${have<=K.C.preWarmup
+      ? `Nothing is left to measure with: the first ${K.C.preWarmup} are warm-up.`
+      : `Only ${have-K.C.preWarmup} of them reach the measurement, so the correction is
+         noisier than it should be.`}
+    ${have===K.C.preUsed?` <b>Ten is what this block used to be.</b> Since BUILD
+      ${K.BUILD} it is ${need}, because a rested ball reads high for its first six impacts.
+      If ten is all that was fired, the first six of them carry the overnight recovery and
+      there is no clean way to take it back out.`:''}
+    ${ib_('preWarmup')}</div></div>`;
+  return `<div class="banner b-warn"><div><b>${have} shots pasted, ${need} expected.</b>
+    The first ${K.C.preWarmup} are still discarded as warm-up and the other
+    ${have-K.C.preWarmup} are all used. Extra shots are not a problem in themselves; they
+    age the ball like any other.${ib_('preWarmup')}</div></div>`;
+}
+
 function scControl(which){
   const key = which==='PRE'?'pre':which==='MID'?'mid':'post';
-  const sum = ctrlBlock(S[key]);
+  const sum = which==='PRE' ? preCtrl() : ctrlBlock(S[key]);
   const age=effAge(), planned=paddleShotCounts().reduce((x,y)=>x+y,0);
   const adv = which==='MID' ? K.midAdvice(age,planned) : null;
   let verdict='';
   if(which==='POST'){
-    const pre=ctrlBlock(S.pre);
+    const pre=preCtrl();
     if(pre.n && sum.n){
       const dm=K.driftMode({pre,post:sum,ballAge:timeline().agePre});
       verdict=`<div class="banner ${dm.ramp?'b-warn':'b-ok'}"><b>${dm.mode}</b> —
@@ -1441,20 +1496,38 @@ function scControl(which){
           ${esc(dm.flag)}</div>`:''}`;
     }
   }
+  const isPre = which==='PRE';
+  const sp = isPre ? preSplit() : null;
+  const warm = isPre ? preWarm() : null;
   return `<h2>${which} ball correction</h2>
   <p class="lede">${which==='MID'?'Between paddles 2 and 3, if the sheet asked for it.'
-      :which==='PRE'?'Before the first paddle.':'After the last paddle.'}
-    Ten shots at the control paddle, at the crosshair. Never move the paddle to change aim.</p>
+      :isPre?'Before the first paddle, and before the weekly control spot.':'After the last paddle.'}
+    ${isPre?`<b>${PRE_NEED()} shots</b> at the control paddle, at the crosshair:
+      ${K.C.preWarmup} to clear the ball's overnight recovery, then ${K.C.preUsed} that make
+      the measurement.${ib_('preWarmup')}`
+      :'Ten shots at the control paddle, at the crosshair.'}
+    Never move the paddle to change aim.</p>
   ${S.endedEarly&&which==='POST'?`<div class="banner b-ok"><b>Session ended after two paddles.</b>
      The MID block you shot has become the POST block — nothing was wasted.</div>`:''}
   ${adv?`<div class="banner ${adv.verdict==='SHOOT IT'?'b-warn':'b-mute'}"><b>${adv.verdict}.</b> ${adv.why}</div>`:''}
-  ${verdict}${NOSORT}${WINDOW_NOTE('ten')}
-  <div class="card"><h3>Paste the gate dump</h3>
-    <textarea id="t-${key}" class="paste" placeholder="Inbound  Outbound  COR&#10;49.8  12.1  0.243"
+  ${verdict}${NOSORT}
+  ${isPre?`<div class="banner b-warn"><div><b>And it matters twice as much in this block.</b>
+    The first ${K.C.preWarmup} shots are dropped BY POSITION, before the speed gate is
+    applied. Paste this block sorted and the page discards the ${K.C.preWarmup} slowest
+    shots instead of the ${K.C.preWarmup} earliest, which is not a warm-up correction at
+    all, and every number it produces will look reasonable.${ib_('preWarmup')}</div></div>`:''}
+  ${WINDOW_NOTE(isPre?'sixteen':'ten')}
+  <div class="card"><h3>Paste the gate dump${isPre?`: all ${PRE_NEED()} shots, in the order you fired them`:''}</h3>
+    <textarea id="t-${key}" class="paste"${isPre?' style="min-height:150px"':''} placeholder="Inbound  Outbound  COR&#10;49.8  12.1  0.243"
       oninput="S['${key}']=this.value;render()">${esc(S[key])}</textarea>
     <p class="muted" style="margin-bottom:0">Rejected shots stay in — the ball felt them.${ib_('window')}</p></div>
-  ${sum.n?ctrlPanel(sum,which+' summary'):''}
-  <div class="card"><h3>Shots</h3>${shotTable(sum)}</div>
+  ${isPre?preCount(sp):''}
+  ${isPre&&warm.rows.length?`<div class="card"><h3>Warm-up: shots 1 to ${warm.rows.length}, not used</h3>
+    <p class="muted" style="margin-top:-6px">These cleared the ball's overnight recovery. They
+      are saved with the session and counted against the ball's age, and they never touch the
+      correction.${ib_('preWarmup')}</p>${shotTable(warm)}</div>`:''}
+  ${sum.n?ctrlPanel(sum,isPre?`PRE summary: shots ${K.C.preWarmup+1} to ${PRE_NEED()}`:which+' summary'):''}
+  <div class="card"><h3>Shots${isPre?' that set the correction':''}</h3>${shotTable(sum, isPre?K.C.preWarmup+1:1)}</div>
   ${which==='PRE'?controlCard():''}
   ${which==='MID'&&sum.n?`<div class="row"><button class="ghost" onclick="endEarly()">End the session here →</button>
      <span class="muted">Turns this block into the POST block and skips paddles 3 and 4.</span></div>`:''}
@@ -1471,7 +1544,7 @@ function endEarly(){
 function paddleResults(idx){
   const p=S.paddles[idx]; if(!p||!p.name) return null;
   const len=parseFloat(p.len), sw=parseFloat(p.sw); if(!(len>0&&sw>0)) return null;
-  const pre=ctrlBlock(S.pre); if(!pre.n) return null;
+  const pre=preCtrl(); if(!pre.n) return null;
   const post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
   const tl=timeline();
   const dm=K.driftMode({pre,post:post.n?post:null,ballAge:tl.agePre});
@@ -1593,7 +1666,7 @@ function scPaddle(idx){
 }
 
 function scResults(){
-  const pre=ctrlBlock(S.pre), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
+  const pre=preCtrl(), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
   const tl=timeline(), done = pre.n && post.n;
   // KEEP THE SLOT. rows is filtered, so its index is not the paddle's position in the
   // session, and the report button needs the position — paddle 3 with paddles 1 and 2
@@ -1910,7 +1983,9 @@ function copyReport(idx, btn){
 function archivePayload(idx){
   const p=S.paddles[idx], R=paddleResults(idx);
   if(!R || !R.summary) return null;
-  const pre=ctrlBlock(S.pre), mid=ctrlBlock(S.mid), post=ctrlBlock(S.post);
+  // preCtrl, not the whole paste: what the sheet stores as P_pre must be the same number
+  // that set the correction. The warm-up shots travel in the draft, not in this row.
+  const pre=preCtrl(), mid=ctrlBlock(S.mid), post=ctrlBlock(S.post);
   const n6 = v => (v==null||!isFinite(v)) ? '' : Math.round(v*1e6)/1e6;
   const num = v => { const x=parseFloat(v); return isFinite(x) ? x : ''; };
   const sp=p.spec||{};
