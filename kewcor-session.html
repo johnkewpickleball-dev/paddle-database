@@ -935,7 +935,13 @@ const numOrBlank = v => (v===''||v==null||!isFinite(+v)) ? '' : +v;
 
 function sessionRowValues(){
   const pre=preCtrl(), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid), tl=timeline();
-  const fired = pre.fired + post.fired + mid.fired
+  /* preAll, NOT preCtrl. This column is what the registry adds up to age the ball, and the
+     ball felt all sixteen. Using the trimmed block here would quietly subtract six impacts
+     from the ball's life every session, and the only thing that would notice is the
+     registry's own recompute check on the Shelf. Column L above is tl.ageAfter, which was
+     always right, so the two would have disagreed by a growing amount. Found 2026-09-09,
+     after BUILD 3 shipped; see prewarmup_page_test.js. */
+  const fired = preAll().fired + post.fired + mid.fired
               + paddleShotCounts().reduce((a,b)=>a+b,0);
   return [
     S.date, S.ballId, S.anchor, numOrBlank(S.temp),
