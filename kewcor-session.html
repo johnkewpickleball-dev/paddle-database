@@ -121,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js?v=3"></script>
+<script src="kewcor-core.js?v=4"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -476,11 +476,11 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 10;
+const WANT_BUILD = 11;
 /* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
    change the other. If the loaded core reports a different BUILD, the browser served a
    cached file and the header says so in plain words. */
-const CORE_V = 3;
+const CORE_V = 4;
 let EP_BUILD = null;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},

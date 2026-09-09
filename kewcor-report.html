@@ -98,7 +98,7 @@
 <div class="tools" id="tools"></div>
 <div class="sheet" id="sheet"></div>
 
-<script src="kewcor-core.js?v=3"></script>
+<script src="kewcor-core.js?v=4"></script>
 <script>
 'use strict';
 /* THE REPORT IS THE LINK. Everything on this page comes out of the URL hash — there is
@@ -182,10 +182,12 @@ function chart(rows){
  * another. */
 function strip(max){
   const pos = K.bandPosition(max);
-  const span = K.BAND_HI - K.BAND_LO;
+  // Widths come from bandFrac, not from (to-from)/span. The scale is piecewise from BUILD 4
+  // on, so a cell sized by its VALUE span would not line up with the pointer above it.
+  const wOf = b => (K.bandFrac(b.to) - K.bandFrac(b.from)) * 100;
   const shades = ['--b1','--b2','--b3','--b4'];
   const cells = K.BANDS.map((b,i)=>{
-    const w = (b.to-b.from)/span*100;
+    const w = wOf(b);
     // The two darker bands take white text on screen. In a fill-less print that would be
     // white on white, so they get a dark text-shadow-free fallback: print rules below
     // restore the fill, and the border keeps the cell visible either way.
@@ -193,8 +195,10 @@ function strip(max){
       border-right:${i<3?'1px solid #1f3864':'none'}">${b.name}</div>`;
   }).join('');
   const ticks = K.BANDS.map((b,i)=>{
-    const w = (b.to-b.from)/span*100;
-    return `<div style="flex:0 0 ${w}%;text-align:right">${b.to.toFixed(3)}</div>`;
+    // The last tick carries the compression warning, because the strip stops being linear
+    // there and a reader measuring distance inside that cell would be misled.
+    return `<div style="flex:0 0 ${wOf(b)}%;text-align:right">${b.to.toFixed(3)}${
+      i===K.BANDS.length-1?'<span style="font-weight:400"> (compressed)</span>':''}</div>`;
   }).join('');
   return `<h2>Where this paddle sits</h2>
     ${pos==null?'':`<div class="pointer" style="position:relative;height:20px">

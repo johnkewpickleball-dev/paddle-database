@@ -224,10 +224,27 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .gauge-teal{background:#0d9488}
   .gauge-orange{background:#d97706}
   .gauge-red{background:#dc2626}
+  /* KewCOR sequential power ramp, BUILD 4. Pale to dark, monotonic lightness, ending on the
+     Tilt dial's own darkest brown (#6b350f) so the two dials read as one system. Replaces the
+     old blue/teal/orange/red hue-only ramp: L* was nearly flat (46.1/55.1/59.9/47.9) and put
+     orange next to red, which is unreadable to red-green colorblindness. A sequential ramp is
+     also more honest -- blue-to-red implied safe-to-dangerous, a judgment this lab doesn't make. */
+  .gauge-kcband1{background:#ead9cc}
+  .gauge-kcband2{background:#d0a180}
+  .gauge-kcband3{background:#ae6837}
+  .gauge-kcband4{background:#6b350f}
+  .pcl-gauge-svg .gband-kcband1{fill:#ead9cc}
+  .pcl-gauge-svg .gband-kcband2{fill:#d0a180}
+  .pcl-gauge-svg .gband-kcband3{fill:#ae6837}
+  .pcl-gauge-svg .gband-kcband4{fill:#6b350f}
   .pcl-gauge-svg .gband-blue{fill:#2563eb}
   .pcl-gauge-svg .gband-teal{fill:#0d9488}
   .pcl-gauge-svg .gband-orange{fill:#d97706}
   .pcl-gauge-svg .gband-red{fill:#dc2626}
+  .pcl-gauge-svg .gseam{stroke:var(--white);stroke-width:1.5;opacity:.85}
+  .pcl-gauge-svg .gchevron{fill:var(--text)}
+  .pcl-gauge-svg .gcat-over{font-size:9px;font-weight:600;fill:var(--muted)}
+  .pcl-gauge-note{font-size:10.5px;color:var(--muted);margin-top:4px;font-family:'DM Sans',sans-serif}
   /* Tilt: diverging ramp separated by LIGHTNESS (dark at both ends, pale in the middle), not
      by hue alone, so the five segments stay distinguishable in grayscale/color-blind view.
      tilt1=pop-leaning (darkest blue) ... tilt3=balanced (palest) ... tilt5=power-leaning (darkest amber). */
@@ -551,6 +568,14 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .pcl-bsp-slider label{color:var(--text)}
   [data-theme="dark"] .pcl-bsp-slider label span{color:#d95926}
   [data-theme="dark"] .pcl-bsp-slider input[type=range]{accent-color:#d95926}
+  /* Dark-theme KewCOR ramp: same hue family and lightness ORDER as the light theme, boosted
+     overall so the darkest band (kcband4) stays visible against a dark page, same treatment
+     the Tilt dial already gets. L* 91.3 / 72.8 / 58.9 / 44.7 -- kcband4 reuses the Tilt dial's
+     own dark-theme tilt5 value (#9a5a24) so the two dials still end on the same color. */
+  [data-theme="dark"] .pcl-gauge-svg .gband-kcband1{fill:#f2e4d6}
+  [data-theme="dark"] .pcl-gauge-svg .gband-kcband2{fill:#dba97c}
+  [data-theme="dark"] .pcl-gauge-svg .gband-kcband3{fill:#c17f45}
+  [data-theme="dark"] .pcl-gauge-svg .gband-kcband4{fill:#9a5a24}
   [data-theme="dark"] .pcl-gauge-svg .gband-blue{fill:#3b82f6}
   [data-theme="dark"] .pcl-gauge-svg .gband-teal{fill:#2dd4bf}
   [data-theme="dark"] .pcl-gauge-svg .gband-orange{fill:#f59e0b}
@@ -1324,7 +1349,38 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       +' L'+iB[0].toFixed(2)+' '+iB[1].toFixed(2)
       +' A'+rI+' '+rI+' 0 '+large+' 0 '+iA[0].toFixed(2)+' '+iA[1].toFixed(2)+' Z';
   }
-  var KEWCOR_BANDS=[{a:0.340,b:0.370,cls:'blue'},{a:0.370,b:0.400,cls:'teal'},{a:0.400,b:0.447,cls:'orange'},{a:0.447,b:0.470,cls:'red'}];
+  // >>> GENERATED from Work/KewCOR/web/kewcor-core.js BANDS/bandFrac (read via node)
+  // by qc.py's regen_kewcor_dial(). Do not hand-edit any line in this block --
+  // it is rewritten from the source every time qc.py --brief/--recall runs. This
+  // whole mechanism exists because this file and kewcor-core.js drifted (0.365 vs
+  // 0.370) for weeks before anyone noticed, misclassifying 46 paddles.
+  var KC_BAND_LO=0.34, KC_BAND_HI=0.55, KC_BAND_SEAM=0.445, KC_BAND_LINEAR_ARC=0.9;
+  var KEWCOR_BANDS=[
+    {a:0.34,b:0.366,cls:'kcband1',label:'Low Power'},
+    {a:0.366,b:0.39,cls:'kcband2',label:'Medium Power'},
+    {a:0.39,b:0.445,cls:'kcband3',label:'High Power'},
+    {a:0.445,b:0.55,cls:'kcband4',label:'Very High Power'}
+  ];
+  // Piecewise, ported from kewcor-core.js's bandFrac: linear across KC_BAND_LINEAR_ARC
+  // of the arc from KC_BAND_LO to KC_BAND_SEAM, the remainder compressed into the rest.
+  // Ignores its (min,max) args on purpose -- gaugeSVG's scaleFrac contract passes them
+  // for parity with gFrac, but this scale's anchors are fixed by the source, not by
+  // whatever min/max a caller happens to pass.
+  function kcScaleFrac(v){
+    if(v==null||!isFinite(v)) return null;
+    if(v<=KC_BAND_LO) return 0;
+    if(v>=KC_BAND_HI) return 1;
+    if(v<=KC_BAND_SEAM) return KC_BAND_LINEAR_ARC*(v-KC_BAND_LO)/(KC_BAND_SEAM-KC_BAND_LO);
+    return KC_BAND_LINEAR_ARC+(1-KC_BAND_LINEAR_ARC)*(v-KC_BAND_SEAM)/(KC_BAND_HI-KC_BAND_SEAM);
+  }
+  function kewcorCat(v){
+    if(v==null) return null;
+    for(var i=0;i<KEWCOR_BANDS.length;i++){
+      if(v<KEWCOR_BANDS[i].b || i===KEWCOR_BANDS.length-1) return {label:KEWCOR_BANDS[i].label, cls:KEWCOR_BANDS[i].cls};
+    }
+    return null;
+  }
+  // <<< GENERATED
   var GCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626'};
   // Tilt: fixed -1.5..+1.5 scale, five bands read straight from the sheet's `Tilt Band` text
   // (never recomputed here). Boundaries are asymmetric on purpose (outer bands 0.75 wide,
@@ -1336,10 +1392,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // Text-readout accent colors (reinforcement only -- the band name in words is what carries
   // the meaning). "Balanced" uses the theme's default text color since it is the neutral case.
   var TCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626',
-    tilt1:'#1d4ed8',tilt2:'#2563eb',tilt3:'var(--text)',tilt4:'#d97706',tilt5:'#b45309'};
+    tilt1:'#1d4ed8',tilt2:'#2563eb',tilt3:'var(--text)',tilt4:'#d97706',tilt5:'#b45309',
+    kcband1:'#8f6b45',kcband2:'#a9702f',kcband3:'#8a4d1f',kcband4:'#6b350f'};
   var TILT_BAND_LABEL={'pop-leaning':'Pop-Leaning','slightly pop':'Slightly Pop','balanced':'Balanced','slightly power':'Slightly Power','power-leaning':'Power-Leaning'};
   var TILT_BAND_CLS={'pop-leaning':'tilt1','slightly pop':'tilt2','balanced':'tilt3','slightly power':'tilt4','power-leaning':'tilt5'};
-  function kewcorCat(v){ if(v==null) return null; if(v<0.370) return {label:'Control',cls:'blue'}; if(v<0.400) return {label:'All-Court',cls:'teal'}; if(v<0.447) return {label:'Power',cls:'orange'}; return {label:'Beyond Spec',cls:'red'}; }
   // Matches on the exact lowercase-hyphenated string from `Tilt Band`; does not recompute the band.
   function tiltCat(band){
     if(band==null) return null;
@@ -1349,6 +1405,11 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   function gaugeSVG(id,title,value,min,max,bands,cat,unit,decimals,opts){
     opts=opts||{};
+    // scaleFrac: optional (v,min,max)->0..1 map, defaulting to the existing linear gFrac.
+    // SHARED with the Tilt dial via this same function -- Tilt never passes it, so gFrac is
+    // what it always was and nothing about Tilt's output changes. Threaded through so KewCOR
+    // can use the piecewise scale from kewcor-core.js without a second copy of gaugeSVG.
+    var scaleFrac=opts.scaleFrac||gFrac;
     var cx=100,cy=100,rO=88,rI=63;
     var hasVal=value!=null;
     var minLbl='<text class="gtick" x="'+(cx-rO+2)+'" y="'+(cy+15)+'" text-anchor="start">'+(decimals?min.toFixed(decimals):min)+'</text>';
@@ -1363,9 +1424,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       return '<svg class="pcl-gauge-svg pcl-gauge-svg--disabled" data-gauge="'+id+'" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'
         +grayBands+grayNeedle+grayHub+minLbl+maxLbl+naTxt+'</svg>';
     }
-    var bandsSVG=bands.map(function(bd){ return '<path class="gband-'+bd.cls+'" d="'+gBandPath(cx,cy,rO,rI,gFrac(bd.a,min,max),gFrac(bd.b,min,max))+'"/>'; }).join('');
+    var bandsSVG=bands.map(function(bd){ return '<path class="gband-'+bd.cls+'" d="'+gBandPath(cx,cy,rO,rI,scaleFrac(bd.a,min,max),scaleFrac(bd.b,min,max))+'"/>'; }).join('');
     var clamped=gClamp(value,min,max);
-    var frac=gFrac(clamped,min,max);
+    var frac=scaleFrac(clamped,min,max);
     var needleLen=rO-8;
     var needle='<g class="gneedle-grp" data-cx="'+cx+'" data-cy="'+cy+'" data-frac="'+frac.toFixed(4)+'" transform="rotate(180 '+cx+' '+cy+')">'
       +'<polygon class="gneedle" points="'+cx+','+(cy-4)+' '+(cx+needleLen)+','+cy+' '+cx+','+(cy+4)+'"/></g>';
@@ -1374,17 +1435,34 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     if(opts.signed){ numTxt=(value>=0?'+':'')+value.toFixed(decimals); }
     else { numTxt=decimals?value.toFixed(decimals):Math.round(value); }
     var valueTxt='<text class="gnum" x="'+cx+'" y="'+(cy+38)+'" text-anchor="middle" fill="'+(cat?TCOLOR[cat.cls]:'var(--text)')+'">'+numTxt+(unit?'<tspan class="gunit"> '+unit+'</tspan>':'')+'</text>';
-    var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+TCOLOR[cat.cls]+'">'+esc(cat.label)+'</text>':'';
+        // seamAt: optional raw value to mark with a tick on the arc (KewCOR's compression seam).
+    // Absent for every other gauge, so this is empty string ('') for Tilt -- concatenating
+    // an empty string changes nothing about the returned markup.
+    var seamTick='';
+    if(opts.seamAt!=null){
+      var sf=scaleFrac(opts.seamAt,min,max), sAng=gAngle(sf);
+      var sO=gPolar(cx,cy,rO+3,sAng), sI=gPolar(cx,cy,rI-3,sAng);
+      seamTick='<line class="gseam" x1="'+sO[0].toFixed(2)+'" y1="'+sO[1].toFixed(2)+'" x2="'+sI[0].toFixed(2)+'" y2="'+sI[1].toFixed(2)+'"/>';
+    }
+    // overRangeMax: optional ceiling above which the needle pins and an outward chevron plus
+    // "above dial range" replace relying on color alone. Absent for every other gauge.
+    var overRange = opts.overRangeMax!=null && value>opts.overRangeMax;
+    var chevron='';
+    if(overRange){
+      var chA=gPolar(cx,cy,rO+4,0), chB=gPolar(cx,cy,rO+14,-7), chC=gPolar(cx,cy,rO+14,7);
+      chevron='<polygon class="gchevron" points="'+chA[0].toFixed(2)+','+chA[1].toFixed(2)+' '+chB[0].toFixed(2)+','+chB[1].toFixed(2)+' '+chC[0].toFixed(2)+','+chC[1].toFixed(2)+'"/>';
+    }
+    var catTxt=cat?'<text class="gcat" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle" fill="'+TCOLOR[cat.cls]+'">'+esc(cat.label)+(overRange?'<tspan x="'+cx+'" dy="12" class="gcat-over">above dial range</tspan>':'')+'</text>':(overRange?'<text class="gcat gcat-over" x="'+cx+'" y="'+(cy+53)+'" text-anchor="middle">above dial range</text>':'');
     return '<svg class="pcl-gauge-svg" data-gauge="'+id+'" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'
-      +bandsSVG+needle+hub+minLbl+maxLbl+valueTxt+catTxt+'</svg>';
+      +bandsSVG+seamTick+needle+chevron+hub+minLbl+maxLbl+valueTxt+catTxt+'</svg>';
   }
   var GINFO='<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="{{T}}" onclick="event.stopPropagation();{{FN}}()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg>';
   function ginfo(title,fn){ return GINFO.replace('{{T}}',title).replace('{{FN}}',fn); }
   function gaugeCol(p){
     var kcCat=kewcorCat(p.kewcor), tCat=tiltCat(p.tiltBand);
-    var kcSVG=gaugeSVG('kewcor','KewCOR',p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,null,3);
+    var kcSVG=gaugeSVG('kewcor','KewCOR',p.kewcor,KC_BAND_LO,KC_BAND_HI,KEWCOR_BANDS,kcCat,null,3,{scaleFrac:kcScaleFrac,overRangeMax:KC_BAND_HI,seamAt:KC_BAND_SEAM});
     var tSVG=gaugeSVG('tilt','Tilt',p.tiltZ,-1.5,1.5,TILT_BANDS,tCat,null,2,{signed:true,naLines:['Not tested on','the cannon']});
-    var kcLegend='<div class="pcl-gauge-legend"><span class="pcl-gl-item"><i class="gauge-blue"></i>Control</span><span class="pcl-gl-item"><i class="gauge-teal"></i>All-Court</span><span class="pcl-gl-item"><i class="gauge-orange"></i>Power</span><span class="pcl-gl-item"><i class="gauge-red"></i>Beyond Spec</span></div>';
+    var kcLegend='<div class="pcl-gauge-legend">'+KEWCOR_BANDS.map(function(bd){return '<span class="pcl-gl-item"><i class="gauge-'+bd.cls+'"></i>'+esc(bd.label)+'</span>';}).join('')+'</div>'+'<div class="pcl-gauge-note">The top band is compressed so the rest of the scale stays readable.</div>';
     var tLegend='<div class="pcl-gauge-legend"><span class="pcl-gl-item"><i class="gauge-tilt1"></i>Pop-Leaning</span><span class="pcl-gl-item"><i class="gauge-tilt2"></i>Slightly Pop</span><span class="pcl-gl-item"><i class="gauge-tilt3"></i>Balanced</span><span class="pcl-gl-item"><i class="gauge-tilt4"></i>Slightly Power</span><span class="pcl-gl-item"><i class="gauge-tilt5"></i>Power-Leaning</span></div>';
     var kcHead='<div class="pcl-gauge-head">KewCOR'+ginfo('About KewCOR','openKcMethodInfo')+'</div>';
     var tHead='<div class="pcl-gauge-head">Tilt'+ginfo('About Tilt','openTiltMethodInfo')+'</div>';
@@ -2134,7 +2212,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <div class="dur-info-overlay" id="kcMethodOverlay" onclick="if(event.target===this)closeKcMethodInfo()">
   <div class="dur-info-box">
     <h3>KewCOR<button class="dur-info-close" onclick="closeKcMethodInfo()" aria-label="Close">&times;</button></h3>
-    <p>Controlled laboratory data capturing efficiency of paddle-ball collision using a ball cannon and clamped paddle.</p>
+    <p>Controlled laboratory data capturing efficiency of paddle-ball collision using a ball cannon and clamped paddle. Bands (Low, Medium, High, Very High Power) describe measured power only and are not a statement about USAP certification or any other standard.</p>
+    <p>The scale from 0.340 to 0.445 is linear. Above 0.445, the gauge compresses the remaining range so the crowded middle of the fleet stays readable: the top band is not drawn to the same scale as the rest of the dial.</p>
   </div>
 </div>
 

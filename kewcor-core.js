@@ -27,8 +27,9 @@
    *   1  2026-08-29  as shipped
    *   2  2026-09-08  ball-age gate on RAMP; pooledD prefers MID and POST over PRE
    *   3  2026-09-09  PRE is 16 shots, first 6 discarded as overnight warm-up
+   *   4  2026-09-09  band boundaries and names standardized; the scale is piecewise
    */
-  const BUILD = 3;
+  const BUILD = 4;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
@@ -480,29 +481,81 @@
     if (!live.length) return null;
     const peak = live.reduce((a, b) => (b.kewcor > a.kewcor ? b : a));
     const max = peak.kewcor, min = live.reduce((a, b) => Math.min(a, b.kewcor), Infinity);
-    // Bands read off the published KewCOR graphic. OUT OF SPEC at 0.445 and above.
-    const band = max < 0.365 ? 'LOW POWER' : max < 0.390 ? 'MID POWER'
-               : max < 0.445 ? 'HIGH POWER' : 'OUT OF SPEC';
+    // Derived from BANDS, never from a second chain of comparisons. Until BUILD 4 this
+    // function carried its own copy of the same three numbers, three lines under a comment
+    // saying two copies is one too many, and the two drifted: BANDS said 0.365 and the
+    // website said 0.370.
+    const band = (BANDS.find(b => max < b.to) || BANDS[BANDS.length - 1]).name;
     return { peakLocation: peak.location, max, variance: max - min, band };
   }
 
-  // ── the client report ─────────────────────────────────────────────────────
-  // The four published bands, read off the KewCOR graphic. Kept as data rather than
-  // as the chain of comparisons in faceSummary(), because the report also has to DRAW
-  // them, and two hand-maintained copies of the same four numbers is one too many.
+  /* ── THE BANDS. ONE DEFINITION, EVERY SURFACE. 2026-09-09, BUILD 4 ─────────
+   *
+   * These four rows are the only place the boundaries and the names are written down.
+   * faceSummary derives from them, the client report strip draws from them, and the
+   * website's comparison lab is generated from them by the shared checker. Anything that
+   * states a boundary and is not generated from here is a copy waiting to rot, which is
+   * exactly what happened: this file said 0.365 while the published gauge said 0.370, and
+   * 46 paddles, 19% of the scored fleet, were classified differently on the site than in
+   * the lab for weeks before anyone looked.
+   *
+   * NAMES. Low, Medium, High, Very High. Purely descriptive, and that is the point.
+   * "OUT OF SPEC" and its predecessor "illegal" made a regulatory claim this lab is not
+   * entitled to make. USAP's limit is 0.43 PBCoR measured with a Franklin ball that has no
+   * holes; 0.445 KewCOR is John's ESTIMATED correspondence, not a published equivalence.
+   * And the claim was false in fact: of the ten paddles at or above 0.445, four are
+   * currently USAP certified, including one at 0.5099.
+   *
+   * WHY 0.445 SURVIVES as a boundary. Not because USAP is near it, but because it is the
+   * only cut in this scheme that measurement error does not threaten. Against a published
+   * se near 0.008: at 0.390 there are 79 paddles within one se of the line, at 0.366 there
+   * are 15, and at 0.445 there are 5 with a genuinely empty gap from 0.4421 to 0.4505.
+   */
   const BANDS = [
-    { name: 'LOW POWER',   from: 0.340, to: 0.365 },
-    { name: 'MID POWER',   from: 0.365, to: 0.390 },
-    { name: 'HIGH POWER',  from: 0.390, to: 0.445 },
-    { name: 'OUT OF SPEC', from: 0.445, to: 0.520 }
+    { name: 'LOW POWER',       from: 0.340, to: 0.366 },
+    { name: 'MEDIUM POWER',    from: 0.366, to: 0.390 },
+    { name: 'HIGH POWER',      from: 0.390, to: 0.445 },
+    { name: 'VERY HIGH POWER', from: 0.445, to: 0.550 }
   ];
-  const BAND_LO = 0.34, BAND_HI = 0.52;        // Client Report B40, the strip's ends
+  const BAND_LO = 0.340, BAND_HI = 0.550;
+
+  /* THE SCALE IS PIECEWISE, AND EVERY SURFACE MUST USE THIS FUNCTION.
+   *
+   * 0.340 to 0.445 is linear and takes 90% of the length. 0.445 to 0.550 is compressed 9x
+   * into the last 10%. Both spans happen to be 0.105 wide, so the compression is exactly
+   * nine to one.
+   *
+   * Why: 72% of the fleet sits between 0.380 and 0.420, and a linear scale that reaches
+   * 0.550 would squeeze that core to fit ten paddles, four percent of the fleet, that sit
+   * above 0.445. The seam is placed at 0.445 because the distribution is empty from 0.4421
+   * to 0.4505, so no paddle straddles the discontinuity. It is NOT at 0.390, which was
+   * considered and rejected: that is the densest point of the fleet and a scale break there
+   * would misrepresent spacing exactly where it matters most.
+   *
+   * The compressed band is not linear, so any surface drawing it MUST label it as
+   * compressed. A reader comparing needle angles inside that band would otherwise be
+   * misled about magnitude.
+   *
+   * The ceiling is 0.550 rather than 0.520 as a deliberate buffer: the hottest paddle
+   * measured is 0.5187, and the last ceiling looked generous when it was set too. */
+  const BAND_SEAM = 0.445;        // where linear stops
+  const BAND_LINEAR_ARC = 0.90;   // share of the length the linear region gets
+
+  function bandFrac(v) {
+    if (v == null || !isFinite(v)) return null;
+    if (v <= BAND_LO) return 0;
+    if (v >= BAND_HI) return 1;
+    if (v <= BAND_SEAM)
+      return BAND_LINEAR_ARC * (v - BAND_LO) / (BAND_SEAM - BAND_LO);
+    return BAND_LINEAR_ARC
+         + (1 - BAND_LINEAR_ARC) * (v - BAND_SEAM) / (BAND_HI - BAND_SEAM);
+  }
 
   // Where the pointer goes on that strip, 0 to 1. Clamped: a paddle off either end
   // still gets a pointer at the end rather than falling off the graphic.
   function bandPosition(max) {
     if (max == null || !isFinite(max)) return null;
-    return Math.max(0, Math.min(1, (max - BAND_LO) / (BAND_HI - BAND_LO)));
+    return bandFrac(max);
   }
 
   const round6 = v => Math.round(v * 1e6) / 1e6;
@@ -592,5 +645,6 @@
            effectiveAge, D, curveFraction, driftMode, pooledD, pooledSource,
            ballTimeline, segmentFor,
            blockCorrections, locationResults, faceSummary, midAdvice, ballStage,
-           BANDS, BAND_LO, BAND_HI, bandPosition, reportAxis, encodeReport, decodeReport };
+           BANDS, BAND_LO, BAND_HI, BAND_SEAM, BAND_LINEAR_ARC, bandFrac, bandPosition,
+           reportAxis, encodeReport, decodeReport };
 }));
