@@ -527,9 +527,14 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
       <div class="filter-title">Performance Profile</div>
       <div class="filter-chip-group" id="profileFilter">
         <div class="chip active" data-val="">All</div>
-        <div class="chip" data-val="Control">Control</div>
-        <div class="chip" data-val="All-Court">All-Court</div>
-        <div class="chip" data-val="Power">Power</div>
+        <!-- >>> GENERATED from Work/KewCOR/web/kewcor-core.js BANDS (read via node) -->
+        <!-- by qc.py's regen_kewcor_mirrors(). Do not hand-edit any line in this block -- -->
+        <!-- it is rewritten from the source every time qc.py --brief/--recall runs. -->
+        <div class="chip" data-val="Low Power">Low Power</div>
+        <div class="chip" data-val="Medium Power">Medium Power</div>
+        <div class="chip" data-val="High Power">High Power</div>
+        <div class="chip" data-val="Very High Power">Very High Power</div>
+        <!-- <<< GENERATED -->
       </div>
     </div>
 
@@ -727,6 +732,27 @@ function parseEntryDate(s) {
   return null;
 }
 
+// >>> GENERATED from Work/KewCOR/web/kewcor-core.js BANDS (read via node)
+// by qc.py's regen_kewcor_mirrors(). Do not hand-edit any line in this block -- it is
+// rewritten from the source every time qc.py --brief/--recall runs. Lockstep 02 rebuilt the
+// dial itself in paddle-comparison-lab.html; this is one of eight other places the same
+// definition was duplicated, most still on the retired 0.340/0.370/0.400/0.447/0.470
+// boundaries and the retired Control/All-Court/Power/Beyond Spec names.
+var IDX_KEWCOR_BANDS=[
+  {a:0.34,b:0.366,label:'Low Power'},
+  {a:0.366,b:0.39,label:'Medium Power'},
+  {a:0.39,b:0.445,label:'High Power'},
+  {a:0.445,b:0.55,label:'Very High Power'}
+];
+// <<< GENERATED
+// Same comparison as the dial's kewcorCat(): v < band.b, or the last band. DERIVED, not a
+// second hardcoded copy -- this is what profRank() in paddle-comparison-lab.html does too.
+function idxKewcorBandIndex(k){
+  if(k==null) return -1;
+  for(var i=0;i<IDX_KEWCOR_BANDS.length;i++){ if(k<IDX_KEWCOR_BANDS[i].b || i===IDX_KEWCOR_BANDS.length-1) return i; }
+  return -1;
+}
+
 function applyFilters(forcedSort){
   const f = getFilters();
   if(typeof forcedSort === 'string') f.sort = forcedSort;
@@ -764,11 +790,11 @@ function applyFilters(forcedSort){
       if(!ok) return false;
     }
     if(f.profile.length){
-      const k=p.kewcor;
-      const ok=f.profile.some(pr =>
-        pr==='Control'   ? (k!=null && k<0.366) :
-        pr==='All-Court' ? (k!=null && k>=0.366 && k<=0.39) :
-        pr==='Power'     ? (k!=null && k>0.39) : false);
+      // FIX 2026-09-09 (Lockstep 02 band rename): the old version used <= at 0.39 where the
+      // dial uses <, so a paddle at exactly 0.390 filtered into All-Court, one band below
+      // where its own dial placed it, and there was no fourth chip for Very High Power at all.
+      const bi=idxKewcorBandIndex(p.kewcor);
+      const ok=f.profile.some(pr => bi>=0 && IDX_KEWCOR_BANDS[bi].label===pr);
       if(!ok) return false;
     }
     if(f.balance.length){

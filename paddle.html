@@ -216,6 +216,11 @@
   .pcl-gauge-svg{width:100%;max-width:220px;display:block;margin:0 auto}
   .pcl-gauge-svg .gband-blue{fill:#2563eb}.pcl-gauge-svg .gband-teal{fill:#0d9488}
   .pcl-gauge-svg .gband-orange{fill:#d97706}.pcl-gauge-svg .gband-red{fill:#dc2626}
+  /* KewCOR sequential power ramp, same lightness ramp Lockstep 02 established for the lab
+     dial (pale to dark, monotonic lightness), replacing the old hue-only blue/teal/orange/red
+     palette that failed John's color-blindness requirement. */
+  .pcl-gauge-svg .gband-kcband1{fill:#ead9cc}.pcl-gauge-svg .gband-kcband2{fill:#d0a180}
+  .pcl-gauge-svg .gband-kcband3{fill:#ae6837}.pcl-gauge-svg .gband-kcband4{fill:#6b350f}
   .pcl-gauge-svg .gneedle{fill:var(--text)}.pcl-gauge-svg .ghub{fill:var(--text);stroke:var(--white);stroke-width:2}
   .pcl-gauge-svg .gnum{font-size:20px;font-weight:700;font-family:'DM Sans',sans-serif;fill:var(--text)}
   .pcl-gauge-svg .gunit{font-size:9px;font-weight:500;fill:var(--muted)}
@@ -650,9 +655,28 @@
       +' L'+iB[0].toFixed(2)+' '+iB[1].toFixed(2)
       +' A'+rI+' '+rI+' 0 '+large+' 0 '+iA[0].toFixed(2)+' '+iA[1].toFixed(2)+' Z';
   }
-  var KEWCOR_BANDS=[{a:0.340,b:0.370,cls:'blue'},{a:0.370,b:0.400,cls:'teal'},{a:0.400,b:0.447,cls:'orange'},{a:0.447,b:0.470,cls:'red'}];
-  var GCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626'};
-  function kewcorCat(v){ if(v==null) return null; if(v<0.370) return {label:'Control',cls:'blue'}; if(v<0.400) return {label:'All-Court',cls:'teal'}; if(v<0.447) return {label:'Power',cls:'orange'}; return {label:'Beyond Spec',cls:'red'}; }
+  // >>> GENERATED from Work/KewCOR/web/kewcor-core.js BANDS (read via node)
+  // by qc.py's regen_kewcor_mirrors(). Do not hand-edit any line in this block -- it is
+  // rewritten from the source every time qc.py --brief/--recall runs. Lockstep 02 rebuilt the
+  // dial itself in paddle-comparison-lab.html; this was one of eight other places the same
+  // definition was duplicated, still on the retired 0.340/0.370/0.400/0.447/0.470 boundaries
+  // and the retired Control/All-Court/Power/Beyond Spec names until this rename.
+  var KEWCOR_BANDS=[
+    {a:0.34,b:0.366,cls:'kcband1',label:'Low Power'},
+    {a:0.366,b:0.39,cls:'kcband2',label:'Medium Power'},
+    {a:0.39,b:0.445,cls:'kcband3',label:'High Power'},
+    {a:0.445,b:0.55,cls:'kcband4',label:'Very High Power'}
+  ];
+  var GCOLOR={kcband1:'#ead9cc',kcband2:'#d0a180',kcband3:'#ae6837',kcband4:'#6b350f'};
+  function kewcorCat(v){
+    if(v==null) return null;
+    for(var i=0;i<KEWCOR_BANDS.length;i++){
+      if(v<KEWCOR_BANDS[i].b || i===KEWCOR_BANDS.length-1) return {label:KEWCOR_BANDS[i].label, cls:KEWCOR_BANDS[i].cls};
+    }
+    return null;
+  }
+  var GAUGE_LEGEND_HTML = KEWCOR_BANDS.map(function(bd){return '<span><i style="background:'+GCOLOR[bd.cls]+'"></i>'+esc(bd.label)+'</span>';}).join('');
+  // <<< GENERATED
   function gaugeSVG(value,min,max,bands,cat,decimals){
     var cx=100,cy=100,rO=88,rI=63;
     var minLbl='<text class="gtick" x="'+(cx-rO+2)+'" y="'+(cy+15)+'" text-anchor="start">'+min.toFixed(decimals)+'</text>';
@@ -1128,7 +1152,6 @@
         + '</div></div></div>';
     }).join('');
   }
-  var GAUGE_LEGEND_HTML = '<span><i style="background:#2563eb"></i>Control</span><span><i style="background:#0d9488"></i>All-Court</span><span><i style="background:#d97706"></i>Power</span><span><i style="background:#dc2626"></i>Beyond Spec</span>';
   function kewcorSeriesHtml(shapes){
     return shapes.map(function(p){
       var kcCat=kewcorCat(p.kewcor);
@@ -1136,7 +1159,7 @@
       var surfHtml = surf ? ('<div class="pcl-surf">'+surf+'</div>') : '<div style="color:var(--muted);font-size:12.5px;text-align:center;padding:30px 10px">No centerline surface data for this paddle yet.</div>';
       return seriesBlockOpen(p)
         + '<div class="pr-card"><div class="pr-charts">'
-          + '<div><div class="pr-cap">KewCOR Score</div><div>'+gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3)+'</div><div class="pr-gauge-legend">'+GAUGE_LEGEND_HTML+'</div></div>'
+          + '<div><div class="pr-cap">KewCOR Score</div><div>'+gaugeSVG(p.kewcor,0.340,0.550,KEWCOR_BANDS,kcCat,3)+'</div><div class="pr-gauge-legend">'+GAUGE_LEGEND_HTML+'</div></div>'
           + '<div><div class="pr-cap">Across-the-Face Curve</div><div>'+surfHtml+'</div></div>'
         + '</div></div></div>';
     }).join('');
@@ -1332,7 +1355,7 @@
 
     // kewcor
     var kcCat=kewcorCat(p.kewcor);
-    document.getElementById('prGauge').innerHTML = gaugeSVG(p.kewcor,0.340,0.470,KEWCOR_BANDS,kcCat,3);
+    document.getElementById('prGauge').innerHTML = gaugeSVG(p.kewcor,0.340,0.550,KEWCOR_BANDS,kcCat,3);
     document.getElementById('prGaugeLegend').innerHTML = GAUGE_LEGEND_HTML;
     document.getElementById('prKewcorNote').innerHTML = R.kewcorNote ? proseHtml(R.kewcorNote) : '<p>Surface curve loading…</p>';
     refreshSurfaceChart(p);

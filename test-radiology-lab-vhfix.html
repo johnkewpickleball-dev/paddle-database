@@ -565,10 +565,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       <div class="filter-title">KewCOR</div>
       <div class="filter-chip-group" id="kewcorFilter">
         <div class="chip active" data-val="">All</div>
-        <div class="chip" data-val="Control">Control</div>
-        <div class="chip" data-val="All-Court">All-Court</div>
-        <div class="chip" data-val="Power">Power</div>
-        <div class="chip" data-val="Beyond Spec">Beyond Spec</div>
+        <div class="chip" data-val="Low Power">Low Power</div>
+        <div class="chip" data-val="Medium Power">Medium Power</div>
+        <div class="chip" data-val="High Power">High Power</div>
+        <div class="chip" data-val="Very High Power">Very High Power</div>
       </div>
     </div>
 
@@ -638,7 +638,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   <div class="dur-info-box">
     <h3>Firepower &amp; KewCOR<button class="dur-info-close" onclick="closeTierInfo()" aria-label="Close">&times;</button></h3>
     <p><b>Firepower</b> is an overall 0&ndash;100 shot-power rating: <b>Low</b> 0&ndash;33, <b>Medium</b> 34&ndash;66, <b>High</b> 67&ndash;100.</p>
-    <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.470 scale: <b>Control</b> 0.340&ndash;0.369, <b>All-Court</b> 0.370&ndash;0.399, <b>Power</b> 0.400&ndash;0.446, <b>Beyond Spec</b> 0.447&ndash;0.470.</p>
+    <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.550 scale: <b>Low Power</b> 0.340&ndash;0.366, <b>Medium Power</b> 0.366&ndash;0.390, <b>High Power</b> 0.390&ndash;0.445, <b>Very High Power</b> 0.445&ndash;0.550.</p>
   </div>
 </div>
 
@@ -957,9 +957,12 @@ function chipVals(id){
 
 // Same tiering logic as the Comparison Lab's Speed Gauges (see kewcorCat/firepowerCat there).
 function firepowerTier(v){ if(v==null) return null; if(v<=33) return 'Low'; if(v<=66) return 'Medium'; return 'High'; }
-function kewcorTier(v){ if(v==null) return null; if(v<0.370) return 'Control'; if(v<0.400) return 'All-Court'; if(v<0.447) return 'Power'; return 'Beyond Spec'; }
+// Renamed 2026-09-09 to match kewcor-core.js BUILD 4 (Lockstep 02). This is a dev-only,
+// not-deployed test file, but left on the retired scheme it would be exactly what someone
+// copies from next.
+function kewcorTier(v){ if(v==null) return null; if(v<0.366) return 'Low Power'; if(v<0.39) return 'Medium Power'; if(v<0.445) return 'High Power'; return 'Very High Power'; }
 const FP_TIER_COLOR = {Low:'#2563eb', Medium:'#0d9488', High:'#d97706'};
-const KC_TIER_COLOR = {Control:'#2563eb', 'All-Court':'#0d9488', Power:'#d97706', 'Beyond Spec':'#dc2626'};
+const KC_TIER_COLOR = {'Low Power':'#ead9cc', 'Medium Power':'#d0a180', 'High Power':'#ae6837', 'Very High Power':'#6b350f'};
 function firepowerBadge(p){ const t=firepowerTier(p.firepower); if(!t) return ''; const c=FP_TIER_COLOR[t]; return `<span class="badge" style="background:${c}22;color:${c}" title="Firepower: ${p.firepower!=null?Math.round(p.firepower):'—'}/100">${t} Firepower</span>`; }
 function kewcorBadge(p){ const t=kewcorTier(p.kewcor); if(!t) return ''; const c=KC_TIER_COLOR[t]; return `<span class="badge" style="background:${c}22;color:${c}" title="KewCOR: ${p.kewcor!=null?p.kewcor.toFixed(4):'—'}">${t}</span>`; }
 

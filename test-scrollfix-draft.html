@@ -496,9 +496,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       <div class="filter-title">Performance Profile</div>
       <div class="filter-chip-group" id="profileFilter">
         <div class="chip active" data-val="">All</div>
-        <div class="chip" data-val="Control">Control</div>
-        <div class="chip" data-val="All-Court">All-Court</div>
-        <div class="chip" data-val="Power">Power</div>
+        <div class="chip" data-val="Low Power">Low Power</div>
+        <div class="chip" data-val="Medium Power">Medium Power</div>
+        <div class="chip" data-val="High Power">High Power</div>
+        <div class="chip" data-val="Very High Power">Very High Power</div>
       </div>
     </div>
 
@@ -731,11 +732,14 @@ function applyFilters(forcedSort){
       if(!ok) return false;
     }
     if(f.profile.length){
+      // Renamed 2026-09-09 to match kewcor-core.js BUILD 4 (Lockstep 02); also fixes the old
+      // <= at 0.39 off-by-one and adds the missing Very High Power bucket.
       const k=p.kewcor;
       const ok=f.profile.some(pr =>
-        pr==='Control'   ? (k!=null && k<0.366) :
-        pr==='All-Court' ? (k!=null && k>=0.366 && k<=0.39) :
-        pr==='Power'     ? (k!=null && k>0.39) : false);
+        pr==='Low Power'      ? (k!=null && k<0.366) :
+        pr==='Medium Power'   ? (k!=null && k>=0.366 && k<0.39) :
+        pr==='High Power'     ? (k!=null && k>=0.39 && k<0.445) :
+        pr==='Very High Power'? (k!=null && k>=0.445) : false);
       if(!ok) return false;
     }
     if(f.balance.length){

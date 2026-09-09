@@ -88,7 +88,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       <h2 class="pcl__h2 pcl__h2-row">Speed Gauges
         <span class="kc-info" role="button" tabindex="0" title="About the Speed Gauges" aria-label="About the Speed Gauges" onclick="openGaugeInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
       </h2>
-      <p class="pcl__sublead">Tilt (which way the paddle leans, pop to power) and KewCOR (power at the sweet spot, 0.340&ndash;0.470).</p>
+      <p class="pcl__sublead">Tilt (which way the paddle leans, pop to power) and KewCOR (power at the sweet spot, 0.340&ndash;0.550, top of the scale compressed).</p>
       <div class="pcl__row" id="rowGauges"></div>
       <h2 class="pcl__h2 pcl__h2-row">KewCOR Paddle Surface Map
         <span class="kc-info" role="button" tabindex="0" title="About the KewCOR Curve" aria-label="About the KewCOR Curve" onclick="openKcInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
@@ -1925,7 +1925,18 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // Sort options for the paddle dropdowns.
   function dateKey(s){ if(!s) return NaN; var m=String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/); if(m){var y=+m[3]; if(y<100)y+=2000; return new Date(y,+m[1]-1,+m[2]).getTime();} var d=Date.parse(s); return isNaN(d)?NaN:d; }
   function spinRank(c){ var m={Elite:0,Good:1,Fair:2,Poor:3}; return c in m ? m[c] : 4; }
-  function profRank(p){ var k=p.kewcor; if(k==null) return 3; return k<0.366?0:(k<=0.39?1:2); }
+  // Performance Profile is the SAME taxonomy as the KewCOR band -- same names, same cutoffs,
+  // not a separate concept. DERIVED from KEWCOR_BANDS (the generated block above), using the
+  // identical comparison kewcorCat() uses (v < band.b, or the last band), so there is no second
+  // hardcoded copy of the boundaries left in this file to drift. FIX 2026-09-09: the old version
+  // used <= at 0.39 where the dial used <, so a paddle at exactly 0.390 sorted one band below
+  // where its own dial placed it, and it collapsed everything above 0.39 into one bucket with no
+  // Very High Power group at all.
+  function profRank(p){
+    var k=p.kewcor; if(k==null) return KEWCOR_BANDS.length;
+    for(var i=0;i<KEWCOR_BANDS.length;i++){ if(k<KEWCOR_BANDS[i].b || i===KEWCOR_BANDS.length-1) return i; }
+    return KEWCOR_BANDS.length;
+  }
   function cmpName(a,b){ return (a.company+' '+a.paddle).localeCompare(b.company+' '+b.paddle, undefined, {sensitivity:'base'}); }
   function sortedIndices(mode){
     var idx=PADDLES.map(function(_,i){return i;});
@@ -1947,7 +1958,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     if(mode==='profile'){
       // Visible grouped headers; alphabetical within each group.
       opts='<option value="">Select a paddle…</option>';
-      [['Control',0],['All-Court',1],['Power',2],['Unrated',3]].forEach(function(g){
+      // Built from KEWCOR_BANDS, not a hardcoded label list -- same reason as profRank above.
+      KEWCOR_BANDS.map(function(bd,i){return [bd.label,i];}).concat([['Unrated',KEWCOR_BANDS.length]]).forEach(function(g){
         var members=PADDLES.map(function(_,i){return i;})
           .filter(function(i){return profRank(PADDLES[i])===g[1];})
           .sort(function(a,b){return cmpName(PADDLES[a],PADDLES[b]);});
@@ -2194,8 +2206,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <div class="dur-info-overlay" id="gaugeInfoOverlay" onclick="if(event.target===this)closeGaugeInfo()">
   <div class="dur-info-box">
     <h3>Speed Gauges<button class="dur-info-close" onclick="closeGaugeInfo()" aria-label="Close">&times;</button></h3>
-    <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.470 scale: <b>Control</b> 0.340&ndash;0.369, <b>All-Court</b> 0.370&ndash;0.399, <b>Power</b> 0.400&ndash;0.446, <b>Beyond Spec</b> 0.447&ndash;0.470.</p>
-    <p>Scores outside 0.340&ndash;0.470 are shown bottoming out or topping out at the nearest edge of the gauge.</p>
+    <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.550 scale: <b>Low Power</b> 0.340&ndash;0.366, <b>Medium Power</b> 0.366&ndash;0.390, <b>High Power</b> 0.390&ndash;0.445, <b>Very High Power</b> 0.445&ndash;0.550. The top of the scale is compressed: 0.340&ndash;0.445 is linear, and the remaining range above 0.445 is squeezed into the last tenth of the dial so the crowded middle of the fleet stays readable.</p>
+    <p>Scores below 0.340 bottom out at the near edge of the gauge. A score above 0.550 pins the needle at the far edge, and the gauge marks it with an outward chevron and the words "above dial range" rather than relying on color alone.</p>
     <p><b>Tilt</b> shows which way a paddle's firepower leans, from Pop to Power, on a &minus;1.5 to +1.5 scale: <b>Pop-Leaning</b> &minus;1.5 to &minus;0.75, <b>Slightly Pop</b> &minus;0.75 to &minus;0.25, <b>Balanced</b> &minus;0.25 to +0.25, <b>Slightly Power</b> +0.25 to +0.75, <b>Power-Leaning</b> +0.75 to +1.5.</p>
     <p>Paddles without a KewCOR curve have not been tested on the cannon, so Tilt is not available for them.</p>
   </div>
