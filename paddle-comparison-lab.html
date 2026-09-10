@@ -285,10 +285,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
      #d0a180 / #ae6837 / #6b350f) so the two never disagree if both are ever on screen at once,
      and because that ramp is what survives a black-and-white print. */
   .pcl-fpcard{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px}
-  .pcl-fpcard-title{text-align:center;color:#0d1f2d;font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif;margin-bottom:8px}
-  .pcl-fp-head{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px}
+  .pcl-fpcard-title{text-align:center;color:var(--text);font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif;margin-bottom:8px}
+  .pcl-fp-head{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
   .pcl-fp-score{text-align:center;font-family:'DM Sans',sans-serif;margin-bottom:10px}
-  .pcl-fp-score-num{font-size:22px;font-weight:700;color:var(--navy)}
+  .pcl-fp-score-num{font-size:22px;font-weight:700;color:var(--text)}
   .pcl-fp-score-unit{font-size:11px;font-weight:500;color:var(--muted)}
   .pcl-fp-score-sat{display:block;font-size:9.5px;color:var(--muted);margin-top:1px}
   .pcl-fpbar-wrap{position:relative;width:100%;padding:0 2px}
@@ -301,17 +301,21 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-fpbar-disabled{fill:var(--border)}
   .pcl-fpbar-sub-tick{stroke:var(--white);stroke-width:1;opacity:.9}
   .pcl-fpbar-sub-label{font-size:6.5px;fill:#fff;font-family:'DM Sans',sans-serif;font-weight:600;text-anchor:middle}
-  .pcl-fpbar-zone{fill:rgba(255,255,255,.001);stroke:var(--navy);stroke-width:.8;stroke-dasharray:2 1.4;opacity:.55}
+  .pcl-fpbar-zone{fill:rgba(255,255,255,.001);stroke:var(--text);stroke-width:.9;stroke-dasharray:2 1.4;opacity:.6}
   .pcl-fpbar-seam{stroke:var(--white);stroke-width:1.5;opacity:.9}
-  .pcl-fpbar-pointer{fill:#1a2535}
-  .pcl-fpbar-pointer-line{stroke:#1a2535;stroke-width:1.5}
+  /* Pointer: white fill/stroke over a dark halo, so it stays visible against BOTH the pale
+     Control/All-Court bands and the dark Power/Very High Power bands, and against a dark-mode
+     page background too -- a single fixed ink color could not do all three at once. */
+  .pcl-fpbar-pointer-halo{stroke:rgba(0,0,0,.55);stroke-width:3.5}
+  .pcl-fpbar-pointer{fill:#fff;stroke:rgba(0,0,0,.55);stroke-width:1}
+  .pcl-fpbar-pointer-line{stroke:#fff;stroke-width:1.5}
   .pcl-fpbar-chevron{fill:var(--text)}
-  .pcl-fpbar-label{font-size:9.5px;font-weight:700;font-family:'DM Sans',sans-serif;fill:var(--navy);text-anchor:middle}
+  .pcl-fpbar-label{font-size:9.5px;font-weight:700;font-family:'DM Sans',sans-serif;fill:var(--text);text-anchor:middle}
   .pcl-fpbar-label-over{fill:var(--muted);font-weight:600}
   .pcl-fpbar-tick{font-size:8px;fill:var(--muted);font-family:'DM Sans',sans-serif}
   .pcl-fpbar-unavail{fill:var(--muted);font-size:10.5px;font-weight:600;font-family:'DM Sans',sans-serif;text-anchor:middle}
   .pcl-fp-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:5px 9px;margin-top:8px;padding:0 4px}
-  .pcl-fp-note{font-size:10.5px;color:var(--muted);margin-top:4px;font-family:'DM Sans',sans-serif;text-align:center}
+  .pcl-fp-note{font-size:10.5px;line-height:1.25;color:var(--muted);margin-top:4px;font-family:'DM Sans',sans-serif;text-align:center}
   .pcl-fpcard--disabled .pcl-fp-head{color:var(--muted)}
   .pcl-fpcard--disabled .pcl-fp-legend{opacity:.45}
 
@@ -1610,15 +1614,18 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     catch(e){ return false; }
   })();
   function fpBarSVG(id, value){
-    // Layout: viewBox 0 0 300 62. Bar band y=18 h=16, spanning x=6..294 (288px of track).
-    var X0=6, TRACK=288, Y=18, H=16;
+    // Layout: viewBox 0 0 300 72. Bar band y=28 h=16, spanning x=6..294 (288px of track).
+    // Y=28 (was 18, 2026-09-10) leaves room above the bar for the pointer's triangle head
+    // (which reaches up to Y-13) to sit BELOW the value/label text at y=8, instead of
+    // overlapping it -- the label must stay legible even when the pointer sits near it.
+    var X0=6, TRACK=288, Y=28, H=16;
     var hasVal = value!=null && isFinite(value);
     var minLbl='<text class="pcl-fpbar-tick" x="'+X0+'" y="'+(Y+H+12)+'" text-anchor="start">'+KC_BAND_LO.toFixed(3)+'</text>';
     var maxLbl='<text class="pcl-fpbar-tick" x="'+(X0+TRACK)+'" y="'+(Y+H+12)+'" text-anchor="end">'+KC_BAND_HI.toFixed(3)+'</text>';
     if(!hasVal){
       var grayBand='<rect class="pcl-fpbar-disabled" x="'+X0+'" y="'+Y+'" width="'+TRACK+'" height="'+H+'" rx="3"/>';
       var naTxt='<text class="pcl-fpbar-unavail" x="'+(X0+TRACK/2)+'" y="'+(Y+H+26)+'">KewCOR value not available</text>';
-      return '<svg class="pcl-fpbar-svg" data-fpbar="'+id+'" viewBox="0 0 300 62" preserveAspectRatio="xMidYMid meet">'
+      return '<svg class="pcl-fpbar-svg" data-fpbar="'+id+'" viewBox="0 0 300 72" preserveAspectRatio="xMidYMid meet">'
         +grayBand+minLbl+maxLbl+naTxt+'</svg>';
     }
     // Bands, left to right, each drawn from its own fraction of the track via kcScaleFrac --
@@ -1659,6 +1666,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var cat=kewcorCat(value);
     var fineLabel = (typeof kcBandLabel==='function' ? kcBandLabel(value) : (cat?cat.label:null));
     var pointer='<g class="pcl-fpbar-pointer-grp" data-x0="'+X0+'" data-track="'+TRACK+'" data-frac="'+frac.toFixed(4)+'" data-y="'+Y+'" data-h="'+H+'">'
+      // Halo line drawn first, underneath: a wide dark stroke so the white pointer on top stays
+      // visible against the pale Control/All-Court bands, exactly the way it needs contrast
+      // against the dark Power/Very High Power bands and a dark-mode page background too.
+      +'<line class="pcl-fpbar-pointer-halo" x1="'+targetX.toFixed(2)+'" y1="'+(Y-6)+'" x2="'+targetX.toFixed(2)+'" y2="'+(Y+H+6)+'"/>'
       +'<line class="pcl-fpbar-pointer-line" x1="'+targetX.toFixed(2)+'" y1="'+(Y-6)+'" x2="'+targetX.toFixed(2)+'" y2="'+(Y+H+6)+'"/>'
       +'<polygon class="pcl-fpbar-pointer" points="'+targetX.toFixed(2)+','+(Y-6)+' '+(targetX-4).toFixed(2)+','+(Y-13)+' '+(targetX+4).toFixed(2)+','+(Y-13)+'"/>'
       +'</g>';
@@ -1670,7 +1681,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var labelTxt = overRange
       ? '<text class="pcl-fpbar-label" x="150" y="8">'+value.toFixed(3)+' <tspan class="pcl-fpbar-label-over">above dial range</tspan></text>'
       : '<text class="pcl-fpbar-label" x="150" y="8">'+value.toFixed(3)+(fineLabel?'  ·  '+esc(fineLabel):'')+'</text>';
-    return '<svg class="pcl-fpbar-svg" data-fpbar="'+id+'" viewBox="0 0 300 62" preserveAspectRatio="xMidYMid meet">'
+    return '<svg class="pcl-fpbar-svg" data-fpbar="'+id+'" viewBox="0 0 300 72" preserveAspectRatio="xMidYMid meet">'
       +labelTxt+bandRects+zoneRects+subMarks+seamTick+pointer+chevron+minLbl+maxLbl+'</svg>';
   }
   function firepowerCardCol(p){
@@ -1681,14 +1692,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + '</div>';
     var barSVG = fpBarSVG('kewcor', p.kewcor);
     var legend = '<div class="pcl-fp-legend">'+KEWCOR_BANDS.map(function(bd){return '<span class="pcl-gl-item"><i class="gauge-'+bd.cls+'"></i>'+esc(bd.label)+'</span>';}).join('')+'</div>'
-      + '<div class="pcl-fp-note">Control through Very High Power run left to right; the top of the scale is compressed into the last tenth of the bar, and each interior cut has a narrow boundary zone.</div>';
+      + '<div class="pcl-fp-note">The top of the scale (Very High Power) is compressed into the last tenth of the bar; the remainder follows a linear scale.</div>';
     var head='<div class="pcl-fp-head">Firepower'+ginfo('About Firepower','openGaugeInfo')+'</div>';
     var cardCls='pcl-fpcard'+(p.kewcor==null?' pcl-fpcard--disabled':'');
     var cardTitle='<div class="kc-title pcl-fpcard-title">'+esc(p.company+' '+p.paddle)+'</div>';
     return '<div class="'+cardCls+'">'+cardTitle+head+scoreHTML+'<div class="pcl-fpbar-wrap">'+barSVG+'</div>'+legend+'</div>';
   }
-  function setFpPointerX(line,poly,x0,track,frac,y,h){
+  function setFpPointerX(halo,line,poly,x0,track,frac,y,h){
     var x=x0+track*frac;
+    halo.setAttribute('x1',x.toFixed(2)); halo.setAttribute('x2',x.toFixed(2));
     line.setAttribute('x1',x.toFixed(2)); line.setAttribute('x2',x.toFixed(2));
     poly.setAttribute('points',x.toFixed(2)+','+(y-6)+' '+(x-4).toFixed(2)+','+(y-13)+' '+(x+4).toFixed(2)+','+(y-13));
   }
@@ -1698,15 +1710,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     g.dataset.animated='1';
     var x0=+g.getAttribute('data-x0'), track=+g.getAttribute('data-track'),
         fracActual=+g.getAttribute('data-frac'), y=+g.getAttribute('data-y'), h=+g.getAttribute('data-h');
-    var line=g.querySelector('.pcl-fpbar-pointer-line'), poly=g.querySelector('.pcl-fpbar-pointer');
-    if(fpReduceMotion){ setFpPointerX(line,poly,x0,track,fracActual,y,h); return; }
-    setFpPointerX(line,poly,x0,track,0,y,h);
+    var halo=g.querySelector('.pcl-fpbar-pointer-halo'), line=g.querySelector('.pcl-fpbar-pointer-line'), poly=g.querySelector('.pcl-fpbar-pointer');
+    if(fpReduceMotion){ setFpPointerX(halo,line,poly,x0,track,fracActual,y,h); return; }
+    setFpPointerX(halo,line,poly,x0,track,0,y,h);
     var dur=650, t0=null;
     function ease3(k){ return 1-Math.pow(1-k,3); }
     function frame(now){
       if(t0==null) t0=now;
       var k=Math.min(1,(now-t0)/dur);
-      setFpPointerX(line,poly,x0,track,fracActual*ease3(k),y,h);
+      setFpPointerX(halo,line,poly,x0,track,fracActual*ease3(k),y,h);
       if(k<1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
