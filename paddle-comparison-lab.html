@@ -85,10 +85,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       <h2 class="pcl__h2">Key Metrics</h2>
       <p class="pcl__sublead">Each axis is the paddle's scaled Z-score (0 at center → 100 at the edge).</p>
       <div class="pcl__row" id="rowMetrics"></div>
-      <h2 class="pcl__h2 pcl__h2-row">Speed Gauges
-        <span class="kc-info" role="button" tabindex="0" title="About the Speed Gauges" aria-label="About the Speed Gauges" onclick="openGaugeInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
+      <h2 class="pcl__h2 pcl__h2-row">Firepower
+        <span class="kc-info" role="button" tabindex="0" title="About Firepower" aria-label="About Firepower" onclick="openGaugeInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
       </h2>
-      <p class="pcl__sublead">Tilt (which way the paddle leans, pop to power) and KewCOR (power at the sweet spot, 0.340&ndash;0.550, top of the scale compressed).</p>
+      <p class="pcl__sublead">A 0&ndash;100 score built from KewCOR (power at the paddle's sweet spot, 0.340&ndash;0.550, top of the scale compressed): the bar shows exactly where each paddle sits.</p>
       <div class="pcl__row" id="rowGauges"></div>
       <h2 class="pcl__h2 pcl__h2-row">KewCOR Paddle Surface Map
         <span class="kc-info" role="button" tabindex="0" title="About the KewCOR Curve" aria-label="About the KewCOR Curve" onclick="openKcInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
@@ -210,7 +210,13 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-bsp-slider label span{color:#eb6834;font-weight:700}
   .pcl-bsp-slider input[type=range]{width:100%;accent-color:#eb6834}
 
-  /* ---- Speed Gauges ---- */
+  /* ---- LEGACY RADIAL GAUGES (UNUSED as of 2026-09-10) ----
+     Tilt is retired site-wide and the Speed Gauges section became the Firepower bar below.
+     This whole CSS block, and the matching JS block starting at "LEGACY RADIAL GAUGES" further
+     down, are kept in place and unwired from the render path rather than deleted -- John wants
+     the radial SVG gauge (gaugeSVG/gFrac/gBandPath/gaugeCol/animateGaugeCard/observeGauges)
+     available to reuse elsewhere. Nothing here is called by any current render function; grep
+     for "firepowerCardCol" to find what replaced it in the row assembly. */
   .pcl-gcard{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 8px 10px}
   .pcl-gauge-cardtitle{text-align:center;color:#0d1f2d;font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif;margin-bottom:8px}
   .pcl-gauges{display:flex;gap:6px}
@@ -271,6 +277,43 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-gauge-svg .gunavail{fill:var(--muted);font-size:11px;font-weight:600;font-family:'DM Sans',sans-serif}
   .pcl-gauge--disabled .pcl-gauge-head{color:var(--muted)}
   .pcl-gauge--disabled .pcl-gauge-legend{opacity:.45}
+
+  /* ---- Firepower Bar, 2026-09-10 (replaces the two-gauge Speed Gauges card above) ----
+     Horizontal, not radial: Control at the left, ascending to Very High Power at the right,
+     matching bandFrac's own piecewise scale (90% of the width linear, the last 10% compressed).
+     Colors are the SAME four-step lightness ramp as the legacy radial gauge above (#ead9cc /
+     #d0a180 / #ae6837 / #6b350f) so the two never disagree if both are ever on screen at once,
+     and because that ramp is what survives a black-and-white print. */
+  .pcl-fpcard{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px}
+  .pcl-fpcard-title{text-align:center;color:#0d1f2d;font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif;margin-bottom:8px}
+  .pcl-fp-head{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--navy);margin-bottom:2px}
+  .pcl-fp-score{text-align:center;font-family:'DM Sans',sans-serif;margin-bottom:10px}
+  .pcl-fp-score-num{font-size:22px;font-weight:700;color:var(--navy)}
+  .pcl-fp-score-unit{font-size:11px;font-weight:500;color:var(--muted)}
+  .pcl-fp-score-sat{display:block;font-size:9.5px;color:var(--muted);margin-top:1px}
+  .pcl-fpbar-wrap{position:relative;width:100%;padding:0 2px}
+  .pcl-fpbar-svg{width:100%;height:auto;display:block;overflow:visible}
+  .pcl-fpbar-band{stroke:var(--white);stroke-width:1}
+  .pcl-fpbar-band-kcband1{fill:#ead9cc}
+  .pcl-fpbar-band-kcband2{fill:#d0a180}
+  .pcl-fpbar-band-kcband3{fill:#ae6837}
+  .pcl-fpbar-band-kcband4{fill:#6b350f}
+  .pcl-fpbar-disabled{fill:var(--border)}
+  .pcl-fpbar-sub-tick{stroke:var(--white);stroke-width:1;opacity:.9}
+  .pcl-fpbar-sub-label{font-size:6.5px;fill:#fff;font-family:'DM Sans',sans-serif;font-weight:600;text-anchor:middle}
+  .pcl-fpbar-zone{fill:rgba(255,255,255,.001);stroke:var(--navy);stroke-width:.8;stroke-dasharray:2 1.4;opacity:.55}
+  .pcl-fpbar-seam{stroke:var(--white);stroke-width:1.5;opacity:.9}
+  .pcl-fpbar-pointer{fill:#1a2535}
+  .pcl-fpbar-pointer-line{stroke:#1a2535;stroke-width:1.5}
+  .pcl-fpbar-chevron{fill:var(--text)}
+  .pcl-fpbar-label{font-size:9.5px;font-weight:700;font-family:'DM Sans',sans-serif;fill:var(--navy);text-anchor:middle}
+  .pcl-fpbar-label-over{fill:var(--muted);font-weight:600}
+  .pcl-fpbar-tick{font-size:8px;fill:var(--muted);font-family:'DM Sans',sans-serif}
+  .pcl-fpbar-unavail{fill:var(--muted);font-size:10.5px;font-weight:600;font-family:'DM Sans',sans-serif;text-anchor:middle}
+  .pcl-fp-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:5px 9px;margin-top:8px;padding:0 4px}
+  .pcl-fp-note{font-size:10.5px;color:var(--muted);margin-top:4px;font-family:'DM Sans',sans-serif;text-align:center}
+  .pcl-fpcard--disabled .pcl-fp-head{color:var(--muted)}
+  .pcl-fpcard--disabled .pcl-fp-legend{opacity:.45}
 
   /* summary card (mirrors Paddle Database card) */
   .paddle-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;position:relative;display:flex;flex-direction:column}
@@ -1334,7 +1377,14 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   window.openBspInfo=function(){ document.getElementById('bspInfoOverlay').classList.add('open'); };
   window.closeBspInfo=function(){ document.getElementById('bspInfoOverlay').classList.remove('open'); };
 
-  // ---- Speed Gauges (Firepower + KewCOR speedometers) ----
+  // ---- LEGACY RADIAL GAUGES (UNUSED as of 2026-09-10) ----
+  // Tilt is retired and this section's render call was switched to firepowerCardCol (see the
+  // new "Firepower Bar" block further down, after this one closes at observeGauges/
+  // closeGaugeInfo). Nothing below this point, down to closeGaugeInfo, is called by the current
+  // render path -- kept in place, not deleted, because John wants this radial SVG gauge
+  // machinery (gaugeSVG/gFrac/gBandPath/gaugeCol/animateGaugeCard/observeGauges) available to
+  // reuse elsewhere. KEWCOR_BANDS/kcScaleFrac/kewcorCat just below are the ONE exception: they
+  // are still live, shared with profRank()'s Performance Profile filter further down this file.
   function gClamp(v,lo,hi){ return Math.max(lo,Math.min(hi,v)); }
   function gFrac(v,min,max){ return gClamp((v-min)/(max-min),0,1); }
   function gAngle(frac){ return 180-180*frac; }
@@ -1356,9 +1406,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // 0.370) for weeks before anyone noticed, misclassifying 46 paddles.
   var KC_BAND_LO=0.34, KC_BAND_HI=0.55, KC_BAND_SEAM=0.445, KC_BAND_LINEAR_ARC=0.9;
   var KEWCOR_BANDS=[
-    {a:0.34,b:0.366,cls:'kcband1',label:'Low Power'},
-    {a:0.366,b:0.39,cls:'kcband2',label:'Medium Power'},
-    {a:0.39,b:0.445,cls:'kcband3',label:'High Power'},
+    {a:0.34,b:0.366,cls:'kcband1',label:'Control'},
+    {a:0.366,b:0.4,cls:'kcband2',label:'All-Court'},
+    {a:0.4,b:0.445,cls:'kcband3',label:'Power'},
     {a:0.445,b:0.55,cls:'kcband4',label:'Very High Power'}
   ];
   // Piecewise, ported from kewcor-core.js's bandFrac: linear across KC_BAND_LINEAR_ARC
@@ -1379,6 +1429,34 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       if(v<KEWCOR_BANDS[i].b || i===KEWCOR_BANDS.length-1) return {label:KEWCOR_BANDS[i].label, cls:KEWCOR_BANDS[i].cls};
     }
     return null;
+  }
+  // Boundary zones (a zone beats a subdivision -- kewcor-core.js's bandLabel()
+  // precedence, ported here rather than re-decided) and Power subdivisions, both
+  // DERIVED in kewcor-core.js from BANDS and read verbatim, never re-typed.
+  var KC_BOUNDARIES=[
+    {from:0.361,to:0.371,label:'Boundary Control-All-Court'},
+    {from:0.395,to:0.405,label:'Boundary All-Court-Power'},
+    {from:0.44,to:0.45,label:'Boundary Power-Very High Power'}
+  ];
+  var KC_POWER_SUBS=[
+    {from:0.4,to:0.415,label:'Power (Low)'},
+    {from:0.415,to:0.43,label:'Power (Mid)'},
+    {from:0.43,to:0.445,label:'Power (High)'}
+  ];
+  // Ported from kewcor-core.js's bandLabel(): a boundary zone beats a Power
+  // subdivision, which beats the plain major-band name. Zones do not overlap at
+  // BOUNDARY_HALF=0.005, so first match is the only match.
+  function kcBandLabel(v){
+    if(v==null||!isFinite(v)) return null;
+    for(var i=0;i<KC_BOUNDARIES.length;i++){
+      if(v>=KC_BOUNDARIES[i].from && v<KC_BOUNDARIES[i].to) return KC_BOUNDARIES[i].label;
+    }
+    var cat=kewcorCat(v);
+    if(!cat || cat.label!=='Power') return cat?cat.label:null;
+    for(var j=0;j<KC_POWER_SUBS.length;j++){
+      if(v<KC_POWER_SUBS[j].to || j===KC_POWER_SUBS.length-1) return KC_POWER_SUBS[j].label;
+    }
+    return cat.label;
   }
   // <<< GENERATED
   var GCOLOR={blue:'#2563eb',teal:'#0d9488',orange:'#d97706',red:'#dc2626'};
@@ -1476,8 +1554,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   window.openKcMethodInfo=function(){ document.getElementById('kcMethodOverlay').classList.add('open'); };
   window.closeKcMethodInfo=function(){ document.getElementById('kcMethodOverlay').classList.remove('open'); };
-  window.openTiltMethodInfo=function(){ document.getElementById('tiltMethodOverlay').classList.add('open'); };
-  window.closeTiltMethodInfo=function(){ document.getElementById('tiltMethodOverlay').classList.remove('open'); };
+  // openTiltMethodInfo/closeTiltMethodInfo removed 2026-09-10: Tilt is retired and tiltMethodOverlay
+  // no longer exists in the DOM. Nothing in the kept-but-unused legacy gaugeCol block above calls them.
   function setNeedleAngle(g,cx,cy,angleDeg){ g.setAttribute('transform','rotate('+(-angleDeg).toFixed(3)+' '+cx+' '+cy+')'); }
   function animateNeedleGroup(g,onDone){
     if(!g){ if(onDone) onDone(); return; }
@@ -1520,6 +1598,131 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   window.openGaugeInfo=function(){ document.getElementById('gaugeInfoOverlay').classList.add('open'); };
   window.closeGaugeInfo=function(){ document.getElementById('gaugeInfoOverlay').classList.remove('open'); };
+
+  // ---- Firepower Bar, 2026-09-10 ----
+  // Replaces the two-gauge Speed Gauges card (Firepower/Tilt + KewCOR) above. Tilt is retired;
+  // this section is now Firepower, shown as a headline score plus the KewCOR position that score
+  // is now computed from (Stage 5 of the rebuild: Firepower is a scaled z-score on KewCOR, the
+  // same +/-2.75 anchor as Power/Pop, so the bar and the number are two views of one measurement,
+  // not two independent ones -- see CONSTANTS.md).
+  var fpReduceMotion = (function(){
+    try { return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; }
+    catch(e){ return false; }
+  })();
+  function fpBarSVG(id, value){
+    // Layout: viewBox 0 0 300 62. Bar band y=18 h=16, spanning x=6..294 (288px of track).
+    var X0=6, TRACK=288, Y=18, H=16;
+    var hasVal = value!=null && isFinite(value);
+    var minLbl='<text class="pcl-fpbar-tick" x="'+X0+'" y="'+(Y+H+12)+'" text-anchor="start">'+KC_BAND_LO.toFixed(3)+'</text>';
+    var maxLbl='<text class="pcl-fpbar-tick" x="'+(X0+TRACK)+'" y="'+(Y+H+12)+'" text-anchor="end">'+KC_BAND_HI.toFixed(3)+'</text>';
+    if(!hasVal){
+      var grayBand='<rect class="pcl-fpbar-disabled" x="'+X0+'" y="'+Y+'" width="'+TRACK+'" height="'+H+'" rx="3"/>';
+      var naTxt='<text class="pcl-fpbar-unavail" x="'+(X0+TRACK/2)+'" y="'+(Y+H+26)+'">KewCOR value not available</text>';
+      return '<svg class="pcl-fpbar-svg" data-fpbar="'+id+'" viewBox="0 0 300 62" preserveAspectRatio="xMidYMid meet">'
+        +grayBand+minLbl+maxLbl+naTxt+'</svg>';
+    }
+    // Bands, left to right, each drawn from its own fraction of the track via kcScaleFrac --
+    // the SAME piecewise map the legacy radial gauge used (linear to 0.445, compressed after),
+    // so a paddle's position here always agrees with wherever else the site plots it.
+    var bandRects = KEWCOR_BANDS.map(function(bd){
+      var xa=X0+TRACK*kcScaleFrac(bd.a), xb=X0+TRACK*kcScaleFrac(bd.b);
+      return '<rect class="pcl-fpbar-band pcl-fpbar-band-'+bd.cls+'" x="'+xa.toFixed(2)+'" y="'+Y+'" width="'+Math.max(0,xb-xa).toFixed(2)+'" height="'+H+'"/>';
+    }).join('');
+    // Power subdivisions: a hairline plus a tiny label, drawn ON TOP of the Power band's own
+    // color -- one color for the whole band, per spec, with the subdivisions subordinate to it.
+    var subMarks='';
+    if(typeof KC_POWER_SUBS!=='undefined'){
+      KC_POWER_SUBS.forEach(function(s,i){
+        var xa=X0+TRACK*kcScaleFrac(s.from), xb=X0+TRACK*kcScaleFrac(s.to);
+        var xm=(xa+xb)/2;
+        if(i>0) subMarks+='<line class="pcl-fpbar-sub-tick" x1="'+xa.toFixed(2)+'" y1="'+Y+'" x2="'+xa.toFixed(2)+'" y2="'+(Y+H)+'"/>';
+        var shortLabel=s.label.replace('Power (','').replace(')','');
+        subMarks+='<text class="pcl-fpbar-sub-label" x="'+xm.toFixed(2)+'" y="'+(Y+H-4)+'">'+shortLabel+'</text>';
+      });
+    }
+    // Boundary zones: a light dashed outline box over each +/-0.005 zone. Subtle on purpose --
+    // a fifth fill color, or anything louder than the band edges themselves, would overstate a
+    // presentation choice (John's, see kewcor-core.js) as if it were a fifth measured category.
+    var zoneRects='';
+    if(typeof KC_BOUNDARIES!=='undefined'){
+      KC_BOUNDARIES.forEach(function(z){
+        var xa=X0+TRACK*kcScaleFrac(z.from), xb=X0+TRACK*kcScaleFrac(z.to);
+        zoneRects+='<rect class="pcl-fpbar-zone" x="'+xa.toFixed(2)+'" y="'+(Y-1.5)+'" width="'+Math.max(0,xb-xa).toFixed(2)+'" height="'+(H+3)+'" rx="2"/>';
+      });
+    }
+    var seamX=X0+TRACK*kcScaleFrac(KC_BAND_SEAM);
+    var seamTick='<line class="pcl-fpbar-seam" x1="'+seamX.toFixed(2)+'" y1="'+(Y-3)+'" x2="'+seamX.toFixed(2)+'" y2="'+(Y+H+3)+'"/>';
+    var clamped=gClamp(value,KC_BAND_LO,KC_BAND_HI);
+    var frac=kcScaleFrac(clamped);
+    var targetX=X0+TRACK*frac;
+    var overRange = value>KC_BAND_HI;
+    var cat=kewcorCat(value);
+    var fineLabel = (typeof kcBandLabel==='function' ? kcBandLabel(value) : (cat?cat.label:null));
+    var pointer='<g class="pcl-fpbar-pointer-grp" data-x0="'+X0+'" data-track="'+TRACK+'" data-frac="'+frac.toFixed(4)+'" data-y="'+Y+'" data-h="'+H+'">'
+      +'<line class="pcl-fpbar-pointer-line" x1="'+targetX.toFixed(2)+'" y1="'+(Y-6)+'" x2="'+targetX.toFixed(2)+'" y2="'+(Y+H+6)+'"/>'
+      +'<polygon class="pcl-fpbar-pointer" points="'+targetX.toFixed(2)+','+(Y-6)+' '+(targetX-4).toFixed(2)+','+(Y-13)+' '+(targetX+4).toFixed(2)+','+(Y-13)+'"/>'
+      +'</g>';
+    var chevron='';
+    if(overRange){
+      var cxr=X0+TRACK+3;
+      chevron='<polygon class="pcl-fpbar-chevron" points="'+cxr+','+(Y+H/2-5)+' '+(cxr+8)+','+(Y+H/2)+' '+cxr+','+(Y+H/2+5)+'"/>';
+    }
+    var labelTxt = overRange
+      ? '<text class="pcl-fpbar-label" x="150" y="8">'+value.toFixed(3)+' <tspan class="pcl-fpbar-label-over">above dial range</tspan></text>'
+      : '<text class="pcl-fpbar-label" x="150" y="8">'+value.toFixed(3)+(fineLabel?'  ·  '+esc(fineLabel):'')+'</text>';
+    return '<svg class="pcl-fpbar-svg" data-fpbar="'+id+'" viewBox="0 0 300 62" preserveAspectRatio="xMidYMid meet">'
+      +labelTxt+bandRects+zoneRects+subMarks+seamTick+pointer+chevron+minLbl+maxLbl+'</svg>';
+  }
+  function firepowerCardCol(p){
+    var hasFp = p.firepower!=null;
+    var fpSat = hasFp && p.firepower>=100;
+    var scoreHTML = '<div class="pcl-fp-score"><span class="pcl-fp-score-num">'+(hasFp?Math.round(Math.min(100,p.firepower)):'—')+'</span><span class="pcl-fp-score-unit">/100</span>'
+      + (fpSat? '<span class="pcl-fp-score-sat">tops out at 100; the bar below shows where it actually sits</span>' : '')
+      + '</div>';
+    var barSVG = fpBarSVG('kewcor', p.kewcor);
+    var legend = '<div class="pcl-fp-legend">'+KEWCOR_BANDS.map(function(bd){return '<span class="pcl-gl-item"><i class="gauge-'+bd.cls+'"></i>'+esc(bd.label)+'</span>';}).join('')+'</div>'
+      + '<div class="pcl-fp-note">Control through Very High Power run left to right; the top of the scale is compressed into the last tenth of the bar, and each interior cut has a narrow boundary zone.</div>';
+    var head='<div class="pcl-fp-head">Firepower'+ginfo('About Firepower','openGaugeInfo')+'</div>';
+    var cardCls='pcl-fpcard'+(p.kewcor==null?' pcl-fpcard--disabled':'');
+    var cardTitle='<div class="kc-title pcl-fpcard-title">'+esc(p.company+' '+p.paddle)+'</div>';
+    return '<div class="'+cardCls+'">'+cardTitle+head+scoreHTML+'<div class="pcl-fpbar-wrap">'+barSVG+'</div>'+legend+'</div>';
+  }
+  function setFpPointerX(line,poly,x0,track,frac,y,h){
+    var x=x0+track*frac;
+    line.setAttribute('x1',x.toFixed(2)); line.setAttribute('x2',x.toFixed(2));
+    poly.setAttribute('points',x.toFixed(2)+','+(y-6)+' '+(x-4).toFixed(2)+','+(y-13)+' '+(x+4).toFixed(2)+','+(y-13));
+  }
+  function animateFpPointer(g){
+    if(!g){ return; }
+    if(g.dataset.animated){ return; }
+    g.dataset.animated='1';
+    var x0=+g.getAttribute('data-x0'), track=+g.getAttribute('data-track'),
+        fracActual=+g.getAttribute('data-frac'), y=+g.getAttribute('data-y'), h=+g.getAttribute('data-h');
+    var line=g.querySelector('.pcl-fpbar-pointer-line'), poly=g.querySelector('.pcl-fpbar-pointer');
+    if(fpReduceMotion){ setFpPointerX(line,poly,x0,track,fracActual,y,h); return; }
+    setFpPointerX(line,poly,x0,track,0,y,h);
+    var dur=650, t0=null;
+    function ease3(k){ return 1-Math.pow(1-k,3); }
+    function frame(now){
+      if(t0==null) t0=now;
+      var k=Math.min(1,(now-t0)/dur);
+      setFpPointerX(line,poly,x0,track,fracActual*ease3(k),y,h);
+      if(k<1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  function animateFirepowerCard(card){
+    if(card.dataset.fpAnimated) return; card.dataset.fpAnimated='1';
+    animateFpPointer(card.querySelector('[data-fpbar="kewcor"] .pcl-fpbar-pointer-grp'));
+  }
+  var fpObserver=null;
+  function observeFirepowerBars(){
+    var host=document.getElementById('rowGauges'); if(!host) return;
+    var cards=host.querySelectorAll('.pcl-fpcard');
+    if(!('IntersectionObserver' in window)){ [].forEach.call(cards,animateFirepowerCard); return; }
+    if(!fpObserver) fpObserver=new IntersectionObserver(function(ents){ ents.forEach(function(en){ if(en.isIntersecting){ animateFirepowerCard(en.target); fpObserver.unobserve(en.target); } }); },{threshold:.3});
+    [].forEach.call(cards,function(c){ fpObserver.observe(c); });
+  }
 
   // ---- Live surface-map fetch + name matcher (auto-updates as the sheet changes) ----
   // SURFACE_MAP starts as a reviewed baked snapshot; once the live sheet loads, fresh
@@ -1874,11 +2077,11 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       var ps=sel.map(function(i){return PADDLES[i];});
       rowSummary.innerHTML = state.slots.map(function(s,slot){ return s==null?'':summaryCard(PADDLES[s],slot); }).filter(Boolean).join('');
       rowMetrics.innerHTML = sel.map(function(i){ return metricsCol(PADDLES[i], i); }).join('');
-      document.getElementById('rowGauges').innerHTML = ps.map(gaugeCol).join('');
+      document.getElementById('rowGauges').innerHTML = ps.map(firepowerCardCol).join('');
       document.getElementById('rowSurface').innerHTML = ps.map(surfaceCol).join('');
       rowDetails.innerHTML = ps.map(detailCol).join('');
       observeRadars();
-      observeGauges();
+      observeFirepowerBars();
       observeSurface();
       refreshBallSpeed();
       renderFeel();
@@ -2205,27 +2408,18 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 
 <div class="dur-info-overlay" id="gaugeInfoOverlay" onclick="if(event.target===this)closeGaugeInfo()">
   <div class="dur-info-box">
-    <h3>Speed Gauges<button class="dur-info-close" onclick="closeGaugeInfo()" aria-label="Close">&times;</button></h3>
-    <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.550 scale: <b>Low Power</b> 0.340&ndash;0.366, <b>Medium Power</b> 0.366&ndash;0.390, <b>High Power</b> 0.390&ndash;0.445, <b>Very High Power</b> 0.445&ndash;0.550. The top of the scale is compressed: 0.340&ndash;0.445 is linear, and the remaining range above 0.445 is squeezed into the last tenth of the dial so the crowded middle of the fleet stays readable.</p>
-    <p>Scores below 0.340 bottom out at the near edge of the gauge. A score above 0.550 pins the needle at the far edge, and the gauge marks it with an outward chevron and the words "above dial range" rather than relying on color alone.</p>
-    <p><b>Tilt</b> shows which way a paddle's firepower leans, from Pop to Power, on a &minus;1.5 to +1.5 scale: <b>Pop-Leaning</b> &minus;1.5 to &minus;0.75, <b>Slightly Pop</b> &minus;0.75 to &minus;0.25, <b>Balanced</b> &minus;0.25 to +0.25, <b>Slightly Power</b> +0.25 to +0.75, <b>Power-Leaning</b> +0.75 to +1.5.</p>
-    <p>Paddles without a KewCOR curve have not been tested on the cannon, so Tilt is not available for them.</p>
-  </div>
-</div>
-
-<div class="dur-info-overlay" id="tiltMethodOverlay" onclick="if(event.target===this)closeTiltMethodInfo()">
-  <div class="dur-info-box">
-    <h3>Tilt<button class="dur-info-close" onclick="closeTiltMethodInfo()" aria-label="Close">&times;</button></h3>
-    <p>Which way a paddle's firepower leans, from Pop to Power. Measured in standard deviations across the tested fleet, so 0 is the fleet average and +1.0 leans one standard deviation toward Power. Driven mostly by swing weight.</p>
-    <p>Shape is a strong predictor of lean: elongated paddles tend to run heavier in swing weight and land Power-leaning, while widebody paddles tend to run lighter and land Pop-leaning. That is why the same model can land on opposite sides of balanced across its shape variants.</p>
+    <h3>Firepower<button class="dur-info-close" onclick="closeGaugeInfo()" aria-label="Close">&times;</button></h3>
+    <p><b>Firepower</b> is a 0&ndash;100 score, a scaled z-score on KewCOR using the same &minus;2.75/+2.75 anchor as Power and Pop. It saturates: any paddle at or above KewCOR 0.4694 reads 100, so a few of the hottest paddles in the fleet show the same Firepower number while sitting at different points on the bar below. The bar carries that detail; the number alone does not.</p>
+    <p><b>KewCOR</b> measures power at the paddle's sweet spot on a 0.340&ndash;0.550 scale: <b>Control</b> 0.340&ndash;0.366, <b>All-Court</b> 0.366&ndash;0.400, <b>Power</b> 0.400&ndash;0.445 (subdividing into Low, Mid and High), <b>Very High Power</b> 0.445&ndash;0.550. A narrow zone around each interior cut (0.010 wide) reads as a boundary rather than either neighboring band, since the measurement error is close to that width. The top of the scale is compressed: 0.340&ndash;0.445 is linear, and the remaining range above 0.445 is squeezed into the last tenth of the bar so the crowded middle of the fleet stays readable.</p>
+    <p>Positions below 0.340 sit at the left edge of the bar. A KewCOR above 0.550 pins the pointer at the right edge, and the bar marks it with an outward chevron and the words "above dial range" rather than relying on color alone.</p>
   </div>
 </div>
 
 <div class="dur-info-overlay" id="kcMethodOverlay" onclick="if(event.target===this)closeKcMethodInfo()">
   <div class="dur-info-box">
     <h3>KewCOR<button class="dur-info-close" onclick="closeKcMethodInfo()" aria-label="Close">&times;</button></h3>
-    <p>Controlled laboratory data capturing efficiency of paddle-ball collision using a ball cannon and clamped paddle. Bands (Low, Medium, High, Very High Power) describe measured power only and are not a statement about USAP certification or any other standard.</p>
-    <p>The scale from 0.340 to 0.445 is linear. Above 0.445, the gauge compresses the remaining range so the crowded middle of the fleet stays readable: the top band is not drawn to the same scale as the rest of the dial.</p>
+    <p>Controlled laboratory data capturing efficiency of paddle-ball collision using a ball cannon and clamped paddle. Bands (Control, All-Court, Power, Very High Power) describe measured power only and are not a statement about USAP certification or any other standard.</p>
+    <p>The scale from 0.340 to 0.445 is linear. Above 0.445, the scale compresses the remaining range so the crowded middle of the fleet stays readable: the top band is not drawn to the same scale as the rest.</p>
   </div>
 </div>
 
