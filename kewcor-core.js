@@ -28,8 +28,10 @@
    *   2  2026-09-08  ball-age gate on RAMP; pooledD prefers MID and POST over PRE
    *   3  2026-09-09  PRE is 16 shots, first 6 discarded as overnight warm-up
    *   4  2026-09-09  band boundaries and names standardized; the scale is piecewise
+   *   5  2026-09-10  Control/All-Court/Power/Very High Power; 0.390 cut moved to 0.400;
+   *                  boundary zones and Power subdivisions added; Tilt retired
    */
-  const BUILD = 4;
+  const BUILD = 5;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
@@ -485,38 +487,97 @@
     // function carried its own copy of the same three numbers, three lines under a comment
     // saying two copies is one too many, and the two drifted: BANDS said 0.365 and the
     // website said 0.370.
-    const band = (BANDS.find(b => max < b.to) || BANDS[BANDS.length - 1]).name;
-    return { peakLocation: peak.location, max, variance: max - min, band };
+    // band is the MAJOR band and is what the archive files under. label is the finer
+    // display string, which can be a boundary zone or a Power subdivision. Two fields on
+    // purpose: the archive must stay comparable across presentation changes.
+    const band = bandFor(max).name;
+    return { peakLocation: peak.location, max, variance: max - min, band, label: bandLabel(max) };
   }
 
-  /* ── THE BANDS. ONE DEFINITION, EVERY SURFACE. 2026-09-09, BUILD 4 ─────────
+  /* -- THE BANDS. ONE DEFINITION, EVERY SURFACE. 2026-09-10, BUILD 5 ---------
    *
    * These four rows are the only place the boundaries and the names are written down.
-   * faceSummary derives from them, the client report strip draws from them, and the
-   * website's comparison lab is generated from them by the shared checker. Anything that
+   * Everything else here derives from them, including the boundary zones. Anything that
    * states a boundary and is not generated from here is a copy waiting to rot, which is
-   * exactly what happened: this file said 0.365 while the published gauge said 0.370, and
-   * 46 paddles, 19% of the scored fleet, were classified differently on the site than in
-   * the lab for weeks before anyone looked.
+   * exactly what happened once already: this file said 0.365 while the published gauge
+   * said 0.370, and 46 paddles were classified differently on the site than in the lab.
    *
-   * NAMES. Low, Medium, High, Very High. Purely descriptive, and that is the point.
-   * "OUT OF SPEC" and its predecessor "illegal" made a regulatory claim this lab is not
-   * entitled to make. USAP's limit is 0.43 PBCoR measured with a Franklin ball that has no
-   * holes; 0.445 KewCOR is John's ESTIMATED correspondence, not a published equivalence.
-   * And the claim was false in fact: of the ten paddles at or above 0.445, four are
-   * currently USAP certified, including one at 0.5099.
+   * NAMES, and why they went back. BUILD 4 used Low, Medium, High, Very High Power for
+   * one day. Descriptive, but it collided with how players actually talk: "low power" and
+   * "high power" are the common vernacular for subdivisions WITHIN the power category, so
+   * calling the softest paddles "Low Power" read as a contradiction. Control, All-Court
+   * and Power are the industry-standard names and consumers already hold them.
    *
-   * WHY 0.445 SURVIVES as a boundary. Not because USAP is near it, but because it is the
-   * only cut in this scheme that measurement error does not threaten. Against a published
-   * se near 0.008: at 0.390 there are 79 paddles within one se of the line, at 0.366 there
-   * are 15, and at 0.445 there are 5 with a genuinely empty gap from 0.4421 to 0.4505.
+   * WHY 0.400 AND NOT 0.390. Power creep. It is also the honest center of the fleet: the
+   * mean scored KewCOR is 0.4007 and the Power/Pop model's own KewCOR center is 0.4001,
+   * so the All-Court/Power line now sits at the fleet average rather than below it. The
+   * split is 120 All-Court to 112 Power, where 0.390 put 160 above the line.
+   *
+   * WHY 0.445 SURVIVES. It is the only cut that measurement error does not threaten.
+   * Within one se (0.008): 0.366 has 15 paddles, 0.400 has 75, 0.445 has 5, with a real
+   * gap from 0.4421 to 0.4505. It is NOT a regulatory line. USAP's limit is 0.43 PBCoR on
+   * a Franklin ball with no holes; 0.445 KewCOR is John's estimated correspondence, not a
+   * published equivalence, and four of the ten paddles above it are USAP certified.
    */
   const BANDS = [
-    { name: 'LOW POWER',       from: 0.340, to: 0.366 },
-    { name: 'MEDIUM POWER',    from: 0.366, to: 0.390 },
-    { name: 'HIGH POWER',      from: 0.390, to: 0.445 },
+    { name: 'CONTROL',         from: 0.340, to: 0.366 },
+    { name: 'ALL-COURT',       from: 0.366, to: 0.400 },
+    { name: 'POWER',           from: 0.400, to: 0.445 },
     { name: 'VERY HIGH POWER', from: 0.445, to: 0.550 }
   ];
+
+  /* BOUNDARY ZONES. A PRESENTATION CHOICE, NOT A MEASUREMENT. John's call 2026-09-10.
+   *
+   * Half-width 0.005, so a zone is 0.010 wide. Read that honestly: the published
+   * not-separated width is 0.022 (1.96 x 0.008 x sqrt 2, the figure sent to Keith), so
+   * these zones are NARROWER than the error, not equal to it. They were set at 0.010
+   * half-width first, which is the statistically faithful number, and that put 38% of the
+   * fleet into "Boundary All-Court-Power" alone and half the fleet into some boundary
+   * label, because the fleet is packed at the mean. John chose legibility. Do not
+   * "correct" this back to 0.010 without asking him, and do not describe a zone as the
+   * measurement error anywhere a viewer can read it.
+   *
+   * DERIVED from the interior cuts above, never typed twice. Move a boundary in BANDS and
+   * the zones follow.
+   */
+  const BOUNDARY_HALF = 0.005;
+  const BOUNDARIES = BANDS.slice(1).map((b, i) => ({
+    at:   b.from,
+    from: +(b.from - BOUNDARY_HALF).toFixed(4),
+    to:   +(b.from + BOUNDARY_HALF).toFixed(4),
+    name: 'BOUNDARY ' + BANDS[i].name + '-' + b.name
+  }));
+
+  /* POWER SUBDIVISIONS. Only the Power band subdivides. The other three do not. */
+  const POWER_SUBS = [
+    { name: 'POWER (LOW)',  from: 0.400, to: 0.415 },
+    { name: 'POWER (MID)',  from: 0.415, to: 0.430 },
+    { name: 'POWER (HIGH)', from: 0.430, to: 0.445 }
+  ];
+
+  /* The major band. This is what a published KewCOR is filed under. */
+  function bandFor(v) {
+    if (v == null || !isFinite(v)) return null;
+    return BANDS.find(b => v < b.to) || BANDS[BANDS.length - 1];
+  }
+
+  /* The DISPLAY label, which is a finer thing than the band.
+   *
+   * PRECEDENCE, John's call 2026-09-10: a boundary zone beats a subdivision. A paddle at
+   * 0.402 reads "BOUNDARY ALL-COURT-POWER", not "POWER (LOW)", because the point of the
+   * zone is to say the reading cannot carry that much precision, and a subdivision label
+   * claims more precision, not less. Zones do not overlap each other at 0.005 half-width,
+   * so first match is the only match.
+   */
+  function bandLabel(v) {
+    if (v == null || !isFinite(v)) return null;
+    const zone = BOUNDARIES.find(z => v >= z.from && v < z.to);
+    if (zone) return zone.name;
+    const band = bandFor(v);
+    if (!band || band.name !== 'POWER') return band ? band.name : null;
+    return (POWER_SUBS.find(s => v < s.to) || POWER_SUBS[POWER_SUBS.length - 1]).name;
+  }
+
   const BAND_LO = 0.340, BAND_HI = 0.550;
 
   /* THE SCALE IS PIECEWISE, AND EVERY SURFACE MUST USE THIS FUNCTION.
@@ -646,5 +707,6 @@
            ballTimeline, segmentFor,
            blockCorrections, locationResults, faceSummary, midAdvice, ballStage,
            BANDS, BAND_LO, BAND_HI, BAND_SEAM, BAND_LINEAR_ARC, bandFrac, bandPosition,
+           BOUNDARIES, BOUNDARY_HALF, POWER_SUBS, bandFor, bandLabel,
            reportAxis, encodeReport, decodeReport };
 }));
