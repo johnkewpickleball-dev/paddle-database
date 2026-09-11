@@ -285,7 +285,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
      #d0a180 / #ae6837 / #6b350f) so the two never disagree if both are ever on screen at once,
      and because that ramp is what survives a black-and-white print. */
   .pcl-fpcard{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:14px 12px}
-  .pcl-fpcard-title{text-align:center;color:var(--text);font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif;margin-bottom:8px}
+  .pcl-fpcard-title{text-align:center;color:var(--text);font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif;margin-bottom:8px}
   .pcl-fp-head{display:flex;align-items:center;justify-content:center;gap:4px;font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
   .pcl-fp-score{text-align:center;font-family:'DM Sans',sans-serif;margin-bottom:10px}
   .pcl-fp-score-num{font-size:22px;font-weight:700;color:var(--text)}
@@ -315,6 +315,11 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-fpbar-tick{font-size:8px;fill:var(--muted);font-family:'DM Sans',sans-serif}
   .pcl-fpbar-unavail{fill:var(--muted);font-size:10.5px;font-weight:600;font-family:'DM Sans',sans-serif;text-anchor:middle}
   .pcl-fp-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:5px 9px;margin-top:8px;padding:0 4px}
+  /* Scoped to the Firepower card only -- .pcl-gl-item's base 9.5px size is shared with the
+     legacy gauge legend and the Low/Medium/High distribution bars elsewhere on this page, so
+     this overrides size only inside .pcl-fp-legend rather than changing the shared class. */
+  .pcl-fp-legend .pcl-gl-item{font-size:11.5px}
+  .pcl-fp-legend .pcl-gl-item i{width:8px;height:8px}
   .pcl-fp-note{font-size:10.5px;line-height:1.25;color:var(--muted);margin-top:4px;font-family:'DM Sans',sans-serif;text-align:center}
   .pcl-fpcard--disabled .pcl-fp-head{color:var(--muted)}
   .pcl-fpcard--disabled .pcl-fp-legend{opacity:.45}
