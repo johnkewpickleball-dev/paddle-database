@@ -15,9 +15,16 @@
 //  3. Stats/votes proxy (POST) — forwards view/labadd/vote/starvote calls to the Apps Script
 //     backend, stamping the real Cloudflare-verified client IP onto the payload.
 
+// '/csv/surface' (the retired transposed sheet, one column per paddle) was renamed to
+// '/csv/curves' on 2026-09-11 -- see CONSTANTS.md. This is deliberately not a bare URL swap:
+// the new URL is a DIFFERENT SHAPE (one row per paddle-test, not one column per paddle), and
+// the route name changed too so nothing downstream can mistake this for still serving the old
+// shape. paddle-comparison-lab.html already calls WORKER_BASE+'/csv/curves' expecting exactly
+// this route+shape (it previously 404'd here and silently fell back to a direct client-side
+// fetch of the Curves sheet -- this route now actually serves it, cached, through the proxy).
 const CSV_SOURCES = {
   '/csv/paddles': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv',
-  '/csv/surface': 'https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv',
+  '/csv/curves':  'https://docs.google.com/spreadsheets/d/1xet-q5iP5Mvs-kk8acsxRsMCrBOPQ8_DevpVjiUzll4/gviz/tq?tqx=out:csv&sheet=Curves',
   '/csv/feel':    'https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv',
 };
 const CACHE_SECONDS = 60;

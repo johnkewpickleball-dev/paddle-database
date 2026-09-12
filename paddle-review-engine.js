@@ -24,7 +24,9 @@ window.JKPaddleReview = (function(){
   // This reads straight off the live sheet, no manual publish step needed.
   var CSV_URL='https://bot-defense-1.johnkewpickleball.workers.dev/csv/paddles';
   var FEEL_CSV='https://docs.google.com/spreadsheets/d/1QEAK3G59VBq4uYIh73fqc59fbdbZiqo-8uIfrf4qACI/gviz/tq?tqx=out:csv';
-  var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
+  // "Curves" tab, one row per paddle-test, written by the KewCOR session runner. Replaced the
+  // retired transposed sheet 2026-09-11 -- see CONSTANTS.md.
+  var CURVES_CSV='https://docs.google.com/spreadsheets/d/1xet-q5iP5Mvs-kk8acsxRsMCrBOPQ8_DevpVjiUzll4/gviz/tq?tqx=out:csv&sheet=Curves';
   var PHOTO_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/';
   var AUTHOR_PHOTO=PHOTO_BASE+'john-kew-author.png';
   var REVIEW_IMG_BASE='https://johnkewpickleball-dev.github.io/paddle-database/images/written-reviews/';
@@ -280,9 +282,22 @@ window.JKPaddleReview = (function(){
     return '<svg class="pcl-gauge-svg" viewBox="0 0 200 158" preserveAspectRatio="xMidYMid meet">'+bandsSVG+needle+hub+minLbl+maxLbl+valueTxt+catTxt+'</svg>';
   }
 
-  /* ================= KewCOR surface curve (verbatim) ================= */
-  var SURFACE_MAP={};
+  /* ================= KewCOR surface curve ================= */
+  // Ported from paddle-comparison-lab.html's Curves reader, 2026-09-11 -- see CONSTANTS.md.
+  // The old transposed sheet (one column per paddle, four locations as rows) is retired; the
+  // Curves feed is one row per paddle-test, read by header text, matched Company||Paddle
+  // exact first with a token/brand/thickness fuzzy fallback, newest test date wins a retest.
+  // This is the SAME reader as the comparison lab's and paddle.html's, not a second (or third)
+  // implementation of it -- ported by hand since this file has no shared script include, kept
+  // byte-for-byte equivalent in logic. Do not re-diverge these three copies; if you change one,
+  // change all three.
+  function dateKey(s){ if(!s) return NaN; var m=String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/); if(m){var y=+m[3]; if(y<100)y+=2000; return new Date(y,+m[1]-1,+m[2]).getTime();} var d=Date.parse(s); return isNaN(d)?NaN:d; }
+  var CURVES_MAP={}; // "Company||Paddle" -> {length,swingWeight,weight,balance,points:[[loc,kewcor],...]}
+  // Force a specific link when auto-matching is wrong: "Company||Paddle" (a PADDLES key) ->
+  // "Company||Paddle" text as it appears in an UNMATCHED Curves row.
   var SURFACE_OVERRIDE={};
+  // Paddles whose name is too similar to a tested sibling (e.g. "Power Bloom" vs "Pro Bloom")
+  // for the fuzzy matcher to tell apart -- always "No data" instead of a guessed curve.
   var SURFACE_EXCLUDE={'Vatic Pro||V-Sol Pro Bloom':1};
   var S_ALI={addias:'adidas',aiero:'aireo',babalot:'babolat',falcolos:'facolos',packle:'pakle',franlkin:'franklin'};
   var S_SYN={wb:'widebody',el:'elongated',elong:'elongated',hyb:'hybrid',std:'standard',blak:'black',paris:'pariss'};
@@ -290,46 +305,92 @@ window.JKPaddleReview = (function(){
   function sAlias(s){ s=String(s).toLowerCase(); for(var a in S_ALI) s=s.split(a).join(S_ALI[a]); return s; }
   function sToks(s){ s=sAlias(s).replace(/\d+(\.\d+)?\s*mm/g,'').replace(/\+/g,' plus ').replace(/[^a-z0-9 ]/g,' '); return s.split(/\s+/).filter(Boolean).map(function(w){return S_SYN[w]||w;}); }
   function sBrand(c){ return sAlias(c).replace(/[^a-z0-9]/g,''); }
-  function sTh(s){ var m=sAlias(s).match(/(\d+(?:\.\d+)?)\s*mm/); return m?parseFloat(m[1]):null; }
-  function parseSurfaceRows(rows){
-    var head=rows[0], ir=rows.slice(1), out=[]; if(!head) return out;
-    for(var c=1;c<head.length;c++){ var nm=(head[c]||'').trim(); if(!nm) continue; var pts=[];
-      for(var r=0;r<ir.length;r++){ var lab=(ir[r][0]||'').trim(); var m=lab.match(/(\d+)/); if(!m) continue; var v=(ir[r][c]||'').trim(); if(v===''){continue;} var fl=parseFloat(v); if(!isNaN(fl)) pts.push([+m[1],Math.round(fl*10000)/10000]); }
-      if(pts.length) out.push({name:nm,pts:pts}); }
+  function parseCurvesRows(rows){
+    var head=rows[0]; if(!head) return [];
+    var idx={}; head.forEach(function(h,i){ idx[norm(h)]=i; });
+    var iCompany=idx['company'], iPaddle=idx['paddle'];
+    if(iCompany==null || iPaddle==null) return [];
+    var iThick=idx[norm('Thickness (mm)')], iDate=idx[norm('Test date')],
+        iLen=idx[norm('Length (in)')], iSw=idx[norm('Swing weight')],
+        iWt=idx[norm('Static weight (oz)')], iBal=idx[norm('Balance point (cm)')];
+    var locCols=[];
+    head.forEach(function(h,i){ var m=String(h||'').trim().match(/^K(\d+)$/i); if(m) locCols.push({loc:+m[1],col:i}); });
+    locCols.sort(function(a,b){return a.loc-b.loc;});
+    var out=[];
+    for(var r=1;r<rows.length;r++){
+      var row=rows[r]; if(!row) continue;
+      var company=(row[iCompany]||'').trim(), paddle=(row[iPaddle]||'').trim();
+      if(!company || !paddle) continue;
+      var pts=[];
+      locCols.forEach(function(lc){ var v=(row[lc.col]||'').trim(); if(v==='') return; var n=parseFloat(v); if(!isNaN(n)) pts.push([lc.loc,n]); });
+      if(!pts.length) continue;
+      out.push({
+        company:company, paddle:paddle,
+        thickness: iThick!=null ? num(row[iThick]) : null,
+        testDate: iDate!=null ? (row[iDate]||'').trim() : '',
+        length: iLen!=null ? num(row[iLen]) : null,
+        swingWeight: iSw!=null ? num(row[iSw]) : null,
+        weight: iWt!=null ? num(row[iWt]) : null,
+        balance: iBal!=null ? num(row[iBal]) : null,
+        points: pts
+      });
+    }
     return out;
   }
-  function buildSurfaceMap(curves, PADDLES_LOCAL, targetOnly){
+  function buildCurvesMap(rows, PADDLES_LOCAL, targetOnly){
     // targetOnly may be a single key (string) or an array of keys (series reviews need the
-    // curve for every shape, not just one).
+    // curve for every shape, not just one) -- kept from this file's old buildSurfaceMap.
     var targetSet=null;
     if(targetOnly){ targetSet={}; (Array.isArray(targetOnly)?targetOnly:[targetOnly]).forEach(function(k){targetSet[k]=1;}); }
-    var byName={}; curves.forEach(function(cu){ byName[cu.name]=cu.pts; });
-    var surfP=curves.map(function(cu){ var st={}; sToks(cu.name).forEach(function(w){st[w]=1;}); return {set:st,th:sTh(cu.name),pts:cu.pts}; });
-    var map={};
-    PADDLES_LOCAL.forEach(function(p){
-      if(targetSet && !targetSet[p.key]) return;
-      if(SURFACE_EXCLUDE[p.key]) return;
-      var ov=SURFACE_OVERRIDE[p.key]; if(ov && byName[ov]){ map[p.key]=byName[ov]; return; }
-      var b=sBrand(p.company), dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
-      var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
-      var dbth=(p.thickness!=null&&p.thickness!=='')?parseFloat(p.thickness):null;
-      var best=null,bs=0;
-      surfP.forEach(function(sp){
-        var sj=Object.keys(sp.set).join('');
-        if(sj.indexOf(b)<0 && (b.length<6 || sj.indexOf(b.slice(0,6))<0)) return;
-        var shcore=Object.keys(sp.set).filter(function(w){return !S_GEN[w];});
-        if(!dbcore.some(function(w){return sp.set[w];})) return;
-        var dbSub=dbcore.every(function(w){return sp.set[w];}), shSub=shcore.every(function(w){return dbt[w];});
-        if(!dbSub && !shSub) return;
-        var uni={}; Object.keys(dbt).forEach(function(w){uni[w]=1;}); Object.keys(sp.set).forEach(function(w){uni[w]=1;});
-        var inter=Object.keys(dbt).filter(function(w){return sp.set[w];}).length;
-        var sc=inter/Object.keys(uni).length + ((dbcore.length===shcore.length&&dbSub&&shSub)?0.1:0);
-        if(dbth && sp.th!=null) sc += (Math.abs(dbth-sp.th)<0.3?0.1:-0.15);
-        if(sc>bs){ bs=sc; best=sp.pts; }
-      });
-      if(best && bs>=0.62) map[p.key]=best;
+    var pKeyIndex={}; PADDLES_LOCAL.forEach(function(p){ pKeyIndex[p.key.toLowerCase()]=p; });
+    var unmatched=[];
+    function assign(key,row){
+      var prev=CURVES_MAP[key];
+      var newMs=row.testDate?dateKey(row.testDate):NaN;
+      if(prev){
+        var prevDated = prev._testDateMs!=null && !isNaN(prev._testDateMs), newDated = !isNaN(newMs);
+        if(prevDated && !newDated) return;                              // keep the measured one
+        if(prevDated && newDated && newMs<prev._testDateMs) return;     // keep the newer
+      }
+      CURVES_MAP[key]={length:row.length,swingWeight:row.swingWeight,weight:row.weight,balance:row.balance,points:row.points,_testDateMs:isNaN(newMs)?null:newMs};
+    }
+    rows.forEach(function(row){
+      var p=pKeyIndex[(row.company+'||'+row.paddle).toLowerCase()];
+      if(p){ assign(p.key,row); } else { unmatched.push(row); }
     });
-    return map;
+    if(unmatched.length){
+      var rowP=unmatched.map(function(row){
+        var st={}; sToks(row.company+' '+row.paddle).forEach(function(w){st[w]=1;});
+        return {set:st, th:row.thickness, row:row};
+      });
+      var unmatchedByKey={};
+      unmatched.forEach(function(row){ unmatchedByKey[(row.company+'||'+row.paddle).toLowerCase()]=row; });
+      PADDLES_LOCAL.forEach(function(p){
+        if(targetSet && !targetSet[p.key]) return;
+        if(CURVES_MAP[p.key]) return;
+        if(SURFACE_EXCLUDE[p.key]) return;
+        var ov=SURFACE_OVERRIDE[p.key];
+        if(ov){ var ovRow=unmatchedByKey[ov.toLowerCase()]; if(ovRow){ assign(p.key,ovRow); return; } }
+        var dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
+        var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
+        var dbth=(p.thickness!=null&&p.thickness!=='')?parseFloat(p.thickness):null;
+        var b=sBrand(p.company), best=null, bs=0;
+        rowP.forEach(function(rp){
+          var sj=Object.keys(rp.set).join('');
+          if(sj.indexOf(b)<0 && (b.length<6 || sj.indexOf(b.slice(0,6))<0)) return;
+          var shcore=Object.keys(rp.set).filter(function(w){return !S_GEN[w];});
+          if(!dbcore.some(function(w){return rp.set[w];})) return;
+          var dbSub=dbcore.every(function(w){return rp.set[w];}), shSub=shcore.every(function(w){return dbt[w];});
+          if(!dbSub && !shSub) return;
+          var uni={}; Object.keys(dbt).forEach(function(w){uni[w]=1;}); Object.keys(rp.set).forEach(function(w){uni[w]=1;});
+          var inter=Object.keys(dbt).filter(function(w){return rp.set[w];}).length;
+          var sc=inter/Object.keys(uni).length + ((dbcore.length===shcore.length&&dbSub&&shSub)?0.1:0);
+          if(dbth!=null && rp.th!=null) sc += (Math.abs(dbth-rp.th)<0.3?0.1:-0.15);
+          if(sc>bs){ bs=sc; best=rp.row; }
+        });
+        if(best && bs>=0.62) assign(p.key,best);
+      });
+    }
   }
   function yWindow(vals){
     var mn=Math.min.apply(null,vals), mx=Math.max.apply(null,vals), lo, hi;
@@ -352,7 +413,9 @@ window.JKPaddleReview = (function(){
     return d;
   }
   function surfaceSVG(p){
-    var data=SURFACE_MAP[p.key]; if(!data||!data.length) return null;
+    var cu=CURVES_MAP[p.key];
+    var data=(cu && cu.points && cu.points.length) ? cu.points : null;
+    if(!data||!data.length) return null;
     var inches=data.map(function(d){return d[0];}), vals=data.map(function(d){return d[1];});
     var win=yWindow(vals), lo=win[0], hi=win[1];
     var PX0=50, PX1=282, PY0=22, PY1=176, minI=Math.min.apply(null,inches), maxI=Math.max.apply(null,inches);
@@ -1309,13 +1372,13 @@ window.JKPaddleReview = (function(){
 
         // live surface curve (fuzzy-matched, same logic as the comparison lab). Series reviews
         // need the curve for every shape, not just the featured one.
-        Papa.parse(SURFACE_CSV,{download:true,skipEmptyLines:true,complete:function(sres){
+        Papa.parse(CURVES_CSV,{download:true,skipEmptyLines:true,complete:function(sres){
           if(sres.data && sres.data.length>1){
             try{
               var shapesForSurface = seriesShapes(opts.seriesKeys, PADDLES);
               var targetKeys = shapesForSurface.length ? shapesForSurface.map(function(s){return s.key;}) : p.key;
-              var live=buildSurfaceMap(parseSurfaceRows(sres.data), PADDLES, targetKeys);
-              for(var k in live) SURFACE_MAP[k]=live[k];
+              var rows=parseCurvesRows(sres.data);
+              if(rows.length){ buildCurvesMap(rows, PADDLES, targetKeys); }
               refreshSurfaceChart(p);
               if(shapesForSurface.length){ document.getElementById('prKewcorSeries').innerHTML = kewcorSeriesHtml(shapesForSurface); }
             }catch(e){}

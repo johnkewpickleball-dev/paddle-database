@@ -735,7 +735,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function lenPct(p){ var L=p.length; if(!L||L<=0) L=PD_MAX_LEN_IN*0.97; L=Math.min(L,PD_MAX_LEN_IN); return (L/PD_MAX_LEN_IN*100).toFixed(2); }
 
   var PADDLES=[], state={slots:[null,null,null]};
-  var SURFACE_MAP={"Diadem||Vice":[[3,0.5303],[4,0.5319],[5,0.4972],[6,0.4525]],"Adidas||Metalbone LP Team (Blue EVA)":[[3,0.549],[4,0.5701],[5,0.5672],[6,0.5045]],"Gearbox||Pro Power Elongated":[[3,0.4431],[4,0.4569],[5,0.4133],[6,0.3991]],"Gherkin||Draco Elongated":[[3,0.419],[4,0.4554],[5,0.4256],[6,0.4071]],"Gherkin||Draco Widebody":[[3,0.4505],[4,0.4306],[5,0.4338],[6,0.4239]],"PaddleTek||Bantam TKO-CX":[[3,0.377],[4,0.413],[5,0.4288],[6,0.3741],[7,0.3254]],"Selkirk||LABS Project Boomstik \u2013 Elongated":[[3,0.3995],[4,0.4056],[5,0.4305],[6,0.396]],"RPM||Q2 Elongated":[[3,0.4037],[4,0.4279],[5,0.4081],[6,0.4122]],"Ronbus||Ripple V2-R2":[[3,0.4001],[4,0.4143],[5,0.4039],[6,0.404]],"Friday||Aura Pro Hybrid":[[3,0.3837],[4,0.4057],[5,0.4214],[6,0.418]],"Friday||Aura Pro Widebody":[[3,0.3938],[4,0.4195],[5,0.4116],[6,0.3927]],"Enhance||EPP Turbo-Elongated":[[3,0.4177],[4,0.4191],[5,0.4192],[6,0.4115]],"Avoura||Rhapsody":[[3,0.368],[4,0.4157],[5,0.3759],[6,0.3576]],"Friday||Aura Pro Elongated":[[3,0.4018],[4,0.4188],[5,0.3985],[6,0.3928]],"Enhance||EPP Turbo-Hybrid":[[3,0.4057],[4,0.4088],[5,0.4186],[6,0.4121]],"Enhance||EPP Turbo-Widebody":[[3,0.3938],[4,0.4182],[5,0.4137],[6,0.4175]],"Bread & Butter||Loco Elongated":[[3,0.4],[4,0.418],[5,0.3982],[6,0.3977]],"Honolulu Pickleball Co.||J2CR Long Handle Blue Grit":[[3,0.3978],[4,0.4121],[5,0.4214],[6,0.4173]],"Enhance||MPP Turbo":[[3,0.3681],[4,0.3735],[5,0.3736],[6,0.3726]],"Ronbus||Ripple V2-R1":[[3,0.3795],[4,0.3918],[5,0.3976],[6,0.391]],"PaddleTek||Bantam ALW-C":[[3,0.4075],[4,0.4071],[5,0.4144],[6,0.3732]],"Thrive||Azul (medium)":[[3,0.3997],[4,0.4134],[5,0.4098],[6,0.4143]],"Scoop||Sidewinder F2E":[[3,0.4043],[4,0.4139],[5,0.406],[6,0.4044]],"Honolulu Pickleball Co.||J6CR":[[3,0.4048],[4,0.4131],[5,0.4082],[6,0.4086]],"11SIX24||Vapor Power 2":[[3,0.3698],[4,0.3765],[5,0.3868],[6,0.3758]],"Thrive||Ignite":[[3,0.406],[4,0.412],[5,0.4027],[6,0.3878]],"Nox||X-Foam JC6":[[3,0.388],[4,0.4068],[5,0.4114],[6,0.3993]],"Selkirk||LABS Project Boomstik \u2013 Widebody":[[3,0.3794],[4,0.386],[5,0.3949],[6,0.4069]],"Thrive||Smoke":[[3,0.401],[4,0.4082],[5,0.4252],[6,0.4003]],"Luzz||Pro-4 Inferno":[[3,0.3901],[4,0.3942],[5,0.3904],[6,0.3862]],"Thrive||Fury":[[3,0.4076],[4,0.4058],[5,0.3963],[6,0.4034]],"Holbrook||Arma T":[[3,0.3814],[4,0.3832],[5,0.3842],[6,0.3775]],"Enhance||Gen 4.5":[[3,0.3814],[4,0.401],[5,0.4089],[6,0.395]],"Enhance||Duo Elongated":[[3,0.404],[4,0.4123],[5,0.4031],[6,0.3889]],"Friday||Aura Hybrid":[[3,0.3821],[4,0.4086],[5,0.3939],[6,0.3712]],"Honolulu Pickleball Co.||J6CR Blue Grit":[[3,0.3997],[4,0.4084],[5,0.401],[6,0.3949]],"Speedup||Tide 14S":[[3,0.3987],[4,0.401],[5,0.4076],[6,0.3925]],"Holbrook||Fuze Elongated":[[3,0.3823],[4,0.4074],[5,0.3977],[6,0.3942]],"Pickle Poppers||Pop N Pink":[[3,0.4071],[4,0.3773],[5,0.3843],[6,0.3877]],"Bread & Butter||Loco Standard":[[3,0.404],[4,0.4069],[5,0.3987],[6,0.4001]],"Element 6||Surtr":[[3,0.3897],[4,0.3796],[5,0.3716],[6,0.3728]],"Gearbox||GX2 Power Hybrid":[[3,0.387],[4,0.4068],[5,0.3988],[6,0.3982]],"Ronbus||Quanta R1.16":[[3,0.3829],[4,0.4072],[5,0.3972],[6,0.3921]],"Selkirk||OMNI Elongated":[[3,0.3705],[4,0.4118],[5,0.3974],[6,0.4001]],"Honolulu Pickleball Co.||J6NF":[[3,0.3973],[4,0.4012],[5,0.4093],[6,0.3847]],"Aireo||Cyclone Hybrid":[[3,0.4051],[4,0.3903],[5,0.3861],[6,0.3804]],"Luzz||Inferno Frozen":[[3,0.4045],[4,0.3888],[5,0.396],[6,0.3996],[7,0.4119]],"Volair||Shift Elongated":[[3,0.3829],[4,0.4045],[5,0.3799],[6,0.373]],"Pickleball Apes||Charm X":[[3,0.3931],[4,0.4056],[5,0.3852],[6,0.3632]],"Speedup||Tide 14L":[[3,0.3993],[4,0.4035],[5,0.3888],[6,0.3804]],"Holbrook||Fuze Hybrid":[[3,0.3873],[4,0.403],[5,0.3806],[6,0.3687]],"Luzz||Pro-4 Tornazo":[[3,0.3856],[4,0.3815],[5,0.3942],[6,0.3844]],"RPM||Friction Pro":[[3,0.3821],[4,0.409],[5,0.3903],[6,0.3681]],"Speedup||Tide 14H":[[3,0.3979],[4,0.4023],[5,0.393],[6,0.3822]],"Pakle||Evolution 01":[[3,0.3713],[4,0.3998],[5,0.3863],[6,0.3803]],"Gearbox||GX2 Power Elongated":[[3,0.4071],[4,0.4219],[5,0.3879],[6,0.3734]],"Slamopus||Core-X":[[3,0.3953],[4,0.394],[5,0.3928],[6,0.3982],[7,0.4062]],"11SIX24||Hurache-X All Court":[[3,0.3699],[4,0.4005],[5,0.3953],[6,0.3784]],"Neonic||Flare Prime X":[[3,0.3709],[4,0.3857],[5,0.3949],[6,0.3791]],"Avoura||Rivelle":[[3,0.3814],[4,0.405],[5,0.4034],[6,0.3601]],"Honolulu Pickleball Co.||J2K+":[[3,0.3844],[4,0.3987],[5,0.3773],[6,0.3768]],"Diadem||Edge BluCore Pro":[[3,0.3986],[4,0.4141],[5,0.4125],[6,0.3777]],"JOOLA||Perseus Pro IV":[[3,0.3633],[4,0.3979],[5,0.383],[6,0.3711]],"Diadem||Edge BluCore Hybrid":[[3,0.4029],[4,0.3965],[5,0.4063],[6,0.3788]],"Pickleball Apes||Charm V":[[3,0.3896],[4,0.4004],[5,0.3766],[6,0.3793]],"Honolulu Pickleball Co.||J2NF":[[3,0.409],[4,0.4118],[5,0.3998],[6,0.3975]],"Honolulu Pickleball Co.||J2NF Long Handle":[[3,0.3916],[4,0.3868],[5,0.3996],[6,0.3915]],"Ronbus||Quanta R2.16":[[3,0.3639],[4,0.3723],[5,0.3981],[6,0.3874]],"Warping Point||Sophon":[[3,0.3937],[4,0.3944],[5,0.3951],[6,0.3913]],"Friday||Fever 102 Elongated":[[3,0.371],[4,0.3943],[5,0.3896],[6,0.372]],"Proton||Series 3-Project Flamingo":[[3,0.4189],[4,0.4276],[5,0.4177],[6,0.375]],"Franlkin||C45 Aurelius 16 mm":[[3,0.3708],[4,0.3804],[5,0.3942],[6,0.3706]],"Enhance||MPP Turbo Hybrid":[[3,0.3681],[4,0.3735],[5,0.3736],[6,0.3726]],"Franklin||C45 Dynasty 16mm":[[3,0.3862],[4,0.3841],[5,0.3986],[6,0.3838]],"Volair||Shift Widebody":[[3,0.373],[4,0.3929],[5,0.3898],[6,0.3718]],"Selkirk||OMNI Widebody":[[3,0.3755],[4,0.3908],[5,0.3927],[6,0.3935]],"Pickleball Apes||Charm S":[[3,0.3834],[4,0.3922],[5,0.3943],[6,0.3718]],"11SIX24||Hurache-X Alpha Pro Power":[[3,0.3859],[4,0.3791],[5,0.3917],[6,0.3788]],"Chorus||Phoenix HX":[[3,0.3717],[4,0.3886],[5,0.3916],[6,0.3772]],"Honolulu Pickleball Co.||J2FC+":[[3,0.3666],[4,0.3813],[5,0.3926],[6,0.3804]],"Volair||Shift Hybrid":[[3,0.3671],[4,0.3835],[5,0.3912],[6,0.3807]],"Luzz||Glider 2026":[[3,0.3938],[4,0.391],[5,0.3798],[6,0.387]],"Luzz||Pro Cannon":[[3,0.3859],[4,0.3891],[5,0.3897],[6,0.3878]],"JOOLA||Scorpeus Pro IV":[[3,0.354],[4,0.3837],[5,0.3722],[6,0.3705],[7,0.3712]],"Honolulu Pickleball Co.||J3NF":[[3,0.3642],[4,0.3933],[5,0.3794],[6,0.3839]],"Ronbus||Refoam R1.14":[[3,0.3695],[4,0.3583],[5,0.3888],[6,0.3711]],"11SIX24||Pegasus All Court":[[3,0.3743],[4,0.3798],[5,0.3885],[6,0.3793]],"Ronbus||Quanta R3.16":[[3,0.3921],[4,0.4113],[5,0.4138],[6,0.4062]],"Ronbus||Quanta R4.16":[[3,0.3758],[4,0.3853],[5,0.3903],[6,0.3905]],"Ace||Spade":[[3,0.3858],[4,0.3882],[5,0.3734],[6,0.3626]],"Neonic||Frost FLX":[[3,0.3872],[4,0.3798],[5,0.3658],[6,0.3736]],"Honolulu Pickleball Co.||J7NF":[[3,0.3745],[4,0.3767],[5,0.3868],[6,0.3795]],"11SIX24||Vapor Power":[[3,0.3698],[4,0.3765],[5,0.3868],[6,0.3758]],"Proton||Series 3-Project Peacock":[[3,0.4076],[4,0.4136],[5,0.4418],[6,0.4277]],"Franklin||C45 Pariss Todd":[[3,0.3701],[4,0.3767],[5,0.3862],[6,0.3745]],"Gearbox||GX2 Hyper":[[3,0.3803],[4,0.3838],[5,0.3925],[6,0.3689]],"JOOLA||Kosmos Pro V":[[3,0.3725],[4,0.3837],[5,0.3852],[6,0.3643]],"11SIX24||Hurache-X Jelly Bean":[[3,0.3589],[4,0.3767],[5,0.3843],[6,0.3669]],"11SIX24||Vapor Alpha Pro Power":[[3,0.3427],[4,0.3571],[5,0.3672],[6,0.3653]],"Ronbus||Refoam R4.14":[[3,0.3538],[4,0.3615],[5,0.3829],[6,0.3939]],"Sypik||Triton":[[3,0.3815],[4,0.3737],[5,0.385],[6,0.3861]],"11SIX24||Pegasus Alpha Pro Power":[[3,0.3527],[4,0.3508],[5,0.3744],[6,0.3681]],"Pickleball Apes||Harmony V":[[3,0.364],[4,0.3831],[5,0.369],[6,0.3741]],"Neonic||Swift FLX":[[3,0.3818],[4,0.3763],[5,0.3601],[6,0.3725],[7,0.35]],"Spartus||P1 Hybrid":[[3,0.3788],[4,0.3765],[5,0.3604],[6,0.3815]],"Engage||Profoam":[[3,0.3636],[4,0.3708],[5,0.381],[6,0.3728]],"Franlkin||C45 Aurelius 12.7mm":[[3,0.3708],[4,0.3804],[5,0.3942],[6,0.3706]],"11SIX24||Vapor All Court":[[3,0.3486],[4,0.3665],[5,0.375],[6,0.3718]],"Honolulu Pickleball Co.||J2NFK":[[3,0.3859],[4,0.3955],[5,0.3793],[6,0.3643]],"Ronbus||Quanta R5.16":[[3,0.3719],[4,0.3796],[5,0.3803],[6,0.3796]],"Engage||Alpha Pro Elongated":[[3,0.3552],[4,0.3789],[5,0.3629],[6,0.36]],"Facolos||Elite X":[[3,0.3617],[4,0.3641],[5,0.3744],[6,0.3646]],"Franlkin||C45 Aurelius 14 mm":[[3,0.3663],[4,0.3694],[5,0.3654],[6,0.3443]],"Friday||Fever Widebody":[[3,0.3539],[4,0.3593],[5,0.3835],[6,0.3596]],"Pickleball Apes||Harmony X":[[3,0.3578],[4,0.3682],[5,0.373],[6,0.3803]],"Pickleball Apes||Harmony S":[[3,0.3567],[4,0.3745],[5,0.3763],[6,0.3744]],"Honolulu Pickleball Co.||J2K":[[3,0.3844],[4,0.3987],[5,0.3773],[6,0.3768]],"Pickleball Apes||Pulse V":[[3,0.3667],[4,0.379],[5,0.3744],[6,0.3573]],"Franklin||Tour Dynasty":[[3,0.3508],[4,0.3589],[5,0.3602],[6,0.3733]],"11SIX24||Vapor Jelly Bean":[[3,0.3419],[4,0.3719],[5,0.3644],[6,0.3582]],"11SIX24||Pegasus Jelly Bean":[[3,0.4072],[4,0.4227],[5,0.3984],[6,0.3736]],"Bread & Butter||Invader":[[3,0.3343],[4,0.3583],[5,0.3555],[6,0.3756]],"Selkirk||Luxx II Control Air Invikta":[[3,0.3715],[4,0.3739],[5,0.3729],[6,0.3497]],"PIKKL||Hurricane Pro":[[3,0.3465],[4,0.3713],[5,0.3409],[6,0.3434]],"Diadem||Edge 18K":[[3,0.331],[4,0.3616],[5,0.3541],[6,0.3468]],"Volair||Mach 2 Forza":[[3,0.3734],[4,0.3777],[5,0.3732],[6,0.3755]],"Volair||Mach 1":[[3,0.3528],[4,0.3758],[5,0.3701],[6,0.358]],"11SIX24||Hurache-X Power":[[3,0.3859],[4,0.3791],[5,0.3917],[6,0.3788]],"11SIX24||Pegasus Power":[[3,0.3527],[4,0.3508],[5,0.3744],[6,0.3681]],"Adidas||Metalbone 14.5 (Polypropylene)":[[3,0.549],[4,0.5701],[5,0.5672],[6,0.5045]],"Adidas||Metalbone 16 (Polypropylene)":[[3,0.549],[4,0.5701],[5,0.5672],[6,0.5045]],"Adidas||Metalbone LP S (Red EVA)":[[3,0.549],[4,0.5701],[5,0.5672],[6,0.5045]],"Diadem||Warrior BluCore Pro 14mm":[[3,0.3986],[4,0.4141],[5,0.4125],[6,0.3777]],"Diadem||Warrior BluCore Standard 19mm":[[3,0.3986],[4,0.4141],[5,0.4125],[6,0.3777]],"Franklin||C45 Dynasty 14mm":[[3,0.3862],[4,0.3841],[5,0.3986],[6,0.3838]],"Gearbox||G2 Elongated":[[3,0.4431],[4,0.4569],[5,0.4133],[6,0.3991]],"Gearbox||GBX Power Elongated":[[3,0.3829],[4,0.3919],[5,0.3864],[6,0.3657]],"Gearbox||GX2 Elongated":[[3,0.4071],[4,0.4219],[5,0.3879],[6,0.3734]],"Gearbox||Pro Ultimate Elongated":[[3,0.4431],[4,0.4569],[5,0.4133],[6,0.3991]],"Gearbox||Pro Ultimate Power Elongated":[[3,0.4431],[4,0.4569],[5,0.4133],[6,0.3991]],"Holbrook||Arma Metallic-S":[[3,0.3814],[4,0.3832],[5,0.3842],[6,0.3775]],"Holbrook||Arma Metallic-T":[[3,0.3814],[4,0.3832],[5,0.3842],[6,0.3775]],"Holbrook||Arma S":[[3,0.3814],[4,0.3832],[5,0.3842],[6,0.3775]],"Honolulu Pickleball Co.||J2K Pro":[[3,0.3844],[4,0.3987],[5,0.3773],[6,0.3768]],"Maverix||Havik-15 Pro":[[3,0.3854],[4,0.3988],[5,0.4158],[6,0.4004]],"Neonic||Flow":[[3,0.3687],[4,0.3824],[5,0.3848],[6,0.3645]],"Pickleball Apes||Pulse E":[[3,0.3667],[4,0.379],[5,0.3744],[6,0.3573]],"Pickleball Apes||Pulse S":[[3,0.3667],[4,0.379],[5,0.3744],[6,0.3573]],"Pickleball Apes||Pulse X":[[3,0.3667],[4,0.379],[5,0.3744],[6,0.3573]],"PIKKL||Vantage Pro":[[3,0.3361],[4,0.3496],[5,0.3639],[6,0.3522]],"Ronbus||R1.16":[[3,0.3829],[4,0.4072],[5,0.3972],[6,0.3921]],"Ronbus||Ripple V2-R4":[[3,0.3975],[4,0.3988],[5,0.4076],[6,0.3983]],"Thrive||Azul (medium-light)":[[3,0.3997],[4,0.4134],[5,0.4098],[6,0.4143]],"Volair||Mach 1 Forza":[[3,0.3528],[4,0.3758],[5,0.3701],[6,0.358]],"Volair||Mach 2":[[3,0.3734],[4,0.3777],[5,0.3732],[6,0.3755]]};
 
   var M = {
     company:['company','brand'], paddle:['paddle','model','name'],
@@ -1231,12 +1230,12 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     return d;
   }
   function surfaceSVG(p){
-    var data=SURFACE_MAP[p.key];
-    // New-pipeline paddles (entered on/after the cutoff) won't be in the old hand-maintained
-    // sheet at all — for THOSE ONLY, fall back to the Curves tab's own KewCOR points so the
-    // chart isn't blank. Historical paddles never touch CURVES_MAP, so this changes nothing
-    // for anything entered before the cutoff.
-    if((!data||!data.length) && isNewPipelinePaddle(p) && CURVES_MAP[p.key] && CURVES_MAP[p.key].points && CURVES_MAP[p.key].points.length) data=CURVES_MAP[p.key].points;
+    // Curves (CURVES_MAP, one row per paddle-test from the KewCOR session runner) is the
+    // ONLY source of centerline surface data as of 2026-09-11 -- it now covers the whole
+    // fleet, not just paddles entered on/after the Ball-Speed-in-Play cutoff, so there is no
+    // more "old sheet for historical, Curves for new" split here. See CONSTANTS.md.
+    var cu=CURVES_MAP[p.key];
+    var data=(cu && cu.points && cu.points.length) ? cu.points : null;
     if(!data||!data.length) return null;
     var inches=data.map(function(d){return d[0];}), vals=data.map(function(d){return d[1];});
     var win=yWindow(vals), lo=win[0], hi=win[1];
@@ -1741,16 +1740,22 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     [].forEach.call(cards,function(c){ fpObserver.observe(c); });
   }
 
-  // ---- Live surface-map fetch + name matcher (auto-updates as the sheet changes) ----
-  // SURFACE_MAP starts as a reviewed baked snapshot; once the live sheet loads, fresh
-  // matches are merged over it (values refresh, new paddles auto-add, no chart is lost).
-  var SURFACE_CSV='https://docs.google.com/spreadsheets/d/1yUySVb0Vex9qWq5pxspFy9eJoa1OEfWzVl-x-sCKBkw/gviz/tq?tqx=out:csv';
-  var SURFACE_PROXY='https://corsproxy.io/?'+encodeURIComponent(SURFACE_CSV);
-  // Force a specific link when auto-matching is wrong:  "Company||Paddle":"exact sheet column name"
+  // ---- Curve-source matching overrides (carried over from the retired transposed sheet's
+  // reader, 2026-09-11 -- see CONSTANTS.md for the retirement) ----
+  // Force a specific link when auto-matching is wrong: "Company||Paddle" (a PADDLES key) ->
+  // "Company||Paddle" text as it appears in an UNMATCHED Curves row. Under the old
+  // column-per-paddle sheet this named a column; the new Curves feed has no columns to name,
+  // so this now names a row instead. Empty today -- nothing has needed it since the runner
+  // writes Company/Paddle from the same source PADDLES[] comes from, so exact matches
+  // (buildCurvesMap's pKeyIndex) handle almost everything without ever reaching this.
   var SURFACE_OVERRIDE={};
-  // Paddles whose name is too similar to a tested sibling (e.g. "Power Bloom" vs "Pro Bloom") for the
-  // fuzzy matcher below to tell apart. List them here so they always show "No data" instead of borrowing
-  // another paddle's curve.  "Company||Paddle": true
+  // Paddles whose name is too similar to a tested sibling (e.g. "Power Bloom" vs "Pro Bloom")
+  // for the fuzzy matcher to tell apart. Listed here so they always show "No data" instead of
+  // borrowing another paddle's curve BY GUESS. "Company||Paddle": true. Kept over from the old
+  // reader (not deleted): this only ever suppresses a fuzzy guess, never a correct exact match,
+  // so it is harmless if the Curves feed already carries this paddle's own exact row -- and a
+  // live-network fetch to confirm that one way or the other wasn't available while making this
+  // change, so it stays in as the safe default rather than being dropped on an unverified guess.
   var SURFACE_EXCLUDE={'Vatic Pro||V-Sol Pro Bloom':1};
   // ---- Ball Speed in Play (added 2026-08-27, per BALL-SPEED-IN-PLAY-BRIEF.md) ----
   // Applies ONLY to paddles entered into the database on/after this cutoff. Historical
@@ -1831,15 +1836,25 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 
   // Exact Company||Paddle match first (the runner writes both from the same Paddle Metrics
   // source PADDLES[] comes from, so this should hit almost always); the token/brand/thickness
-  // fuzzy scorer below — identical in spirit to buildSurfaceMap's — is a fallback only, kept
-  // for the historical backlog, never deleted. Newest test date wins on a retest.
+  // fuzzy scorer below is a fallback only, kept for the historical backlog, never deleted (the
+  // retired transposed sheet's reader used the same scorer -- see CONSTANTS.md, 2026-09-11).
+  // Newest test date wins on a retest.
   function buildCurvesMap(rows){
     var pKeyIndex={}; PADDLES.forEach(function(p){ pKeyIndex[p.key.toLowerCase()]=p; });
     var unmatched=[];
     function assign(key,row){
       var prev=CURVES_MAP[key];
       var newMs=row.testDate?dateKey(row.testDate):NaN;
-      if(prev && prev._testDateMs!=null && !isNaN(prev._testDateMs) && !isNaN(newMs) && newMs<prev._testDateMs) return;
+      // A historical row has NO test date, so newMs is NaN for it -- the old guard
+      // (`prev.date not-NaN && new not-NaN && new<prev`) fell through whenever EITHER side
+      // was undated, so which row won a retest depended on sheet row order, not which one was
+      // actually measured. Fixed 2026-09-11: a dated row always beats an undated one
+      // regardless of order, and between two dated rows the newer date wins.
+      if(prev){
+        var prevDated = prev._testDateMs!=null && !isNaN(prev._testDateMs), newDated = !isNaN(newMs);
+        if(prevDated && !newDated) return;                              // keep the measured one
+        if(prevDated && newDated && newMs<prev._testDateMs) return;     // keep the newer
+      }
       CURVES_MAP[key]={length:row.length,swingWeight:row.swingWeight,weight:row.weight,balance:row.balance,points:row.points,_testDateMs:isNaN(newMs)?null:newMs};
     }
     rows.forEach(function(row){
@@ -1851,8 +1866,13 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         var st={}; sToks(row.company+' '+row.paddle).forEach(function(w){st[w]=1;});
         return {set:st, th:row.thickness, row:row};
       });
+      var unmatchedByKey={};
+      unmatched.forEach(function(row){ unmatchedByKey[(row.company+'||'+row.paddle).toLowerCase()]=row; });
       PADDLES.forEach(function(p){
         if(CURVES_MAP[p.key]) return;
+        if(SURFACE_EXCLUDE[p.key]) return; // always "No data" -- never let the fuzzy scorer guess for this one
+        var ov=SURFACE_OVERRIDE[p.key];
+        if(ov){ var ovRow=unmatchedByKey[ov.toLowerCase()]; if(ovRow){ assign(p.key,ovRow); return; } }
         var dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
         var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
         var dbth=(p.thickness!=null&&p.thickness!=='')?parseFloat(p.thickness):null;
@@ -1888,50 +1908,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function sAlias(s){ s=String(s).toLowerCase(); for(var a in S_ALI) s=s.split(a).join(S_ALI[a]); return s; }
   function sToks(s){ s=sAlias(s).replace(/\d+(\.\d+)?\s*mm/g,'').replace(/\+/g,' plus ').replace(/[^a-z0-9 ]/g,' '); return s.split(/\s+/).filter(Boolean).map(function(w){return S_SYN[w]||w;}); }
   function sBrand(c){ return sAlias(c).replace(/[^a-z0-9]/g,''); }
-  function sTh(s){ var m=sAlias(s).match(/(\d+(?:\.\d+)?)\s*mm/); return m?parseFloat(m[1]):null; }
-  function parseSurfaceRows(rows){
-    var head=rows[0], ir=rows.slice(1), out=[]; if(!head) return out;
-    for(var c=1;c<head.length;c++){ var nm=(head[c]||'').trim(); if(!nm) continue; var pts=[];
-      for(var r=0;r<ir.length;r++){ var lab=(ir[r][0]||'').trim(); var m=lab.match(/(\d+)/); if(!m) continue; var v=(ir[r][c]||'').trim(); if(v===''){continue;} var fl=parseFloat(v); if(!isNaN(fl)) pts.push([+m[1],Math.round(fl*10000)/10000]); }
-      if(pts.length) out.push({name:nm,pts:pts}); }
-    return out;
-  }
-  function buildSurfaceMap(curves){
-    var byName={}; curves.forEach(function(cu){ byName[cu.name]=cu.pts; });
-    var surfP=curves.map(function(cu){ var st={}; sToks(cu.name).forEach(function(w){st[w]=1;}); return {set:st,th:sTh(cu.name),pts:cu.pts}; });
-    var map={};
-    PADDLES.forEach(function(p){
-      if(SURFACE_EXCLUDE[p.key]) return;
-      var ov=SURFACE_OVERRIDE[p.key]; if(ov && byName[ov]){ map[p.key]=byName[ov]; return; }
-      var b=sBrand(p.company), dbt={}; sToks(p.company+' '+p.paddle).forEach(function(w){dbt[w]=1;});
-      var dbcore=Object.keys(dbt).filter(function(w){return !S_GEN[w];});
-      var dbth=(p.thickness!=null&&p.thickness!=='')?parseFloat(p.thickness):null;
-      var best=null,bs=0;
-      surfP.forEach(function(sp){
-        var sj=Object.keys(sp.set).join('');
-        if(sj.indexOf(b)<0 && (b.length<6 || sj.indexOf(b.slice(0,6))<0)) return;
-        var shcore=Object.keys(sp.set).filter(function(w){return !S_GEN[w];});
-        if(!dbcore.some(function(w){return sp.set[w];})) return;
-        var dbSub=dbcore.every(function(w){return sp.set[w];}), shSub=shcore.every(function(w){return dbt[w];});
-        if(!dbSub && !shSub) return;
-        var uni={}; Object.keys(dbt).forEach(function(w){uni[w]=1;}); Object.keys(sp.set).forEach(function(w){uni[w]=1;});
-        var inter=Object.keys(dbt).filter(function(w){return sp.set[w];}).length;
-        var sc=inter/Object.keys(uni).length + ((dbcore.length===shcore.length&&dbSub&&shSub)?0.1:0);
-        if(dbth && sp.th!=null) sc += (Math.abs(dbth-sp.th)<0.3?0.1:-0.15);
-        if(sc>bs){ bs=sc; best=sp.pts; }
-      });
-      if(best && bs>=0.62) map[p.key]=best;
-    });
-    return map;
-  }
   function refreshSurface(){ var sel=selectedIdx(); if(!sel.length) return; var el=document.getElementById('rowSurface'); if(el){ el.innerHTML=sel.map(function(i){return surfaceCol(PADDLES[i]);}).join(''); observeSurface(); } }
-  function loadSurface(url,fb){
-    if(!window.Papa) return;
-    Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
-      if(res.data && res.data.length>1){ try{ var live=buildSurfaceMap(parseSurfaceRows(res.data)); if(Object.keys(live).length){ for(var k in live) SURFACE_MAP[k]=live[k]; refreshSurface(); } }catch(e){} }
-      else if(fb){ loadSurface(fb,null); }
-    }, error:function(){ if(fb) loadSurface(fb,null); }});
-  }
 
   function metricsCol(p, idx){
     var tc=photoCandidates(p);
@@ -2382,7 +2359,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     syncSlots();
     render();
     wireBspControls();
-    loadSurface(WORKER_BASE+'/csv/surface', SURFACE_CSV);
     loadCurves(WORKER_BASE+'/csv/curves', CURVES_CSV);
     var fcsv=WORKER_BASE+'/csv/feel?cb='+Date.now();
     loadFeel(fcsv, FEEL_CSV+'&cb='+Date.now());
