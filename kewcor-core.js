@@ -30,8 +30,11 @@
    *   4  2026-09-09  band boundaries and names standardized; the scale is piecewise
    *   5  2026-09-10  Control/All-Court/Power/Very High Power; 0.390 cut moved to 0.400;
    *                  boundary zones and Power subdivisions added; Tilt retired
+   *   6  2026-09-12  no arithmetic change. Company is captured in the runner and
+   *                  required before archive, so the Curves row can never go out
+   *                  with a blank Company for the website to guess at.
    */
-  const BUILD = 5;
+  const BUILD = 6;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {

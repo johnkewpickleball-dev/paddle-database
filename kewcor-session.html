@@ -121,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js?v=5"></script>
+<script src="kewcor-core.js?v=6"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -159,7 +159,7 @@ function bubble(k){ const [h,b]=NOTES[k]; ih.textContent=h; ib.textContent=b; in
 const LOC_ALL = [3,4,5,6,7];
 // `missed` is keyed by location, like `shots`: how many impacts the speed gate did not
 // record there. Impacts that happened and produced no numbers.
-const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',pmNote:'',pmWarn:'',use7:false,
+const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',mfrEdited:false,pmNote:'',pmWarn:'',use7:false,
                             spec:{}, shots:{}, missed:{}, archive:null});
 const DEFAULT = {
   regBall:null,
@@ -476,11 +476,11 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 12;
+const WANT_BUILD = 13;
 /* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
    change the other. If the loaded core reports a different BUILD, the browser served a
    cached file and the header says so in plain words. */
-const CORE_V = 5;
+const CORE_V = 6;
 let EP_BUILD = null;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
@@ -777,12 +777,25 @@ function pmOptions(){
 function pickPaddle(i,name){
   const p=S.paddles[i]; p.name=name; p.pmNote=''; p.pmWarn='';
   const hits=PM.rows.filter(r=>r.name===name);
-  if(!hits.length){ render(); return; }
+  if(!hits.length){
+    // Was a silent return. The operator got no signal that nothing had been filled in,
+    // and the company went to the website blank.
+    if(name && !p.mfr) p.pmWarn='this name is not in Paddle Metrics — type the company, '
+                              + 'length and swing weight by hand';
+    render(); return;
+  }
   const hit=hits.slice().sort((a,b)=>b.when-a.when)[0];
   if(isFinite(hit.sw)) p.sw=hit.sw; else p.pmWarn='no swing weight on file — type it';
   if(isFinite(hit.len)) p.len=hit.len;
   else p.pmWarn=(p.pmWarn?p.pmWarn+'; ':'')+'no length on file — type it';
-  p.mfr=hit.mfr||'';
+  // COMPANY. Prefilled from Paddle Metrics rather than typed, on purpose: the Curves row
+  // has to exact-match PADDLES[] on the website, and a hand-typed company is how you get
+  // "Aiero " with a trailing space and "Honolulu Pickleball Co." three different ways. It
+  // is editable below for the case Paddle Metrics cannot answer, but the lookup wins when
+  // it has an answer. Before BUILD 6 a blank here was SILENT: a missed lookup returned
+  // early, mfr stayed empty, and the endpoint wrote a Curves row with no Company at all.
+  if(!p.mfrEdited) p.mfr=hit.mfr||'';
+  if(!p.mfr) p.pmWarn=(p.pmWarn?p.pmWarn+'; ':'')+'no company on file — type it';
   // Display-only specs for the client report. Taken from the SAME Paddle Metrics row the
   // length and swing weight came from, so a report can never mix one measurement's swing
   // weight with another's deflection.
@@ -869,6 +882,21 @@ function field(lbl,key,type,note,attrs){
   return `<div><label>${lbl}${note?ib_(note):''}</label>
     <input id="f-${key}" ${attrs||''} type="text" ${num?'inputmode="decimal" autocomplete="off"':''}
       value="${esc(S[key])}" oninput="S['${key}']=this.value;render()"></div>`;
+}
+/* Every distinct company Paddle Metrics knows, so the operator picks rather than spells.
+   Free text is what produced 29 unmatchable names in the hand-maintained curves sheet. */
+function pmCompanies(){
+  const seen=new Set();
+  (PM.rows||[]).forEach(r=>{ const m=(r.mfr||'').trim(); if(m) seen.add(m); });
+  return [...seen].sort((a,b)=>a.localeCompare(b))
+    .map(c=>`<option value="${esc(c)}"></option>`).join('');
+}
+function cfield(i){
+  const p=S.paddles[i];
+  return `<div><label>Company${p.mfrEdited?' <span class="muted">(typed)</span>':''}</label>
+    <input id="p${i}-mfr" list="pmcos" autocomplete="off" value="${esc(p.mfr||'')}"
+      placeholder="from Paddle Metrics"
+      oninput="S.paddles[${i}].mfr=this.value; S.paddles[${i}].mfrEdited=true; render()"></div>`;
 }
 function pfield(i,lbl,k,attrs){
   return `<div><label>${lbl}</label><input id="p${i}-${k}" type="text" inputmode="decimal"
@@ -1441,12 +1469,13 @@ function paddleCard(){
        <br>You can type the name, length and swing weight by hand in the meantime — nothing else depends on this.
        </div></div>`:''}
     <datalist id="${listId}">${pmOptions()}</datalist>
+    <datalist id="pmcos">${pmCompanies()}</datalist>
     ${S.paddles.map((p,i)=>`<div class="grid" style="margin-bottom:9px">
-      <div style="grid-column:span 2"><label>Paddle ${i+1}${p.mfr?` · <span class="muted">${esc(p.mfr)}</span>`:''}</label>
+      <div style="grid-column:span 2"><label>Paddle ${i+1}</label>
         <input id="p${i}-name" list="${listId}" value="${esc(p.name)}"
           placeholder="start typing — the list filters as you go"
           oninput="pickPaddle(${i},this.value)"></div>
-      ${pfield(i,'Length (in)','len')}${pfield(i,'Swing weight','sw')}
+      ${cfield(i)}${pfield(i,'Length (in)','len')}${pfield(i,'Swing weight','sw')}
     </div>${p.pmNote?`<p class="muted" style="margin:6px 0 0">${esc(p.pmNote)}</p>`:''}
     ${p.pmWarn?`<div class="banner b-warn" style="margin:8px 0 0"><b>Paddle Metrics is missing a spec:</b> ${esc(p.pmWarn)}.</div>`:''}`).join('')}
     <div class="row">
@@ -1612,10 +1641,11 @@ function scPaddle(idx){
   <p class="lede">One box per location, in the order you shoot them. Ten shots each.</p>
   <div class="card"><h3>Paddle</h3>
     <datalist id="pmlist2">${pmOptions()}</datalist>
+    <datalist id="pmcos">${pmCompanies()}</datalist>
     <div class="grid">
-      <div style="grid-column:span 2"><label>Name${p.mfr?` · <span class="muted">${esc(p.mfr)}</span>`:''}</label>
+      <div style="grid-column:span 2"><label>Name</label>
         <input id="q${idx}-name" list="pmlist2" value="${esc(p.name)}" oninput="pickPaddle(${idx},this.value)"></div>
-      ${pfield(idx,'Length (in)','len')}${pfield(idx,'Swing weight','sw')}</div>${p.pmNote?`<p class="muted" style="margin:6px 0 0">${esc(p.pmNote)}</p>`:''}
+      ${cfield(idx)}${pfield(idx,'Length (in)','len')}${pfield(idx,'Swing weight','sw')}</div>${p.pmNote?`<p class="muted" style="margin:6px 0 0">${esc(p.pmNote)}</p>`:''}
     ${p.pmWarn?`<div class="banner b-warn" style="margin:8px 0 0"><b>Paddle Metrics is missing a spec:</b> ${esc(p.pmWarn)}.</div>`:''}</div>
   ${NOSORT}${WINDOW_NOTE('ten per location')}
   ${locs.map(l=>{
@@ -2044,6 +2074,17 @@ function archivePayload(idx){
 
 function archivePaddle(idx){
   WRSCOPE='archive';
+  // A blank company used to sail straight through to the website, where the Curves row
+  // landed with an empty Company cell and the site fell back to fuzzy name matching to
+  // work out whose paddle it was. Stop it here, where the person who knows is standing.
+  const pp=S.paddles[idx];
+  if(pp && pp.name && !(pp.mfr||'').trim()){
+    WR={busy:'',tone:'bad',msg:'This paddle has no company.',
+        detail:'The website matches on Company and Paddle together, so a blank company '
+             + 'means this curve cannot be attached to the right paddle. Fill the Company '
+             + 'box above the length and swing weight, then save.'};
+    return render();
+  }
   const req=archivePayload(idx);
   if(!req){ WR={busy:'',tone:'warn',msg:'Nothing to archive yet.',detail:''}; return render(); }
   if(!EP.url){ WR={busy:'',tone:'bad',msg:'No write endpoint.',
