@@ -1888,14 +1888,17 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // (50 mph) the rest of the site's KewCOR numbers are effectively anchored to, so mult(50)==1
   // and the correction is a no-op at that speed by construction.
   //
-  // PBCOR_REF50 is John's supplied anchor value, not the formula's own value at v=50
-  // (which evaluates to 0.403705 -- about 2.1% lower, uniformly, across the whole
-  // reference table). Per John's 2026-09-13 prompt this 0.41246 anchor is deliberate,
-  // repeated verbatim across two prompt revisions, so it is used literally here even
-  // though it means mult(v) does not reproduce the 9-point reference table to 3
-  // decimals (see verification report -- max abs error ~0.021, a near-constant ~2.1%
-  // offset consistent with the anchor being fit independently of the quadratic above).
-  var PBCOR_A=0.87788, PBCOR_B=-0.011939, PBCOR_C=0.00004911;
+  // PBCOR_REF50 = 0.41246 is the correct, literal anchor: PBCoR(v,n) = poly(v) + 0.06022*exp(-n/52),
+  // and 0.41246 is poly(50) WITH that ball-state offset term included (worth ~0.0088 at this
+  // session's ball age). The bug (fixed 2026-09-13) was that PBCOR_A below was the bare
+  // poly(v) intercept (0.87788), which evaluates to poly(50)=0.403705 -- missing the offset --
+  // so mult(50) = 0.403705/0.41246 = 0.9788 instead of 1.000, and EVERY multiplier at every
+  // speed was low by a uniform 2.12%, not just at v=50 (v=50 just has no other term to mask it).
+  // Fix: since the offset is additive (not multiplicative), it doesn't cancel out of the mult()
+  // ratio, so it must be folded into the numerator's intercept directly rather than adjusting
+  // the denominator. PBCOR_A is now 0.87788 + (0.41246 - 0.403705) = 0.886635. The v and v^2
+  // coefficients and the clamp range are unaffected -- do not "correct" PBCOR_A back to 0.87788.
+  var PBCOR_A=0.886635, PBCOR_B=-0.011939, PBCOR_C=0.00004911;
   function pbcor(v){ return PBCOR_A + PBCOR_B*v + PBCOR_C*v*v; }
   var PBCOR_REF50 = 0.41246;
   var MULT_LO=18.5, MULT_HI=95.1; // fit data range -- clamp outside it, never extrapolate
@@ -1918,13 +1921,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var dcm=spec.balance_cm-CLAMP_IN*IN2CM;
     var Icm=spec.swing_weight-M*dcm*dcm;
     if(!(Icm>0)) return null; // bad specs; caller shows KewCOR only
-    if(vRef===0){
-      // No head speed: there's no swing to model (and the reference-location speed
-      // solve below has nothing to solve for), so show the raw rebound -- the KewCOR
-      // value itself -- per location, unmodified. Avoids a meaningless "0 mph paddle"
-      // swing computation rather than any actual divide-by-zero risk.
-      return points.map(function(pt){ return [pt[0], pt[1]]; });
-    }
     var omega=vRef/((spec.length_in-refL-CLAMP_IN)+dAxis);
     return points.map(function(pt){
       var loc=pt[0], e0=pt[1];
