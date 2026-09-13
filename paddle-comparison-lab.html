@@ -201,8 +201,8 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl__h2{color:var(--navy);font-size:18px;font-weight:700;margin:26px 0 4px;letter-spacing:-.3px}
   .pcl__sublead{color:var(--muted);font-size:12.5px;margin-bottom:12px}
   .pcl__h2-row{display:flex;align-items:center;gap:8px}
-  .kc-info{width:18px;height:18px;color:var(--green);cursor:pointer;flex-shrink:0;animation:pclPulse 2.2s ease-in-out infinite;border-radius:50%}
-  .kc-info:hover{color:var(--green-mid);animation:none}
+  .kc-info{width:18px;height:18px;color:var(--green);cursor:pointer;flex-shrink:0;border-radius:50%}
+  .kc-info:hover{color:var(--green-mid)}
 
   /* KewCOR Surface Map <-> Ball Speed in Play flip card (added 2026-09-13) */
   .pcl-surfbsp-headrow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:26px 0 4px}
@@ -210,7 +210,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-surfbsp-flipbtn:hover{border-color:#eb6834;color:#eb6834;animation:none}
   .pcl-surfbsp-flipbtn svg{width:18px;height:18px;display:block}
   @media (prefers-reduced-motion:reduce){.pcl-surfbsp-flipbtn{animation:none}}
-  .pcl-bsp-presetrow.pcl-bsp-disabled,.pcl-bsp-controls.pcl-bsp-disabled{opacity:.42;filter:grayscale(.4);pointer-events:none}
   .kc-info svg{width:18px;height:18px;display:block}
   .pcl-surf{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 10px}
   .pcl-surf svg{width:100%;height:auto;display:block}
@@ -1514,13 +1513,19 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       var t = isKc ? 'Switch to Ball Speed in Play' : 'Switch to KewCOR Paddle Surface Map';
       flipBtn.title=t; flipBtn.setAttribute('aria-label',t);
     }
+    // In KewCOR mode the Ball Speed controls don't drive anything on screen, so they're removed
+    // outright rather than grayed out -- there's nothing left to preview a grayed-out control
+    // against once the BSP chart itself isn't showing. Uses inline style.display, not the
+    // `hidden` attribute or a class: .pcl-bsp-presetrow/.pcl-bsp-controls/.pcl__row all set their
+    // own `display` in the stylesheet, and an author rule beats the UA's `[hidden]{display:none}`
+    // at equal specificity regardless of source order, so `hidden`/class toggles alone silently
+    // fail to hide these elements. Inline style always wins over any stylesheet rule.
     var presetRow=document.getElementById('bspPresetRow'), controls=document.getElementById('bspControls');
-    [presetRow, controls].forEach(function(el){ if(!el) return; el.classList.toggle('pcl-bsp-disabled', isKc); });
-    if(presetRow) presetRow.querySelectorAll('button').forEach(function(b){ b.disabled=isKc; });
-    if(controls) controls.querySelectorAll('button,input').forEach(function(b){ b.disabled=isKc; });
+    if(presetRow) presetRow.style.display = isKc ? 'none' : '';
+    if(controls) controls.style.display = isKc ? 'none' : '';
     var rowBsp=document.getElementById('rowBallSpeed'), rowSurf=document.getElementById('rowSurface');
-    if(rowBsp) rowBsp.hidden = isKc;
-    if(rowSurf) rowSurf.hidden = !isKc;
+    if(rowBsp) rowBsp.style.display = isKc ? 'none' : '';
+    if(rowSurf) rowSurf.style.display = isKc ? '' : 'none';
     if(isKc) observeSurface(); else observeBallSpeed();
   }
   function flipSurfBsp(){
