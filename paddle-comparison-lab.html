@@ -100,7 +100,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         <h2 class="pcl__h2 pcl__h2-row">Ball Speed in Play
           <span class="kc-info" role="button" tabindex="0" title="About Ball Speed in Play" aria-label="About Ball Speed in Play" onclick="openBspInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
         </h2>
-        <p class="pcl__sublead">Converts the KewCOR face-response curve into the ball speed a swung paddle would produce. Only covers paddles entered on or after Aug 27, 2026 &mdash; not applied retroactively. <b>An estimate, not a measurement</b> &mdash; see the assumptions below.</p>
+        <p class="pcl__sublead">Converts the KewCOR face-response curve into the ball speed a swung paddle would produce. <b>An estimate, not a measurement</b> &mdash; see the assumptions below.</p>
         <div class="pcl-bsp-presets" id="bspPresets" role="group" aria-label="Ball Speed in Play presets">
           <button type="button" class="pcl-bsp-presetbtn" data-preset="putaway">Putaway/slam</button>
           <button type="button" class="pcl-bsp-presetbtn" data-preset="serve">Serve</button>
@@ -1367,9 +1367,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + '<text class="bsp-title" x="'+((PX0+PX1)/2).toFixed(0)+'" y="13" text-anchor="middle">'+esc(p.company+' '+p.paddle)+'</text>';
     return '<svg class="bsp-svg" viewBox="0 0 300 212" preserveAspectRatio="xMidYMid meet">'+axis+yl+drops+line+vlab+xl+titles+'</svg>';
   }
-  function bspCol(p,win){
-    if(!isNewPipelinePaddle(p)) return '<div class="pcl-surf-empty">Ball Speed in Play only covers paddles entered on or after Aug 27, 2026 — not applied retroactively.</div>';
-    var curve=bspCurveFor(p);
+  // curve is precomputed by refreshBallSpeed and passed in (each paddle's curve is needed twice
+  // per render -- once to size the shared y-window, once to draw -- so it's computed once here,
+  // not recomputed per paddle per call).
+  function bspCol(p,win,curve){
     if(!curve) return '<div class="pcl-surf-empty">'+esc(bspReason(p))+'</div>';
     return '<div class="pcl-surf pcl-bsp">'+playSpeedSVGFromCurve(p,curve,win)+'</div>';
   }
@@ -1377,13 +1378,16 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var sel=selectedIdx(); var section=document.getElementById('bspSection'); if(!section) return;
     if(!sel.length){ section.hidden=true; return; }
     var ps=sel.map(function(i){return PADDLES[i];});
-    if(!ps.some(isNewPipelinePaddle)){ section.hidden=true; return; }
+    // Gate is DATA, not date: show the section as soon as any selected paddle actually produces
+    // a curve (has a Curves-feed row and complete swing specs), regardless of when it was entered.
+    var pairs=ps.map(function(p){ return {p:p, curve:bspCurveFor(p)}; });
+    if(!pairs.some(function(x){ return !!x.curve; })){ section.hidden=true; return; }
     section.hidden=false;
-    var curves=[]; ps.forEach(function(p){ if(isNewPipelinePaddle(p)){ var c=bspCurveFor(p); if(c) curves.push(c); } });
     var win=null;
-    if(curves.length){ var allVals=[]; curves.forEach(function(c){ c.forEach(function(pt){ allVals.push(pt[1]); }); }); win=bspYWindow(allVals); }
+    var allVals=[]; pairs.forEach(function(x){ if(x.curve) x.curve.forEach(function(pt){ allVals.push(pt[1]); }); });
+    if(allVals.length) win=bspYWindow(allVals);
     var el=document.getElementById('rowBallSpeed');
-    if(el){ el.innerHTML = ps.map(function(p){ return bspCol(p,win); }).join(''); observeBallSpeed(); }
+    if(el){ el.innerHTML = pairs.map(function(x){ return bspCol(x.p,win,x.curve); }).join(''); observeBallSpeed(); }
   }
   function animateBallSpeed(svg){
     if(!svg || svg.dataset.animated) return; svg.dataset.animated='1';
@@ -1844,11 +1848,12 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // change, so it stays in as the safe default rather than being dropped on an unverified guess.
   var SURFACE_EXCLUDE={'Vatic Pro||V-Sol Pro Bloom':1};
   // ---- Ball Speed in Play (added 2026-08-27, per BALL-SPEED-IN-PLAY-BRIEF.md) ----
-  // Applies ONLY to paddles entered into the database on/after this cutoff. Historical
-  // paddles keep the exact KewCOR-only pipeline above, byte-for-byte untouched — per John's
-  // explicit instruction this is not retroactive.
-  var CURVES_CUTOFF = new Date(2026,7,27).getTime(); // 2026-08-27
-  function isNewPipelinePaddle(p){ var d=dateKey(p.dateEntered); return !isNaN(d) && d>=CURVES_CUTOFF; }
+  // Gated on 2026-09-13: was date-entered >= Aug 27 2026, now purely on data availability.
+  // The date was only ever a proxy for "does this paddle have a face curve on file" -- now that
+  // the Curves feed covers most of the fleet (historical rows included), that proxy hides
+  // paddles that do have real data and isn't needed. bspCurveFor()/bspReason() already do the
+  // actual data check (curve row present, all four swing specs present); this section no longer
+  // filters by date at all.
 
   // "Curves" tab, one row per paddle-test, written automatically by the KewCOR session
   // runner (kewcor-session.html). NOT a tab on the Ball Registry itself — a separate
@@ -2522,7 +2527,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     <p>Each point on the curve is also corrected for the fact that a paddle's measured rebound isn't a fixed number &mdash; it depends on how fast the ball and paddle are closing on each other, which is different at every point on the face and at every combination of head speed and incoming ball speed. That per-location closing speed (this location's paddle speed plus the incoming ball speed) is fed through a fitted speed/rebound relation before the swing math runs, so a hard drive and a soft dink at the same face location get different starting numbers, not the same one scaled by swing speed alone.</p>
     <p>The model is rigid-body. Real paddles lose energy to flex, most of it near the tip &mdash; exactly where this curve is most generous. Treat the tip end as an upper bound. The Dink preset sits at a 19&nbsp;mph closing speed, right at the floor of the speed-correction data, where the correction is held flat rather than extrapolated.</p>
     <p>This is a second, derived quantity &mdash; not a corrected KewCOR. KewCOR stays the comparable, ball-normalized measurement of the face itself; ball speed in play adds head speed back in under the stated swing assumptions. Based on Nathan, A.&nbsp;M., <i>Characterizing the performance of baseball bats</i>, American Journal of Physics 71, 134 (2003).</p>
-    <p>Only available for paddles entered on or after Aug 27, 2026, tested under the new KewCOR session runner &mdash; not applied to historical paddles.</p>
+    <p>Shown for any paddle with a face curve and complete swing specs on file. A handful of older paddles are missing a spec and show a message in place of the chart instead.</p>
   </div>
 </div>
 
