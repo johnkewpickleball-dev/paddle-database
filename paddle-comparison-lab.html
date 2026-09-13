@@ -101,14 +101,27 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
           <span class="kc-info" role="button" tabindex="0" title="About Ball Speed in Play" aria-label="About Ball Speed in Play" onclick="openBspInfo()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>
         </h2>
         <p class="pcl__sublead">Converts the KewCOR face-response curve into the ball speed a swung paddle would produce. Only covers paddles entered on or after Aug 27, 2026 &mdash; not applied retroactively. <b>An estimate, not a measurement</b> &mdash; see the assumptions below.</p>
+        <div class="pcl-bsp-presets" id="bspPresets" role="group" aria-label="Ball Speed in Play presets">
+          <button type="button" class="pcl-bsp-presetbtn" data-preset="putaway">Putaway/slam</button>
+          <button type="button" class="pcl-bsp-presetbtn" data-preset="serve">Serve</button>
+          <button type="button" class="pcl-bsp-presetbtn" data-preset="drive">Drive</button>
+          <button type="button" class="pcl-bsp-presetbtn" data-preset="reset">Reset/bunt</button>
+          <button type="button" class="pcl-bsp-presetbtn" data-preset="dink">Dink</button>
+        </div>
         <div class="pcl-bsp-controls" id="bspControls">
-          <div class="pcl-bsp-slider">
-            <label for="bspDaxis">Swing axis: <span id="bspDaxisVal">8</span> in behind the hand</label>
-            <input type="range" id="bspDaxis" min="4" max="16" step="1" value="8">
+          <div class="pcl-bsp-slider pcl-bsp-axis">
+            <label id="bspAxisLabel">Swing axis</label>
+            <div class="pcl-bsp-axisgrp" id="bspAxisGrp" role="radiogroup" aria-labelledby="bspAxisLabel">
+              <button type="button" class="pcl-bsp-axisbtn" data-axis="4" role="radio" aria-checked="false">Wrist-dominant<small>4 in</small></button>
+              <button type="button" class="pcl-bsp-axisbtn active" data-axis="8" role="radio" aria-checked="true">Elbow-dominant<small>8 in</small></button>
+              <button type="button" class="pcl-bsp-axisbtn" data-axis="14" role="radio" aria-checked="false">Shoulder-dominant<small>14 in</small></button>
+            </div>
+            <p class="pcl-bsp-axisnote">Paddle speed at the reference point is the same for all three &mdash; the axis only tilts how speed spreads from tip to throat (about &plusmn;5&nbsp;mph swing at wrist, under &plusmn;1&nbsp;mph at shoulder). Picking &ldquo;shoulder&rdquo; will not raise your ball speed.</p>
           </div>
           <div class="pcl-bsp-slider">
-            <label for="bspVref">Paddle speed at 4 in: <span id="bspVrefVal">45</span> mph</label>
-            <input type="range" id="bspVref" min="30" max="60" step="1" value="45">
+            <label for="bspHead">Paddle head speed: <span id="bspHeadVal">54.8</span> mph &mdash; <span class="pcl-bsp-band" id="bspHeadBand">Serve/drive/full swings</span></label>
+            <input type="range" id="bspHead" min="0" max="55" step="1" value="54.8">
+            <p class="pcl-bsp-headnote">These are approximate ranges &mdash; every player is different, and outbound speed is affected by swing mechanics and inbound ball speed.</p>
           </div>
           <div class="pcl-bsp-slider">
             <label for="bspVball">Incoming ball speed: <span id="bspVballVal">25</span> mph</label>
@@ -204,11 +217,24 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl-surf .bsp-axtitle{fill:#64748b;font-size:7.5px;font-family:'DM Sans',sans-serif}
   .pcl-surf .bsp-val{fill:#0d1f2d;font-size:7px;font-weight:600;font-family:'DM Sans',sans-serif;paint-order:stroke;stroke:#fff;stroke-width:1.8px}
   .pcl-surf .bsp-title{fill:#0d1f2d;font-size:9px;font-weight:600;font-family:'DM Sans',sans-serif}
+  .pcl-bsp-presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .pcl-bsp-presetbtn{background:#fff;border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-family:inherit;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer}
+  .pcl-bsp-presetbtn:hover{border-color:#eb6834;color:#eb6834}
+  .pcl-bsp-presetbtn.active{background:#eb6834;border-color:#eb6834;color:#fff}
   .pcl-bsp-controls{display:flex;flex-wrap:wrap;gap:14px 22px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:12px}
   .pcl-bsp-slider{flex:1 1 200px;min-width:170px;font-size:11.5px}
   .pcl-bsp-slider label{display:block;margin-bottom:5px;color:var(--navy);font-weight:600}
   .pcl-bsp-slider label span{color:#eb6834;font-weight:700}
   .pcl-bsp-slider input[type=range]{width:100%;accent-color:#eb6834}
+  .pcl-bsp-band{color:var(--muted);font-weight:600}
+  .pcl-bsp-headnote{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.35;font-weight:400}
+  .pcl-bsp-axis{flex:1 1 260px}
+  .pcl-bsp-axisgrp{display:flex;gap:6px;flex-wrap:wrap}
+  .pcl-bsp-axisbtn{flex:1 1 auto;min-width:84px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px 8px;font-family:inherit;font-size:11px;font-weight:600;color:var(--text);cursor:pointer;text-align:center;line-height:1.3}
+  .pcl-bsp-axisbtn small{display:block;font-weight:500;color:var(--muted);font-size:10px;margin-top:1px}
+  .pcl-bsp-axisbtn.active{background:#eb6834;border-color:#eb6834;color:#fff}
+  .pcl-bsp-axisbtn.active small{color:rgba(255,255,255,.85)}
+  .pcl-bsp-axisnote{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.35;font-weight:400}
 
   /* ---- LEGACY RADIAL GAUGES (UNUSED as of 2026-09-10) ----
      Tilt is retired site-wide and the Speed Gauges section became the Firepower bar below.
@@ -620,6 +646,15 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .pcl-bsp-slider label{color:var(--text)}
   [data-theme="dark"] .pcl-bsp-slider label span{color:#d95926}
   [data-theme="dark"] .pcl-bsp-slider input[type=range]{accent-color:#d95926}
+  [data-theme="dark"] .pcl-bsp-band{color:var(--muted)}
+  [data-theme="dark"] .pcl-bsp-axisbtn{background:var(--white);border-color:var(--border);color:var(--text)}
+  [data-theme="dark"] .pcl-bsp-axisbtn small{color:var(--muted)}
+  [data-theme="dark"] .pcl-bsp-axisbtn.active{background:#d95926;border-color:#d95926;color:#fff}
+  [data-theme="dark"] .pcl-bsp-axisbtn.active small{color:rgba(255,255,255,.85)}
+  [data-theme="dark"] .pcl-bsp-axisnote{color:var(--muted)}
+  [data-theme="dark"] .pcl-bsp-headnote{color:var(--muted)}
+  [data-theme="dark"] .pcl-bsp-presetbtn{background:var(--white);border-color:var(--border);color:var(--text)}
+  [data-theme="dark"] .pcl-bsp-presetbtn.active{background:#d95926;border-color:#d95926;color:#fff}
   /* Dark-theme KewCOR ramp: same hue family and lightness ORDER as the light theme, boosted
      overall so the darkest band (kcband4) stays visible against a dark page, same treatment
      the Tilt dial already gets. L* 91.3 / 72.8 / 58.9 / 44.7 -- kcband4 reuses the Tilt dial's
@@ -1370,17 +1405,68 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     if(!bspObserver) bspObserver=new IntersectionObserver(function(ents){ ents.forEach(function(en){ if(en.isIntersecting){ animateBallSpeed(en.target); bspObserver.unobserve(en.target); } }); },{threshold:.3});
     [].forEach.call(svgs,function(s){ bspObserver.observe(s); });
   }
+  function bspHeadBand(v){
+    if(v<=2) return 'Bunt/reset';
+    if(v<=15) return 'Dink/reset';
+    if(v<=25) return 'Hybrid strokes';
+    return 'Serve/drive/full swings';
+  }
+  // Part 4 presets. Settled 2026-09-13: Putaway/Serve/Drive sit on elbow-dominant (8 in)
+  // because a real overhead putaway blends shoulder+elbow+wrist (splitting the difference
+  // lands on elbow, since most amateurs add little wrist snap); Reset/Dink sit on
+  // shoulder-dominant (14 in) because both hinge at the shoulder with elbow/wrist locked.
+  // Every preset now lands exactly on a named axis option -- no "custom" state needed.
+  var BSP_PRESETS = {
+    putaway: {axis:8,  head:55, ball:20, label:'Putaway/slam'},
+    serve:   {axis:8,  head:43, ball:0,  label:'Serve'},
+    drive:   {axis:8,  head:34, ball:25, label:'Drive'},
+    reset:   {axis:14, head:2,  ball:36, label:'Reset/bunt'},
+    dink:    {axis:14, head:9,  ball:10, label:'Dink'}
+  };
   function wireBspControls(){
-    var dEl=document.getElementById('bspDaxis'), dVal=document.getElementById('bspDaxisVal');
-    var rEl=document.getElementById('bspVref'), rVal=document.getElementById('bspVrefVal');
+    var axisGrp=document.getElementById('bspAxisGrp');
+    var hEl=document.getElementById('bspHead'), hVal=document.getElementById('bspHeadVal'), hBand=document.getElementById('bspHeadBand');
     var bEl=document.getElementById('bspVball'), bVal=document.getElementById('bspVballVal');
-    if(!dEl||!rEl||!bEl) return;
+    var presetGrp=document.getElementById('bspPresets');
+    if(!axisGrp||!hEl||!bEl) return;
+    function setAxisActive(axisVal){
+      axisGrp.querySelectorAll('.pcl-bsp-axisbtn').forEach(function(b){
+        var on = (+b.getAttribute('data-axis'))===axisVal;
+        b.classList.toggle('active',on); b.setAttribute('aria-checked',on?'true':'false');
+      });
+    }
+    function clearPresetActive(){
+      if(presetGrp) presetGrp.querySelectorAll('.pcl-bsp-presetbtn').forEach(function(b){ b.classList.remove('active'); });
+    }
     function upd(){
-      BSP_OPTS.d_axis=+dEl.value; BSP_OPTS.v_ref=+rEl.value; BSP_OPTS.v_ball=+bEl.value;
-      dVal.textContent=dEl.value; rVal.textContent=rEl.value; bVal.textContent=bEl.value;
+      hVal.textContent=hEl.value; hBand.textContent=bspHeadBand(+hEl.value); bVal.textContent=bEl.value;
+      BSP_OPTS.v_ref=+hEl.value; BSP_OPTS.v_ball=+bEl.value;
       refreshBallSpeed();
     }
-    dEl.addEventListener('input',upd); rEl.addEventListener('input',upd); bEl.addEventListener('input',upd);
+    axisGrp.querySelectorAll('.pcl-bsp-axisbtn').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        setAxisActive(+btn.getAttribute('data-axis'));
+        BSP_OPTS.d_axis=+btn.getAttribute('data-axis');
+        clearPresetActive();
+        refreshBallSpeed();
+      });
+    });
+    hEl.addEventListener('input',function(){ clearPresetActive(); upd(); });
+    bEl.addEventListener('input',function(){ clearPresetActive(); upd(); });
+    if(presetGrp){
+      presetGrp.querySelectorAll('.pcl-bsp-presetbtn').forEach(function(btn){
+        btn.addEventListener('click',function(){
+          var p=BSP_PRESETS[btn.getAttribute('data-preset')]; if(!p) return;
+          presetGrp.querySelectorAll('.pcl-bsp-presetbtn').forEach(function(b){ b.classList.remove('active'); });
+          btn.classList.add('active');
+          setAxisActive(p.axis);
+          hEl.value=p.head; bEl.value=p.ball;
+          BSP_OPTS.d_axis=p.axis;
+          upd();
+        });
+      });
+    }
+    upd();
   }
   window.openBspInfo=function(){ document.getElementById('bspInfoOverlay').classList.add('open'); };
   window.closeBspInfo=function(){ document.getElementById('bspInfoOverlay').classList.remove('open'); };
@@ -1773,28 +1859,68 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   var CURVES_MAP={}; // "Company||Paddle" -> {length,swingWeight,weight,balance,points:[[loc,kewcor],...]}
 
   var OZ2KG=0.0283495, IN2CM=2.54, BALL_KG=0.92*OZ2KG, CLAMP_IN=2.00;
-  var BSP_OPTS={d_axis:8.0, v_ref:45.0, ref_loc:4, v_ball:25.0}; // brief 4.6 defaults; sliders override live
+  // v_ref recalibrated 2026-09-13 from 45.0 -> 54.8: 45.7+/-0.9 was the fleet-wide fit
+  // WITHOUT the PBCoR speed correction below; 54.8+/-1.2 is the fit WITH it applied.
+  // Shipping the correction without this paired recalibration (or vice versa) would be
+  // worse than shipping neither -- they were fit as a pair. See PBCOR_A/B/C constants.
+  var BSP_OPTS={d_axis:8.0, v_ref:54.8, ref_loc:4, v_ball:25.0}; // sliders override live
 
-  // Reference implementation from BALL-SPEED-IN-PLAY-BRIEF.md section 5.1, ported verbatim.
-  // Validated against both fixture tables in section 6 to 3dp before shipping.
+  // ---- Per-location speed (COR) correction, added 2026-09-13 ----
+  // The lab measurement (KewCOR/PBCoR) is itself speed-dependent: a ball-cannon shot at a
+  // fixed reference speed measures a different apparent COR than the same paddle location
+  // sees during an actual rally, where closing speed (paddle speed at that spot + incoming
+  // ball speed) varies swing to swing. PBCoR(v) below is a quadratic fit to 141 shots at
+  // varying closing speed; mult(v) rescales it against the fixed reference closing speed
+  // (50 mph) the rest of the site's KewCOR numbers are effectively anchored to, so mult(50)==1
+  // and the correction is a no-op at that speed by construction.
+  //
+  // PBCOR_REF50 is John's supplied anchor value, not the formula's own value at v=50
+  // (which evaluates to 0.403705 -- about 2.1% lower, uniformly, across the whole
+  // reference table). Per John's 2026-09-13 prompt this 0.41246 anchor is deliberate,
+  // repeated verbatim across two prompt revisions, so it is used literally here even
+  // though it means mult(v) does not reproduce the 9-point reference table to 3
+  // decimals (see verification report -- max abs error ~0.021, a near-constant ~2.1%
+  // offset consistent with the anchor being fit independently of the quadratic above).
+  var PBCOR_A=0.87788, PBCOR_B=-0.011939, PBCOR_C=0.00004911;
+  function pbcor(v){ return PBCOR_A + PBCOR_B*v + PBCOR_C*v*v; }
+  var PBCOR_REF50 = 0.41246;
+  var MULT_LO=18.5, MULT_HI=95.1; // fit data range -- clamp outside it, never extrapolate
+  function speedCorrectionMult(v){
+    var vc = v<MULT_LO ? MULT_LO : (v>MULT_HI ? MULT_HI : v);
+    return pbcor(vc)/PBCOR_REF50;
+  }
+
+  // Reference implementation from BALL-SPEED-IN-PLAY-BRIEF.md section 5.1, extended
+  // 2026-09-13 with the per-location speed correction above (applied to the raw KewCOR
+  // value at each location, using that location's own closing speed, BEFORE the eA/
+  // effective-mass step -- not as a single scale on the whole finished curve).
   function playSpeedCurve(spec, points, opts){
     var o=opts||{};
     var dAxis=o.d_axis!=null?o.d_axis:8.0;
-    var vRef =o.v_ref !=null?o.v_ref :45.0;
+    var vRef =o.v_ref !=null?o.v_ref :54.8;
     var refL =o.ref_loc!=null?o.ref_loc:4;
     var vBall=o.v_ball!=null?o.v_ball:25.0;
     var M=spec.static_oz*OZ2KG;
     var dcm=spec.balance_cm-CLAMP_IN*IN2CM;
     var Icm=spec.swing_weight-M*dcm*dcm;
     if(!(Icm>0)) return null; // bad specs; caller shows KewCOR only
+    if(vRef===0){
+      // No head speed: there's no swing to model (and the reference-location speed
+      // solve below has nothing to solve for), so show the raw rebound -- the KewCOR
+      // value itself -- per location, unmodified. Avoids a meaningless "0 mph paddle"
+      // swing computation rather than any actual divide-by-zero risk.
+      return points.map(function(pt){ return [pt[0], pt[1]]; });
+    }
     var omega=vRef/((spec.length_in-refL-CLAMP_IN)+dAxis);
     return points.map(function(pt){
-      var loc=pt[0], e=pt[1];
+      var loc=pt[0], e0=pt[1];
+      var vp=omega*((spec.length_in-CLAMP_IN-loc)+dAxis);
+      var closing=vp+vBall; // paddle speed at THIS location plus incoming ball speed
+      var e=e0*speedCorrectionMult(closing);
       var b=(spec.length_in-loc)*IN2CM-spec.balance_cm;
       var Me=1/(1/M + b*b/Icm);
       var k=BALL_KG/Me;
       var eA=(e-k)/(1+k);
-      var vp=omega*((spec.length_in-CLAMP_IN-loc)+dAxis);
       return [loc, eA*vBall+(1+eA)*vp];
     });
   }
@@ -2392,8 +2518,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <div class="dur-info-overlay" id="bspInfoOverlay" onclick="if(event.target===this)closeBspInfo()">
   <div class="dur-info-box">
     <h3>Ball Speed in Play<button class="dur-info-close" onclick="closeBspInfo()" aria-label="Close">&times;</button></h3>
-    <p><b>Ball speed in play</b> converts the measured face response into the ball speed a swung paddle would produce, using Nathan's collision-efficiency relation. The lab test fires a ball at a stationary paddle, so it measures what the face returns and is blind to head speed &mdash; which is highest at the tip. This curve puts that back. It assumes a swing axis 8&nbsp;in behind the hand, 45&nbsp;mph of paddle speed at the 4-inch location, and a 25&nbsp;mph incoming ball by default; the sliders above change those assumptions and the curve changes with them.</p>
-    <p>The model is rigid-body. Real paddles lose energy to flex, most of it near the tip &mdash; exactly where this curve is most generous. Treat the tip end as an upper bound.</p>
+    <p><b>Ball speed in play</b> converts the measured face response into the ball speed a swung paddle would produce, using Nathan's collision-efficiency relation. The lab test fires a ball at a stationary paddle, so it measures what the face returns and is blind to head speed &mdash; which is highest at the tip. This curve puts that back. It defaults to an elbow-dominant swing axis (8&nbsp;in behind the hand), 54.8&nbsp;mph of paddle speed at the reference location, and a 25&nbsp;mph incoming ball; the controls above change those assumptions and the curve changes with them. Paddle speed at the reference location is the same regardless of which axis option is picked &mdash; axis only changes how that speed spreads across the face.</p>
+    <p>Each point on the curve is also corrected for the fact that a paddle's measured rebound isn't a fixed number &mdash; it depends on how fast the ball and paddle are closing on each other, which is different at every point on the face and at every combination of head speed and incoming ball speed. That per-location closing speed (this location's paddle speed plus the incoming ball speed) is fed through a fitted speed/rebound relation before the swing math runs, so a hard drive and a soft dink at the same face location get different starting numbers, not the same one scaled by swing speed alone.</p>
+    <p>The model is rigid-body. Real paddles lose energy to flex, most of it near the tip &mdash; exactly where this curve is most generous. Treat the tip end as an upper bound. The Dink preset sits at a 19&nbsp;mph closing speed, right at the floor of the speed-correction data, where the correction is held flat rather than extrapolated.</p>
     <p>This is a second, derived quantity &mdash; not a corrected KewCOR. KewCOR stays the comparable, ball-normalized measurement of the face itself; ball speed in play adds head speed back in under the stated swing assumptions. Based on Nathan, A.&nbsp;M., <i>Characterizing the performance of baseball bats</i>, American Journal of Physics 71, 134 (2003).</p>
     <p>Only available for paddles entered on or after Aug 27, 2026, tested under the new KewCOR session runner &mdash; not applied to historical paddles.</p>
   </div>
