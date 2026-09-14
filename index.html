@@ -289,18 +289,30 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .basic-gauge-nodata,.basic-feelbar-nodata{font-size:12.5px;color:var(--muted);padding:10px;background:var(--bg);border-radius:8px}
 .basic-gauge-wrap{max-width:280px;margin:0 auto}
 .basic-gauge-svg{width:100%;height:auto;display:block}
-.basic-gauge-band{stroke:var(--bg);stroke-width:1.5}
+.basic-gauge-band{stroke:var(--white);stroke-width:1.5}
 .basic-gauge-band-0{fill:#e3c6ab}
 .basic-gauge-band-1{fill:#b9814c}
 .basic-gauge-band-2{fill:#7a4419}
 .basic-gauge-label{font-size:9px;font-weight:700;fill:var(--muted);font-family:inherit;text-transform:uppercase;letter-spacing:.2px}
-.basic-gauge-needle{stroke:var(--text);stroke-width:3;stroke-linecap:round}
-.basic-gauge-hub{fill:var(--text)}
+.basic-gauge-needle{fill:var(--text)}
+.basic-gauge-hub{fill:var(--text);stroke:var(--white);stroke-width:2}
 .basic-gauge-result{margin-top:4px;font-size:15px;font-weight:700;color:var(--green)}
 .basic-feelbar{max-width:340px;margin:0 auto 12px}
-.basic-feelbar-labels{display:flex;justify-content:space-between;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;color:var(--muted);margin-bottom:6px}
-.basic-feelbar-track{position:relative;height:8px;background:var(--bg);border-radius:4px;border:1px solid var(--border)}
-.basic-feelbar-ptr{position:absolute;top:50%;width:14px;height:14px;background:var(--green);border:2px solid #fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 3px rgba(0,0,0,.3);transition:none}
+.basic-feelbar-svg{width:100%;height:auto;display:block}
+.basic-feelbar-band-label{font-size:10px;font-weight:700;font-family:inherit;text-transform:uppercase;letter-spacing:.2px}
+.basic-feelbar-band-label-0{fill:#4a3423}
+.basic-feelbar-band-label-1{fill:#fff}
+.basic-feelbar-band-label-2{fill:#fff}
+.basic-feelbar-pointer-halo{stroke:rgba(15,23,42,.6);stroke-width:3.5}
+.basic-feelbar-pointer-line{stroke:#fff;stroke-width:1.5}
+.basic-feelbar-pointer{fill:#fff;stroke:rgba(15,23,42,.6);stroke-width:1}
+.basic-feelbar-disabled{fill:var(--border)}
+.basic-feelbar-unavail{font-size:10.5px;fill:var(--muted);font-family:inherit}
+.basic-specs-grid{max-width:340px;margin:0 auto;text-align:left;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.basic-specs-row{display:flex;justify-content:space-between;padding:8px 12px;font-size:13px}
+.basic-specs-row:nth-child(even){background:var(--bg)}
+.basic-specs-label{color:var(--muted);font-weight:600}
+.basic-specs-val{color:var(--text);font-weight:600}
 
 .empty{text-align:center;padding:60px 20px;color:var(--muted)}
 .empty svg{width:48px;height:48px;margin-bottom:12px;opacity:.3}
@@ -361,10 +373,12 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .basic-gauge-band-0{fill:#f2ded0}
 [data-theme="dark"] .basic-gauge-band-1{fill:#d4a271}
 [data-theme="dark"] .basic-gauge-band-2{fill:#a8672f}
+[data-theme="dark"] .basic-gauge-band{stroke:var(--white)}
 [data-theme="dark"] .basic-gauge-label{fill:var(--muted)}
-[data-theme="dark"] .basic-gauge-needle{stroke:var(--text)}
-[data-theme="dark"] .basic-gauge-hub{fill:var(--text)}
-[data-theme="dark"] .basic-feelbar-track{background:#2a3a49}
+[data-theme="dark"] .basic-gauge-needle{fill:var(--text)}
+[data-theme="dark"] .basic-gauge-hub{fill:var(--text);stroke:var(--white)}
+[data-theme="dark"] .basic-feelbar-band-label-0{fill:#2a1c11}
+[data-theme="dark"] .basic-feelbar-disabled{fill:#2a3a49}
 [data-theme="dark"] .dur-info-box h3{color:var(--text)}
 [data-theme="dark"] .discount-code{background:var(--green-light);color:#5fe0a0}
 [data-theme="dark"] .badge-shape{background:#16304d;color:#8ab4f8}
@@ -1404,26 +1418,42 @@ function basicGaugeCurrentLabel(zones, labels, value){
   for(let i=0;i<n;i++){ if(value>=zones[i].lo && value<=zones[i].hi) return labels[i]; }
   return labels[n-1];
 }
+// Half-circle annular dial (outer/inner arc ring + triangular needle), matching the shape of
+// the RETIRED KewCOR/Tilt radial gauge (gaugeSVG/gBandPath in paddle-comparison-lab.html,
+// rO=88/rI=63 there) rather than the filled pie-wedge look this used to have -- John flagged
+// the pie-wedge version as looking "3D, concave" and asked for the flatter half-circle dial
+// back, 2026-09-13. Same 3-band color ramp as before (.basic-gauge-band-0/1/2); only the shape
+// and needle style change here.
 function basicGaugeSVG(labels, frac){
-  const cx=100, cy=98, r=76, n=labels.length;
+  const cx=100, cy=98, rO=76, rI=52, n=labels.length;
   function pt(deg, rr){ const rad=deg*Math.PI/180; return [cx+rr*Math.cos(rad), cy-rr*Math.sin(rad)]; }
+  function ringPath(fracA, fracB){
+    const aA=180-180*fracA, aB=180-180*fracB;
+    const oA=pt(aA,rO), oB=pt(aB,rO), iB=pt(aB,rI), iA=pt(aA,rI);
+    const large=(aA-aB)>180?1:0;
+    return `M${oA[0].toFixed(2)} ${oA[1].toFixed(2)} A${rO} ${rO} 0 ${large} 1 ${oB[0].toFixed(2)} ${oB[1].toFixed(2)} L${iB[0].toFixed(2)} ${iB[1].toFixed(2)} A${rI} ${rI} 0 ${large} 0 ${iA[0].toFixed(2)} ${iA[1].toFixed(2)} Z`;
+  }
   let bands='', labelsHtml='';
   for(let i=0;i<n;i++){
-    const a0=180-(i/n)*180, a1=180-((i+1)/n)*180;
-    const p0=pt(a0,r), p1=pt(a1,r);
-    bands += `<path class="basic-gauge-band basic-gauge-band-${i}" d="M${cx} ${cy} L${p0[0].toFixed(1)} ${p0[1].toFixed(1)} A${r} ${r} 0 0 0 ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} Z"></path>`;
-    const lp=pt((a0+a1)/2, r+16);
+    const fracA=i/n, fracB=(i+1)/n;
+    bands += `<path class="basic-gauge-band basic-gauge-band-${i}" d="${ringPath(fracA,fracB)}"></path>`;
+    const midDeg=180-180*((i+0.5)/n);
+    const lp=pt(midDeg, rO+16);
     labelsHtml += `<text class="basic-gauge-label" x="${lp[0].toFixed(1)}" y="${lp[1].toFixed(1)}" text-anchor="middle">${labels[i]}</text>`;
   }
-  // Needle starts at fraction 0 (far left, -90deg in this rotate-from-vertical scheme) and is
-  // animated up to its real target angle by initBasicVisuals() -- "animate needle to start at
-  // minimum value and go up to actual value," per spec.
-  const target = frac==null ? -90 : (frac*180-90);
-  const needleLen = r-10;
+  // Needle is a filled triangle (matches the retired dial's gneedle polygon) pivoting from the
+  // hub, resting at rest-angle 180 (far left / minimum) and animated by initBasicVisuals() up
+  // to its real target angle -- "animate needle to start at minimum value and go up to actual
+  // value," per spec. gAngle(frac)=180-180*frac: frac 0 -> 180deg (left/min), frac 1 -> 0deg
+  // (right/max), same convention as the retired gaugeSVG/setNeedleAngle.
+  const needleLen = rO-8;
+  const targetAngle = frac==null ? 180 : (180-180*frac);
+  const needle = `<g class="basic-gauge-needle-grp" data-target="${(-targetAngle).toFixed(2)}" transform="rotate(-180 ${cx} ${cy})">
+    <polygon class="basic-gauge-needle" points="${cx},${cy-4} ${cx+needleLen},${cy} ${cx},${cy+4}"></polygon>
+  </g>`;
   return `<svg class="basic-gauge-svg" viewBox="0 0 200 118" preserveAspectRatio="xMidYMid meet">
-    ${bands}${labelsHtml}
-    <line class="basic-gauge-needle" data-target="${target.toFixed(2)}" x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy-needleLen}" transform="rotate(-90 ${cx} ${cy})"></line>
-    <circle class="basic-gauge-hub" cx="${cx}" cy="${cy}" r="5"></circle>
+    ${bands}${labelsHtml}${needle}
+    <circle class="basic-gauge-hub" cx="${cx}" cy="${cy}" r="6"></circle>
   </svg>`;
 }
 function basicGaugeSection(title, sub, zones, labels, value){
@@ -1438,18 +1468,41 @@ function basicGaugeSection(title, sub, zones, labels, value){
     `}
   </div>`;
 }
-function basicFeelBar(leftLabel, rightLabel, value){
+// Feel bars, redesigned 2026-09-13 to match the live Firepower bar (fpBarSVG in
+// paddle-comparison-lab.html): an SVG track with three EQUAL zones (adds a "Balanced" middle
+// zone that didn't exist before) and a white triangle+line pointer with a dark halo for
+// contrast against both light and dark bands, animated start-to-actual the same way. Zone
+// labels sit directly on their own band (matching the reference bar's in-band Low/Mid/High
+// text) rather than in a separate legend row above the track, per John's spec. Reuses the same
+// 3-step .basic-gauge-band-0/1/2 color ramp as the Power/Spin/Swing gauges for one consistent
+// palette across all four Basic Mode visuals.
+function basicFeelBarSVG(leftLabel, midLabel, rightLabel, value){
+  const X0=6, TRACK=288, Y=28, H=16;
   if(value==null || isNaN(value)){
-    return `<div class="basic-feelbar">
-      <div class="basic-feelbar-labels"><span>${leftLabel}</span><span>${rightLabel}</span></div>
-      <div class="basic-feelbar-nodata">Not placed on the feel map yet.</div>
-    </div>`;
+    return `<svg class="basic-feelbar-svg" viewBox="0 0 300 72" preserveAspectRatio="xMidYMid meet">
+      <rect class="basic-feelbar-disabled" x="${X0}" y="${Y}" width="${TRACK}" height="${H}" rx="3"></rect>
+      <text class="basic-feelbar-unavail" x="${(X0+TRACK/2).toFixed(1)}" y="${Y+H+22}" text-anchor="middle">Not placed on the feel map yet.</text>
+    </svg>`;
   }
-  const pct = Math.max(0, Math.min(100, ((value+5)/10)*100));
-  return `<div class="basic-feelbar">
-    <div class="basic-feelbar-labels"><span>${leftLabel}</span><span>${rightLabel}</span></div>
-    <div class="basic-feelbar-track"><div class="basic-feelbar-ptr" data-target="${pct.toFixed(2)}" style="left:0%"></div></div>
-  </div>`;
+  const labels=[leftLabel, midLabel, rightLabel];
+  let bands='', labelsHtml='';
+  for(let i=0;i<3;i++){
+    const xa=X0+TRACK*(i/3), xb=X0+TRACK*((i+1)/3);
+    bands += `<rect class="basic-gauge-band basic-gauge-band-${i}" x="${xa.toFixed(2)}" y="${Y}" width="${(xb-xa).toFixed(2)}" height="${H}"></rect>`;
+    labelsHtml += `<text class="basic-feelbar-band-label basic-feelbar-band-label-${i}" x="${((xa+xb)/2).toFixed(2)}" y="${(Y+H-4)}" text-anchor="middle">${labels[i]}</text>`;
+  }
+  const clamped = Math.max(-5, Math.min(5, value));
+  const pct = (clamped+5)/10;
+  // Pointer starts at the track's left edge (X0, i.e. frac 0) and initBasicVisuals() animates
+  // it to X0+TRACK*pct -- "animate pointer min to actual value," per spec.
+  const pointer = `<g class="basic-feelbar-pointer-grp" data-x0="${X0}" data-track="${TRACK}" data-target="${pct.toFixed(4)}" data-y="${Y}" data-h="${H}">
+    <line class="basic-feelbar-pointer-halo" x1="${X0}" y1="${Y-6}" x2="${X0}" y2="${Y+H+6}"></line>
+    <line class="basic-feelbar-pointer-line" x1="${X0}" y1="${Y-6}" x2="${X0}" y2="${Y+H+6}"></line>
+    <polygon class="basic-feelbar-pointer" points="${X0},${Y-6} ${X0-4},${Y-13} ${X0+4},${Y-13}"></polygon>
+  </g>`;
+  return `<svg class="basic-feelbar-svg" viewBox="0 0 300 72" preserveAspectRatio="xMidYMid meet">
+    ${bands}${labelsHtml}${pointer}
+  </svg>`;
 }
 function basicFeelSection(p){
   const fe = feelXYOfPaddle(p);
@@ -1457,27 +1510,61 @@ function basicFeelSection(p){
   const x = fe ? fe.x : null; // dense(-5) <-> hollow(+5)
   return `<div class="basic-section">
     <div class="basic-section-title">How Does It Feel?</div>
-    ${basicFeelBar('Soft','Stiff', y)}
-    ${basicFeelBar('Dense','Hollow', x)}
+    <div class="basic-feelbar">${basicFeelBarSVG('Soft','Balanced','Stiff', y)}</div>
+    <div class="basic-feelbar">${basicFeelBarSVG('Dense','Balanced','Hollow', x)}</div>
+  </div>`;
+}
+// "Specs" section, added 2026-09-13: raw physical measurements below the swing gauge, per
+// John's spec. Plain values, no gauges/bands -- this is intentionally the one place in Basic
+// Mode that shows unprocessed numbers, since a shape name and a ruler measurement need no
+// interpretation the way a performance metric does.
+function fmtSpecVal(v, unit){
+  if(v==null || v==='' || (typeof v==='number' && isNaN(v))) return '—';
+  return (typeof v==='number' ? v : v) + (unit && v!=='' ? ' '+unit : '');
+}
+function basicSpecsSection(p){
+  const rows=[
+    ['Shape', p.shape || '—'],
+    ['Length', fmtSpecVal(p.length,'in')],
+    ['Width', fmtSpecVal(p.width,'in')],
+    ['Thickness', fmtSpecVal(p.thickness,'mm')],
+    ['Handle Length', fmtSpecVal(p.handleLength,'in')],
+    ['Static Weight', fmtSpecVal(p.weight,'oz')]
+  ];
+  return `<div class="basic-section">
+    <div class="basic-section-title">Specs</div>
+    <div class="basic-specs-grid">${rows.map(r=>`<div class="basic-specs-row"><span class="basic-specs-label">${r[0]}</span><span class="basic-specs-val">${r[1]}</span></div>`).join('')}</div>
   </div>`;
 }
 // Animates every gauge needle / feel-bar pointer currently in the modal, from its minimum
 // (rest) position up to its real value. Called once right after the modal's innerHTML is set.
 function initBasicVisuals(){
-  document.querySelectorAll('#modalContent .basic-gauge-needle[data-target]').forEach(needle=>{
-    const target=parseFloat(needle.getAttribute('data-target'));
-    let t0=null; const dur=900, start=-90;
+  // Gauge needle: group starts at rotate(-180) (rest/minimum) and animates to its stored
+  // data-target angle (already the negated gAngle(frac), same convention as the retired dial's
+  // setNeedleAngle) via requestAnimationFrame, cubic ease-out.
+  document.querySelectorAll('#modalContent .basic-gauge-needle-grp[data-target]').forEach(grp=>{
+    const target=parseFloat(grp.getAttribute('data-target'));
+    let t0=null; const dur=900, start=-180;
     function frame(now){ if(t0==null)t0=now; const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
-      needle.setAttribute('transform', `rotate(${(start+(target-start)*e).toFixed(2)} 100 98)`);
+      grp.setAttribute('transform', `rotate(${(start+(target-start)*e).toFixed(2)} 100 98)`);
       if(k<1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
   });
-  document.querySelectorAll('#modalContent .basic-feelbar-ptr[data-target]').forEach(ptr=>{
-    const target=parseFloat(ptr.getAttribute('data-target'));
+  // Feel bar pointer: group starts at x=data-x0 (rest/minimum) and animates the halo/line/
+  // triangle together to data-x0 + data-track*data-target, same easing.
+  document.querySelectorAll('#modalContent .basic-feelbar-pointer-grp[data-target]').forEach(grp=>{
+    const x0=parseFloat(grp.getAttribute('data-x0')), track=parseFloat(grp.getAttribute('data-track')),
+      target=parseFloat(grp.getAttribute('data-target')), y=parseFloat(grp.getAttribute('data-y')), h=parseFloat(grp.getAttribute('data-h'));
+    const halo=grp.querySelector('.basic-feelbar-pointer-halo'), line=grp.querySelector('.basic-feelbar-pointer-line'), poly=grp.querySelector('.basic-feelbar-pointer');
+    function setX(x){
+      halo.setAttribute('x1',x.toFixed(2)); halo.setAttribute('x2',x.toFixed(2));
+      line.setAttribute('x1',x.toFixed(2)); line.setAttribute('x2',x.toFixed(2));
+      poly.setAttribute('points', x.toFixed(2)+','+(y-6)+' '+(x-4).toFixed(2)+','+(y-13)+' '+(x+4).toFixed(2)+','+(y-13));
+    }
     let t0=null; const dur=900;
     function frame(now){ if(t0==null)t0=now; const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
-      ptr.style.left=(target*e).toFixed(2)+'%';
+      setX(x0+track*target*e);
       if(k<1) requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
@@ -1517,6 +1604,7 @@ function openModal(idx){
       ${basicGaugeSection('How Much Spin?', null, BASIC_THIRDS_ZONES, BASIC_SPIN_LABELS, p.spinScaled)}
       ${basicFeelSection(p)}
       ${basicGaugeSection('How Does It Swing?', null, BASIC_THIRDS_ZONES, BASIC_SWING_LABELS, p.swingResist)}
+      ${basicSpecsSection(p)}
 
       <button class="btn-nerd-mode" onclick="nerdMode(${idx})" title="Full Details/Metrics/Analytics">Want more details? Enter Nerd Mode</button>
     </div>
