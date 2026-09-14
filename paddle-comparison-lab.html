@@ -67,6 +67,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         <option value="spin">Spin Rating: High → Low</option>
         <option value="profile">Performance Profile</option>
       </select>
+      <button type="button" class="pcl__backbasicbtn" id="pclBackBasicBtn" hidden onclick="backToBasicMode()">← Take me back to Basic Mode</button>
     </div>
     <div class="pcl__slots" id="pclSlots"></div>
 
@@ -76,6 +77,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         Copy share link
       </button>
       <span class="pcl__sharenote" id="pclShareNote"></span>
+      <span class="pcl__autosimnote" id="pclAutoSimNote" hidden>A second paddle was provided matching the specs/performance of your chosen paddle.</span>
     </div>
 
     <div class="pcl__empty" id="pclEmpty">Select at least one paddle above to begin.</div>
@@ -467,6 +469,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .pcl__sharebtn{display:inline-flex;align-items:center;gap:7px;background:var(--green);color:#fff;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
   .pcl__sharebtn:hover{background:var(--green-mid)}
   .pcl__sharenote{font-size:12.5px;color:var(--green);font-weight:700}
+  .pcl__autosimnote{font-size:12.5px;color:var(--muted);font-style:italic}
+  .pcl__backbasicbtn{margin-left:auto;background:none;border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:inherit;font-size:12.5px;font-weight:700;color:var(--navy);cursor:pointer;white-space:nowrap}
+  .pcl__backbasicbtn:hover{border-color:var(--green);color:var(--green)}
   .pcl-eng{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap}
   .pcl-eng-info{display:flex;flex-direction:column;gap:8px;flex:1 1 auto;min-width:0}
   .pcl-eng-counts{display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:var(--ink-soft,#64748b);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums}
@@ -611,6 +616,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .pcl-legend b,
   [data-theme="dark"] .pcl-flipbtn,
   [data-theme="dark"] .pcl-surfbsp-flipbtn,
+  [data-theme="dark"] .pcl__backbasicbtn,
   [data-theme="dark"] .pclf-coltitle,
   [data-theme="dark"] .pcl-eng-counts b{color:var(--text)}
   [data-theme="dark"] .pcl-gauge-head{color:var(--text)}
@@ -736,6 +742,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   // the published CSV — which Google serves with permissive CORS on its own — if the Worker
   // is ever unreachable, so the site never goes fully dark on this data.
   var WORKER_BASE='https://bot-defense-1.johnkewpickleball.workers.dev';
+  // Paddle Database page URL, for the "Take me back to Basic Mode" button (added 2026-09-13) --
+  // mirrors LAB_URL's role in index.html/paddle-review-engine.js but in the other direction.
+  var DB_URL='https://www.johnkewpickleball.com/paddle-database';
   var CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vSxXXe0qvh94nPoU20S7OSp8yw9tHF4f4VpfNH_fneBhKSSOxvvrQ9lPGwgcNa_OS9OuWTZzaDyZWiZ/pub?gid=575894669&single=true&output=csv';
   var PROXY='https://corsproxy.io/?'+encodeURIComponent(CSV_URL);
 
@@ -2372,8 +2381,29 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     }
     elSlots.querySelectorAll('.pcl__dd').forEach(function(sel){ sel.innerHTML=opts; });
   }
-  function chooseSlot(slot, idx){ state.slots[slot]=idx; recordLabAdd(PADDLES[idx]); syncSlots(); render(); }
-  function clearSlot(slot){ state.slots[slot]=null; syncSlots(); render(); }
+  // If the slot being (re)chosen here is the one maybeAutoFillSimilar() populated, the user is
+  // deliberately overriding that guess with their own pick -- the "a second paddle was provided
+  // matching..." note is no longer true, so clear the auto-fill state before applying the pick.
+  // Without this, picking your own 2nd/3rd paddle right after an auto-fill left the note showing
+  // next to a paddle you chose yourself (caught by outputs/basic_nerd_verify.js scenario 5).
+  function chooseSlot(slot, idx){
+    if(AUTO_SIM_ADDED && slot===AUTO_SIM_SLOT){
+      AUTO_SIM_ADDED=false; AUTO_SIM_SLOT=-1;
+      var note0=document.getElementById('pclAutoSimNote'); if(note0) note0.hidden=true;
+    }
+    state.slots[slot]=idx; recordLabAdd(PADDLES[idx]); syncSlots(); render(); maybeAutoFillSimilar();
+  }
+  function clearSlot(slot){
+    state.slots[slot]=null;
+    if(slot===AUTO_SIM_SLOT){ AUTO_SIM_ADDED=false; AUTO_SIM_SLOT=-1; var noteC=document.getElementById('pclAutoSimNote'); if(noteC) noteC.hidden=true; }
+    // Once every slot is empty again, allow a future single-paddle pick to trigger a fresh
+    // auto-fill (otherwise AUTO_SIM_ADDED from an earlier round would silently block it).
+    if(!selectedIdx().length){
+      AUTO_SIM_ADDED=false; AUTO_SIM_SLOT=-1;
+      var note=document.getElementById('pclAutoSimNote'); if(note) note.hidden=true;
+    }
+    syncSlots(); render();
+  }
   function syncSlots(){
     for(var i=0;i<3;i++){
       var pick=elSlots.querySelector('.pcl__pick[data-slot="'+i+'"]');
@@ -2440,9 +2470,20 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   }
   (function(){ var b=document.getElementById('pclShareBtn'); if(b) b.addEventListener('click', copyShareLink); })();
 
+  // ---- Nerd Mode / auto-similar-paddle state (added 2026-09-13) ----
+  // ENTERED_VIA_NERD + NERD_RETURN_KEY drive the "Take me back to Basic Mode" button (shown
+  // ONLY for this specific entry path, per spec -- not for ?compare=, not for a bare manual
+  // visit). AUTO_SIM_ADDED drives the note beside "Copy share link." Both compare= and nerd=
+  // land exactly one paddle in slot 0 and then rely on maybeAutoFillSimilar() (below) for the
+  // second slot -- neither param carries a pre-computed p2, unlike paddle-review-engine.js's
+  // p1/p2 links, which already know their similar paddle from the review page's own computation.
+  var ENTERED_VIA_NERD=false, NERD_RETURN_KEY=null, AUTO_SIM_ADDED=false, AUTO_SIM_SLOT=-1;
   function applyDeepLink(){
     var qs=new URLSearchParams(location.search);
-    var wanted=[]; if(qs.get('compare')) wanted.push(qs.get('compare'));
+    var wanted=[];
+    var nerdKey=qs.get('nerd');
+    if(nerdKey){ wanted.push(nerdKey); ENTERED_VIA_NERD=true; NERD_RETURN_KEY=nerdKey; }
+    if(qs.get('compare')) wanted.push(qs.get('compare'));
     ['p1','p2','p3'].forEach(function(k){ if(qs.get(k)) wanted.push(qs.get(k)); });
     var slot=0;
     wanted.forEach(function(w){
@@ -2453,6 +2494,36 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       if(idx>-1 && state.slots.indexOf(idx)<0){ state.slots[slot++]=idx; recordLabAdd(PADDLES[idx]); }
     });
   }
+  // Auto-fills slot 2 with the most similar paddle (via findSimilarPaddles/paddleSimilarity
+  // above) whenever exactly one paddle ends up selected -- whether that's from ?compare=,
+  // ?nerd=, or a plain manual first pick with no URL params at all (per spec: "when a user
+  // navigates straight to the comparison lab and populates the first paddle, go ahead and
+  // auto-populate a second paddle"). Called once right after paddle data loads (from start(),
+  // where it will usually find nothing yet because Feel Map data hasn't arrived) and again once
+  // loadFeel() finishes (success OR exhausted fallback) -- paddleSimilarity() requires all 7
+  // metrics including Feel Profile, so it can't find a real match until Feel data exists.
+  // Idempotent: does nothing once AUTO_SIM_ADDED is set or once a second slot is already filled.
+  function maybeAutoFillSimilar(){
+    if(AUTO_SIM_ADDED) return;
+    var sel=selectedIdx();
+    if(sel.length!==1) return;
+    var idx=mostSimilarPaddleIdx(sel[0]);
+    if(idx<0) return;
+    var slot=state.slots.indexOf(null); if(slot<0) return;
+    state.slots[slot]=idx;
+    recordLabAdd(PADDLES[idx]);
+    AUTO_SIM_ADDED=true;
+    AUTO_SIM_SLOT=slot;
+    syncSlots();
+    render();
+    var note=document.getElementById('pclAutoSimNote'); if(note) note.hidden=false;
+  }
+  window.backToBasicMode=function(){
+    if(!NERD_RETURN_KEY) return;
+    var url=DB_URL+'?paddle='+encodeURIComponent(NERD_RETURN_KEY);
+    try{ (window.top||window).location.href=url; }
+    catch(e){ window.open(url,'_blank','noopener'); }
+  };
 
   /* ---- load ---- */
   /* ---- Paddle Feel Map (read-only mirror of the admin chart) ---- */
@@ -2484,10 +2555,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function feelBool(v){ var s=String(v==null?'':v).trim().toLowerCase(); return !(s==='false'||s==='0'||s==='no'||s==='off'); }
   function loadFeel(url,fb){
     Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){
-      var rows=res.data||[]; if(rows.length<1){ if(fb) return loadFeel(fb,null); return; }
+      var rows=res.data||[]; if(rows.length<1){ if(fb) return loadFeel(fb,null); maybeAutoFillSimilar(); return; }
       var head=rows[0].map(feelNorm), ci={};
       ['company','paddle','x','y','on'].forEach(function(k){ci[k]=head.indexOf(k);});
-      if(ci.company<0||ci.paddle<0){ if(fb) return loadFeel(fb,null); return; }
+      if(ci.company<0||ci.paddle<0){ if(fb) return loadFeel(fb,null); maybeAutoFillSimilar(); return; }
       var out=[];
       for(var i=1;i<rows.length;i++){ var r=rows[i]; if(!r) continue;
         var c=r[ci.company], p=r[ci.paddle]; if(!c||!p) continue;
@@ -2497,7 +2568,12 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
                   on:ci.on>-1?feelBool(r[ci.on]):true});
       }
       FEEL=out; renderFeel();
-    },error:function(){ if(fb) loadFeel(fb,null); }});
+      // Feel data (the last of the 7 similarity metrics) just arrived -- this is the first
+      // point at which paddleSimilarity() can actually find a full match. See
+      // maybeAutoFillSimilar()'s comment near applyDeepLink() for why this has to be re-tried
+      // here rather than just once at page load.
+      maybeAutoFillSimilar();
+    },error:function(){ if(fb) loadFeel(fb,null); else maybeAutoFillSimilar(); }});
   }
   // Paddles whose Company+Paddle name covers more than one thickness are stored
   // in the feel sheet with the thickness appended (e.g. "Bantam ALW-C 14.3mm").
@@ -2515,6 +2591,75 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var want=(p.company+'||'+feelNameOf(p)).toLowerCase().trim();
     for(var i=0;i<FEEL.length;i++){ var f=FEEL[i]; if((f.company+'||'+f.paddle).toLowerCase().trim()===want) return f; }
     return null;
+  }
+
+  /* ================= similar paddles (similarity score) — ported from paddle-review-engine.js
+     2026-09-13, kept byte-for-byte equivalent in logic (per CONSTANTS.md's rule for ported
+     readers: if you change one copy, change all three -- same discipline as the Curves reader).
+     A per-metric similarity score is a plain min/max ratio expressed as a percentage. That only
+     produces a sane number for metrics that are always >0 on a shared scale, true of every
+     ratio-based metric used here: the *Scaled fields are already 0-100 scaled scores, KewCOR and
+     every physical dimension/weight field are plain positive measurements. Feel Map x/y run
+     -5..+5, so a ratio would mangle negative values -- uses a distance-based formula instead
+     (axisSim: 100*(1-|a-b|/10), the two axes averaged). Firepower and Hand Speed Index are
+     deliberately excluded: Firepower is itself an average of Power and Pop, and Hand Speed Index
+     is derived from Weight/Balance, so both would double-count metrics already represented.
+     Overall score is the average of all 7 top-level metrics. A candidate needs ALL 7 present to
+     be considered at all -- no partial-credit threshold (a 60% coverage threshold used to let
+     incomplete-data paddles surface as false "similar" matches; see ROADMAP-review-scripts.md). */
+  var SIM_DIMENSION_KEYS=['length','width','thickness','handleLength'];
+  var SIM_WEIGHT_KEYS=['weight','swingWeight','twistWeight','balance'];
+  function simRatio(a,b){
+    if(a==null||b==null||isNaN(a)||isNaN(b)||a<=0||b<=0) return null;
+    return (Math.min(a,b)/Math.max(a,b))*100;
+  }
+  function simAvg(p,q,keys){
+    var vals=keys.map(function(k){return simRatio(p[k],q[k]);}).filter(function(v){return v!=null;});
+    return vals.length ? vals.reduce(function(a,b){return a+b;},0)/vals.length : null;
+  }
+  function axisSim(a,b){
+    if(a==null||b==null||isNaN(a)||isNaN(b)) return null;
+    return 100*(1-Math.abs(a-b)/10);
+  }
+  function feelSim(p,q){
+    var fp=feelEntryFor(p), fq=feelEntryFor(q);
+    if(!fp||!fq) return null;
+    var xs=axisSim(fp.x,fq.x), ys=axisSim(fp.y,fq.y);
+    if(xs==null||ys==null) return null;
+    return (xs+ys)/2;
+  }
+  function paddleSimilarity(p,q){
+    var m={
+      spin:simRatio(p.spinScaled,q.spinScaled),
+      dimensions:simAvg(p,q,SIM_DIMENSION_KEYS),
+      weightBalance:simAvg(p,q,SIM_WEIGHT_KEYS),
+      power:simRatio(p.powerScaled,q.powerScaled),
+      pop:simRatio(p.popScaled,q.popScaled),
+      kewcor:simRatio(p.kewcor,q.kewcor),
+      feel:feelSim(p,q)
+    };
+    var order=['spin','dimensions','weightBalance','power','pop','kewcor','feel'];
+    var vals=order.map(function(k){return m[k];}).filter(function(v){return v!=null;});
+    if(vals.length<order.length) return null;
+    return {overall:vals.reduce(function(a,b){return a+b;},0)/vals.length, metrics:m, order:order};
+  }
+  function findSimilarPaddles(p,n,excludeKeySet){
+    var scored=[];
+    PADDLES.forEach(function(q){
+      if(q.key===p.key) return;
+      if(excludeKeySet && excludeKeySet[q.key.toLowerCase()]) return;
+      var s=paddleSimilarity(p,q);
+      if(s) scored.push({paddle:q,sim:s});
+    });
+    scored.sort(function(a,b){return b.sim.overall-a.sim.overall;});
+    return scored.slice(0,n||4);
+  }
+  function mostSimilarPaddleIdx(pIdx, excludeIdxSet){
+    var p=PADDLES[pIdx]; if(!p) return -1;
+    var exclude={}; if(excludeIdxSet) excludeIdxSet.forEach(function(i){ if(PADDLES[i]) exclude[PADDLES[i].key.toLowerCase()]=1; });
+    var top=findSimilarPaddles(p,1,exclude);
+    if(!top.length) return -1;
+    return PADDLES.indexOf(top[0].paddle);
   }
   function feelCol(p){
     var f=feelEntryFor(p);
@@ -2557,8 +2702,10 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     var sortEl=document.getElementById('pclListSort');
     if(sortEl) sortEl.addEventListener('change', populateDropdowns);
     applyDeepLink();
+    var backBtn=document.getElementById('pclBackBasicBtn'); if(backBtn) backBtn.hidden=!ENTERED_VIA_NERD;
     syncSlots();
     render();
+    maybeAutoFillSimilar(); // usually a no-op here -- Feel data (below) hasn't loaded yet
     wireBspControls();
     loadCurves(WORKER_BASE+'/csv/curves', CURVES_CSV);
     var fcsv=WORKER_BASE+'/csv/feel?cb='+Date.now();
