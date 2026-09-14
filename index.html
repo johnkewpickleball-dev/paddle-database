@@ -296,7 +296,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .basic-gauge-label{font-size:9px;font-weight:700;fill:var(--muted);font-family:inherit;text-transform:uppercase;letter-spacing:.2px}
 .basic-gauge-needle{fill:var(--text)}
 .basic-gauge-hub{fill:var(--text);stroke:var(--white);stroke-width:2}
-.basic-gauge-result{margin-top:4px;font-size:15px;font-weight:700;color:var(--green)}
+.basic-gauge-answer{margin:0 0 8px;font-size:17px;font-weight:700;color:#d97706}
 .basic-feelbar{max-width:340px;margin:0 auto 12px}
 .basic-feelbar-svg{width:100%;height:auto;display:block}
 .basic-feelbar-band-label{font-size:10px;font-weight:700;font-family:inherit;text-transform:uppercase;letter-spacing:.2px}
@@ -379,6 +379,7 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .basic-gauge-hub{fill:var(--text);stroke:var(--white)}
 [data-theme="dark"] .basic-feelbar-band-label-0{fill:#2a1c11}
 [data-theme="dark"] .basic-feelbar-disabled{fill:#2a3a49}
+[data-theme="dark"] .basic-gauge-answer{color:#f59e0b}
 [data-theme="dark"] .dur-info-box h3{color:var(--text)}
 [data-theme="dark"] .discount-code{background:var(--green-light);color:#5fe0a0}
 [data-theme="dark"] .badge-shape{background:#16304d;color:#8ab4f8}
@@ -1451,11 +1452,21 @@ function basicGaugeSVG(labels, frac){
   const needle = `<g class="basic-gauge-needle-grp" data-target="${(-targetAngle).toFixed(2)}" transform="rotate(-180 ${cx} ${cy})">
     <polygon class="basic-gauge-needle" points="${cx},${cy-4} ${cx+needleLen},${cy} ${cx},${cy+4}"></polygon>
   </g>`;
-  return `<svg class="basic-gauge-svg" viewBox="0 0 200 118" preserveAspectRatio="xMidYMid meet">
+  // viewBox is widened 30px on each side (200 -> 260 wide) beyond the actual dial geometry.
+  // The two EDGE band labels (e.g. "CONTROL", "POWER") are text-anchor:middle at x=8/x=192 --
+  // with the dial's own 0-200 box that put roughly half of each word's width outside the
+  // canvas and clipped it. The dial's own coordinates (cx=100 etc.) are unchanged; only the
+  // visible/clipping box is larger, so nothing about the arc or needle math shifts. 2026-09-13.
+  return `<svg class="basic-gauge-svg" viewBox="-30 0 260 118" preserveAspectRatio="xMidYMid meet">
     ${bands}${labelsHtml}${needle}
     <circle class="basic-gauge-hub" cx="${cx}" cy="${cy}" r="6"></circle>
   </svg>`;
 }
+// The "answer" line (e.g. "Power", "High") now sits directly under the section TITLE, in
+// orange, above the dial -- not below the dial where the band label for whichever zone happens
+// to render highest in the SVG (the middle band, always closest to the title) could be mistaken
+// for the answer. 2026-09-13, per John: seeing "ALL-COURT" right under "How Powerful Is It?"
+// read as if that were the answer, when the real answer ("Power") was below the gauge instead.
 function basicGaugeSection(title, sub, zones, labels, value){
   const frac = basicGaugeFraction(zones, value);
   const curLabel = basicGaugeCurrentLabel(zones, labels, value);
@@ -1463,8 +1474,8 @@ function basicGaugeSection(title, sub, zones, labels, value){
     <div class="basic-section-title">${title}</div>
     ${sub?`<div class="basic-section-sub">${sub}</div>`:''}
     ${value==null ? `<div class="basic-gauge-nodata">Not enough data for this paddle yet.</div>` : `
+      <div class="basic-gauge-answer">${curLabel}</div>
       <div class="basic-gauge-wrap">${basicGaugeSVG(labels, frac)}</div>
-      <div class="basic-gauge-result">${curLabel}</div>
     `}
   </div>`;
 }
@@ -1504,12 +1515,29 @@ function basicFeelBarSVG(leftLabel, midLabel, rightLabel, value){
     ${bands}${labelsHtml}${pointer}
   </svg>`;
 }
+// Same 3 equal zones the feel-bar SVG itself draws (-5..5 split into thirds); used only to
+// build the plain-English answer line, not to re-derive the bar's own geometry.
+function basicFeelZoneLabel(value, labels){
+  if(value==null || isNaN(value)) return null;
+  const t=(Math.max(-5,Math.min(5,value))+5)/10;
+  if(t<1/3) return labels[0];
+  if(t<2/3) return labels[1];
+  return labels[2];
+}
 function basicFeelSection(p){
   const fe = feelXYOfPaddle(p);
   const y = fe ? fe.y : null; // soft(-5) <-> stiff(+5)
   const x = fe ? fe.x : null; // dense(-5) <-> hollow(+5)
+  const yLabel = basicFeelZoneLabel(y, ['Soft','Balanced','Stiff']);
+  const xLabel = basicFeelZoneLabel(x, ['Dense','Balanced','Hollow']);
+  // "Stiff-Hollow", "Soft-Balanced", etc. If BOTH axes land on Balanced, collapse to a single
+  // "Balanced" instead of the redundant "Balanced-Balanced," per John 2026-09-13.
+  const combined = (yLabel==null || xLabel==null) ? null
+    : (yLabel==='Balanced' && xLabel==='Balanced') ? 'Balanced'
+    : `${yLabel}-${xLabel}`;
   return `<div class="basic-section">
     <div class="basic-section-title">How Does It Feel?</div>
+    ${combined ? `<div class="basic-gauge-answer">${combined}</div>` : ''}
     <div class="basic-feelbar">${basicFeelBarSVG('Soft','Balanced','Stiff', y)}</div>
     <div class="basic-feelbar">${basicFeelBarSVG('Dense','Balanced','Hollow', x)}</div>
   </div>`;
@@ -1598,7 +1626,6 @@ function openModal(idx){
     </div>
     <div class="modal-body">
       ${dbPhotoBasic(p)}
-      <button class="btn-nerd-mode" onclick="nerdMode(${idx})" title="Full Details/Metrics/Analytics">Take Me to Nerd Mode</button>
 
       ${basicGaugeSection('How Powerful Is It?', null, BASIC_POWER_ZONES, BASIC_POWER_LABELS, p.kewcor)}
       ${basicGaugeSection('How Much Spin?', null, BASIC_THIRDS_ZONES, BASIC_SPIN_LABELS, p.spinScaled)}
