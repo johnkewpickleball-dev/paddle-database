@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "gearbox-pressure-x-8m-elongated-review",
+    "title": "Gearbox Pressure X 8M Elongated Review",
+    "teaser": "The MPP half of Gearbox's Pressure X pairing plays stiffer and tighter than the traditional floating-core feel MPP usually delivers, testing Tier 2 for spin durability, a counter-intuitive companion to the EPP 8E.",
+    "chips": ["Elongated", "Good Spin", "Power, Mid"],
+    "date": "2026-09-13",
+    "search": "gearbox pressure x 8m elongated gen-4 full foam sst mpp tpe expanding foam tuning pods carbon fiber tier 2 good spin power gx2",
+    "img": "gearbox-pressure-x-8m-elongated"
+  },
+  {
     "slug": "gearbox-pressure-x-8e-elongated-review",
     "title": "Gearbox Pressure X 8E Elongated Review",
     "teaser": "Gearbox's Gen-4 return to form: a modified SST core, EPP foam, TPE band, and expanding foam tuning pods under a grit-infused carbon face, testing Tier 2 for spin durability with a counter-intuitive twist versus its MPP sibling.",
