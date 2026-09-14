@@ -1480,8 +1480,9 @@ function basicGaugeSection(title, sub, zones, labels, value){
   </div>`;
 }
 // Feel bars, redesigned 2026-09-13 to match the live Firepower bar (fpBarSVG in
-// paddle-comparison-lab.html): an SVG track with three EQUAL zones (adds a "Balanced" middle
-// zone that didn't exist before) and a white triangle+line pointer with a dark halo for
+// paddle-comparison-lab.html): an SVG track with three EQUAL zones (adds a "Neutral" middle
+// zone that didn't exist before, renamed from "Balanced" 2026-09-14) and a white triangle+line
+// pointer with a dark halo for
 // contrast against both light and dark bands, animated start-to-actual the same way. Zone
 // labels sit directly on their own band (matching the reference bar's in-band Low/Mid/High
 // text) rather than in a separate legend row above the track, per John's spec. Reuses the same
@@ -1528,18 +1529,19 @@ function basicFeelSection(p){
   const fe = feelXYOfPaddle(p);
   const y = fe ? fe.y : null; // soft(-5) <-> stiff(+5)
   const x = fe ? fe.x : null; // dense(-5) <-> hollow(+5)
-  const yLabel = basicFeelZoneLabel(y, ['Soft','Balanced','Stiff']);
-  const xLabel = basicFeelZoneLabel(x, ['Dense','Balanced','Hollow']);
-  // "Stiff-Hollow", "Soft-Balanced", etc. If BOTH axes land on Balanced, collapse to a single
-  // "Balanced" instead of the redundant "Balanced-Balanced," per John 2026-09-13.
+  const yLabel = basicFeelZoneLabel(y, ['Soft','Neutral','Stiff']);
+  const xLabel = basicFeelZoneLabel(x, ['Dense','Neutral','Hollow']);
+  // "Stiff-Hollow", "Soft-Neutral", etc. If BOTH axes land on Neutral, collapse to a single
+  // "Neutral" instead of the redundant "Neutral-Neutral," per John 2026-09-13. (Middle-zone
+  // label renamed from "Balanced" to "Neutral" 2026-09-14, same collapse rule applies.)
   const combined = (yLabel==null || xLabel==null) ? null
-    : (yLabel==='Balanced' && xLabel==='Balanced') ? 'Balanced'
+    : (yLabel==='Neutral' && xLabel==='Neutral') ? 'Neutral'
     : `${yLabel}-${xLabel}`;
   return `<div class="basic-section">
     <div class="basic-section-title">How Does It Feel?</div>
     ${combined ? `<div class="basic-gauge-answer">${combined}</div>` : ''}
-    <div class="basic-feelbar">${basicFeelBarSVG('Soft','Balanced','Stiff', y)}</div>
-    <div class="basic-feelbar">${basicFeelBarSVG('Dense','Balanced','Hollow', x)}</div>
+    <div class="basic-feelbar">${basicFeelBarSVG('Soft','Neutral','Stiff', y)}</div>
+    <div class="basic-feelbar">${basicFeelBarSVG('Dense','Neutral','Hollow', x)}</div>
   </div>`;
 }
 // "Specs" section, added 2026-09-13: raw physical measurements below the swing gauge, per
