@@ -1564,13 +1564,16 @@ function basicSpecsSection(p){
     <div class="basic-specs-grid">${rows.map(r=>`<div class="basic-specs-row"><span class="basic-specs-label">${r[0]}</span><span class="basic-specs-val">${r[1]}</span></div>`).join('')}</div>
   </div>`;
 }
-// Animates every gauge needle / feel-bar pointer currently in the modal, from its minimum
-// (rest) position up to its real value. Called once right after the modal's innerHTML is set.
-function initBasicVisuals(){
+// Animates every gauge needle / feel-bar pointer within `root` (default: the whole modal), from
+// its minimum (rest) position up to its real value. Called once right after the modal's
+// innerHTML is set, and again -- scoped to just the Feel section -- by refreshOpenModalFeel()
+// below, so a late data refresh doesn't re-animate gauges that already finished.
+function initBasicVisuals(root){
+  root = root || document.getElementById('modalContent');
   // Gauge needle: group starts at rotate(-180) (rest/minimum) and animates to its stored
   // data-target angle (already the negated gAngle(frac), same convention as the retired dial's
   // setNeedleAngle) via requestAnimationFrame, cubic ease-out.
-  document.querySelectorAll('#modalContent .basic-gauge-needle-grp[data-target]').forEach(grp=>{
+  root.querySelectorAll('.basic-gauge-needle-grp[data-target]').forEach(grp=>{
     const target=parseFloat(grp.getAttribute('data-target'));
     let t0=null; const dur=900, start=-180;
     function frame(now){ if(t0==null)t0=now; const k=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-k,3);
@@ -1581,7 +1584,7 @@ function initBasicVisuals(){
   });
   // Feel bar pointer: group starts at x=data-x0 (rest/minimum) and animates the halo/line/
   // triangle together to data-x0 + data-track*data-target, same easing.
-  document.querySelectorAll('#modalContent .basic-feelbar-pointer-grp[data-target]').forEach(grp=>{
+  root.querySelectorAll('.basic-feelbar-pointer-grp[data-target]').forEach(grp=>{
     const x0=parseFloat(grp.getAttribute('data-x0')), track=parseFloat(grp.getAttribute('data-track')),
       target=parseFloat(grp.getAttribute('data-target')), y=parseFloat(grp.getAttribute('data-y')), h=parseFloat(grp.getAttribute('data-h'));
     const halo=grp.querySelector('.basic-feelbar-pointer-halo'), line=grp.querySelector('.basic-feelbar-pointer-line'), poly=grp.querySelector('.basic-feelbar-pointer');
@@ -1597,6 +1600,34 @@ function initBasicVisuals(){
     }
     requestAnimationFrame(frame);
   });
+}
+// Fixes a data race: the Feel Map CSV (FEEL_MAP) loads asynchronously via loadFeelMap(), which
+// can still be in flight when a paddle's modal is opened right after page load. Before this
+// fix, openModal() read FEEL_MAP at click-time only -- if it was still {} at that instant, the
+// Feel section rendered "Not placed on the feel map yet." for that paddle FOREVER (nothing ever
+// re-rendered it once the real data arrived), which is exactly what John saw happen for every
+// paddle on 2026-09-13. loadFeelMap()'s completion now calls this to re-render just the Feel
+// section of whichever modal is currently open, scoped so it doesn't re-trigger the gauge
+// needle animations that already finished. Mirrors the same late-data-arrival pattern already
+// used for the similarity auto-fill in paddle-comparison-lab.html's loadFeel().
+function refreshOpenModalFeel(){
+  if(!CURRENT_MODAL_PADDLE) return;
+  const overlay=document.getElementById('modalOverlay');
+  if(!overlay || !overlay.classList.contains('open')) return;
+  const titles=document.querySelectorAll('#modalContent .basic-section-title');
+  for(let i=0;i<titles.length;i++){
+    if(titles[i].textContent==='How Does It Feel?'){
+      const section=titles[i].closest('.basic-section');
+      if(section){
+        const wrap=document.createElement('div');
+        wrap.innerHTML=basicFeelSection(CURRENT_MODAL_PADDLE);
+        const newSection=wrap.firstElementChild;
+        section.replaceWith(newSection);
+        initBasicVisuals(newSection);
+      }
+      break;
+    }
+  }
 }
 
 function openModal(idx){
@@ -2020,6 +2051,7 @@ applyPaddleDeepLink();
         m[(String(c)+'||'+String(p)).toLowerCase().trim()] = { x:x, y:y };
       }
       FEEL_MAP = m;
+      if(typeof refreshOpenModalFeel==='function') refreshOpenModalFeel();
     }, error:function(){ if(fb) loadFeelMap(fb,null); } });
   }
 
