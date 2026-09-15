@@ -1395,7 +1395,10 @@ const BASIC_POWER_LABELS=['Control','All-Court','Power'];
 // no separate per-metric boundary lookup needed, per spec.
 const BASIC_THIRDS_ZONES=[{lo:0,hi:33},{lo:34,hi:66},{lo:67,hi:100}];
 const BASIC_SPIN_LABELS=['Low','Medium','High'];
-const BASIC_SWING_LABELS=['Light','Medium','Heavy'];
+// Hand Speed Index: HIGH value = lightweight/easy-to-swing paddle, LOW value = heavy paddle.
+// The gauge always maps low value -> left band (labels[0]) and high value -> right band
+// (labels[n-1]), so the label order must be reversed relative to the raw 0-100 scale.
+const BASIC_SWING_LABELS=['Heavy','Medium','Light'];
 
 function basicGaugeFraction(zones, value){
   if(value==null || isNaN(value)) return null;
