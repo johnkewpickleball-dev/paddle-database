@@ -121,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js?v=6"></script>
+<script src="kewcor-core.js?v=7"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -141,7 +141,7 @@ const NOTES = {
   paste: ["Pasting gate data",
     "DO NOT SORT IT. The rows must stay in the order you fired them.\n\nEvery shot is placed in the ball's life by its position in the block, and the correction each location gets is taken at the moment that block was actually fired. Sorting scrambles that, and the damage is silent — the numbers still look reasonable, they are just wrong.\n\nDo not remove the bad shots either. The ball felt every one of them and the wear accounting needs the real count.\n\nThree columns: Inbound, Outbound, COR. Tabs, commas or spaces all work."],
   window: ["Why ±7 mph is safe",
-    "The cannon runs an inbound sd of 4.29 mph. At ±3 you keep half your shots; at ±7 you keep about 90%.\n\nIt is only safe because every shot is corrected to 50 mph BEFORE anything is averaged, using a slope of −0.00451 PBCoR per mph measured on these paddles at this location over two sessions."],
+    "The cannon runs an inbound sd of 4.29 mph. At ±3 you keep half your shots; at ±7 you keep about 90%.\n\nIt is only safe because every shot is corrected to 50 mph BEFORE anything is averaged, using a slope of −0.00612 PBCoR per mph, re-fitted 2026-09-16 on 686 shots across 18 paddle-sessions. Shots archived before that date used −0.00451 and were not retro-corrected."],
   mid: ["The MID block",
     "A third control reading, shot between paddles 2 and 3.\n\nBall COR decays exponentially, so the correction between PRE and POST follows a curve, not a straight line. The ramp already bends to that curve using a decay constant borrowed from LT-15. The MID block is what makes that borrowing unnecessary: with a third reading the ramp is anchored on measurements in both halves of the session.\n\nIt is asked for when the ball is under 190 effective impacts and the session runs more than about 90 paddle impacts — in practice, a ball's first session or two after its wear phase, and almost never after that.\n\nIf you decide to stop after two paddles, this block becomes the POST block. Nothing is wasted."],
   drift: ["POOLED or RAMP",
@@ -476,12 +476,16 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 13;
+const WANT_BUILD = 14;
 /* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
    change the other. If the loaded core reports a different BUILD, the browser served a
    cached file and the header says so in plain words. */
-const CORE_V = 6;
+const CORE_V = 7;
 let EP_BUILD = null;
+// Set from the last ping's health check. Null means nobody has pinged this session, so the
+// archive failure handler falls back to reading the error text; true/false is the real
+// answer and overrides text-guessing entirely once it is known.
+let EP_CAN_WRITE_DRIVE = null;
 const EP_KEY='kewcor.endpoint.v1';
 let EP = (()=>{ try{ return Object.assign({url:'',secret:''},
     JSON.parse(localStorage.getItem(EP_KEY)||'{}')); }catch(e){ return {url:'',secret:''}; } })();
@@ -527,7 +531,17 @@ function post(op, payload){
       let j;
       try{ j=JSON.parse(t); }
       catch(e){
-        throw new Error(/<(!doctype|html)/i.test(t)
+        // A 404 means this URL does not resolve to a live deployment at all -- that is what
+        // happens after Deploy > New deployment, which issues a NEW /exec URL and leaves the
+        // old one pointing at nothing. Wrong access settings are a different failure: Google
+        // serves a sign-in or permission page for those, normally HTTP 200 or 403, not 404.
+        // Test the status before assuming it is a settings problem.
+        throw new Error(status===404
+          ? 'HTTP 404: this URL no longer points at a live deployment. It was probably '
+          + 'replaced by a New deployment rather than a new version of the same one -- '
+          + 'open the script, go to Deploy > Manage deployments, and re-copy the current '
+          + '/exec URL from there.'
+          : /<(!doctype|html)/i.test(t)
           ? 'The endpoint answered with a web page instead of JSON (HTTP '+status+'). '
           + 'That is almost always the deployment being set to anything other than '
           + '"Execute as: Me, Who has access: Anyone".'
@@ -571,6 +585,7 @@ function pingEndpoint(){
         ? 'Curves feed for the website: ' + j.curvesSheetId
         : 'No Curves feed yet — it is created the first time you archive a paddle.');
     EP_BUILD = v;
+    EP_CAN_WRITE_DRIVE = ('canWriteDrive' in j) ? j.canWriteDrive : null;
     WR={busy:'', tone: (ok && j.secretChanged!==false && j.canWriteDrive!==false)
                        ? 'ok' : 'warn',
         msg:'Endpoint answered — build '+v+'.',
@@ -1737,7 +1752,12 @@ function scResults(){
         ? 'The whole report travels in the link, so it works for anyone you send it to.'
         : 'It will open, and it will be stamped DRAFT until the POST block is shot and the session is logged.'}</span>
     </div>
-    ${p.archive?'':`<div class="banner b-warn"><div><b>NOT SAVED YET.</b>
+    ${p.archive
+      ? `<div class="banner b-ok"><div><b>Saved as ${esc(p.archive.name)}.</b>
+        This is this card's own record, read from S.paddles[${p._i}].archive -- it stays
+        true regardless of what the banner below says about the most recent action, and
+        regardless of what happened on any other card in this list.</div></div>`
+      : `<div class="banner b-warn"><div><b>NOT SAVED YET.</b>
       This paddle's results exist only in this browser. Nothing outside this machine has
       them until you press the button below.</div></div>`}
     <div class="row" style="margin-top:8px">
@@ -1751,7 +1771,7 @@ function scResults(){
           + 'is the record of what was reported at the time. The website row is corrected in '
           + 'place instead, and the registry row is not touched: fix that cell by hand.'
         : 'Writes the internal record: every shot, the specs, and the ball correction, as live formulas you can correct later.'}</span>
-    </div>${wrBanner('archive')}</div>`).join('')}
+    </div>${wrBanner('archive:'+p._i)}</div>`).join('')}
   <div class="card"><h3>Send it to the registry</h3>
     ${S.sent.session
       ? `<div class="banner b-ok"><div><b>Already logged — Sessions row ${S.sent.session.row}.</b>
@@ -2073,7 +2093,11 @@ function archivePayload(idx){
 }
 
 function archivePaddle(idx){
-  WRSCOPE='archive';
+  // Scoped to THIS paddle's index, not just 'archive' -- every card in the results list
+  // calls wrBanner('archive') with the same literal scope, so a single global success
+  // banner used to show up under every paddle once ANY paddle had been archived. The
+  // card that renders this banner must pass the matching 'archive:'+idx scope back.
+  WRSCOPE='archive:'+idx;
   // A blank company used to sail straight through to the website, where the Curves row
   // landed with an empty Company cell and the site fell back to fuzzy name matching to
   // work out whose paddle it was. Stop it here, where the person who knows is standing.
@@ -2118,16 +2142,33 @@ function archivePaddle(idx){
       render();
     })
     .catch(e=>{
+      const msg = e.message||'';
       // A missing Drive scope is the one failure that looks like something else: the
       // script was pasted but never re-authorized, and the error is about permissions
-      // rather than about anything on this page.
-      const scope=/PERMISSION|authoriz|scope|Drive/i.test(e.message||'');
+      // rather than about anything on this page. But the bare word "Drive" is not enough
+      // to call it that -- Google's own transient backend failure is literally "Exception:
+      // Service error: Drive", and that used to trip this same check and send the operator
+      // to re-run authorizeArchive, which fixes nothing and wastes a session.
+      const textLooksLikePermission =
+        /PERMISSION|authoriz|scope|does not have permission/i.test(msg);
+      // The health check already knows whether Drive access works (canWriteDrive), so use
+      // that fact instead of guessing from the error text when it is available. Text-
+      // matching is only the fallback for when nobody has pressed "Check it" this session.
+      const permission = EP_CAN_WRITE_DRIVE===false ? true
+                        : EP_CAN_WRITE_DRIVE===true ? false
+                        : textLooksLikePermission;
+      const serviceError = !permission && /Service error/i.test(msg);
       WR={busy:'', tone:'bad', msg:'The paddle was NOT saved.',
-          detail:(scope
+          detail:(permission
             ? 'This looks like the script not being authorized for Drive. Creating a sheet '
             + 'needs a permission the earlier version never asked for: open the script, '
             + 'Run the archive function once, and accept the prompt. Then redeploy. '
-            : '') + e.message};
+            : serviceError
+            ? 'This is a transient Google backend failure, not a missing permission. The '
+            + 'archive may already exist on Drive: check the KewCOR Tests folder for a '
+            + 'partially written sheet from this attempt and delete it before retrying. '
+            + 'Wait a bit rather than pressing Save again right away. '
+            : '') + msg};
       render();
     });
 }

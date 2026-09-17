@@ -34,7 +34,9 @@
    *                  required before archive, so the Curves row can never go out
    *                  with a blank Company for the website to guess at.
    */
-  const BUILD = 6;
+  // 7: velocity slope -0.00451 -> -0.00612 (2026-09-16). Every number this file
+  //    produces moved, so the cache-buster HAD to move with it.
+  const BUILD = 7;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
@@ -48,7 +50,32 @@
     window: 7.0,            // Setup C17, accept 50 +/- this
     perLoc: 10,             // Setup C18, shots per impact location
     ballOz: 0.92,           // Setup C19
-    slope: -0.00451,        // Setup C23, dPBCoR/dVin
+    /* VELOCITY SLOPE, changed 2026-09-16 from -0.00451 to -0.00612.
+     *
+     * -0.00451 came off two early sessions. The re-fit used 686 valid shots in 72 location
+     * blocks across 18 paddle-sessions, 2026-08-25 to 09-01, regressed on RAW PBCoR with
+     * every paddle-by-location block mean removed so no paddle's own level can leak into
+     * the slope: -0.00612, cluster-robust se 0.00036, 95% CI -0.00683 to -0.00541. Cochran
+     * Q = 23.98 on 17 df, p = 0.12, so one slope really is common to all paddles. Full fit,
+     * confounds ruled out and sensitivities: _QC/QC-velocity-slope-refit-2026-09-16.md.
+     *
+     * THE DATABASE NOW HAS TWO CORRECTION ERAS. Everything archived BEFORE 2026-09-16 was
+     * computed at -0.00451 and is NOT retro-corrected, because published content is a
+     * historical record. Re-running these 18 paddles at the new slope moved no published
+     * maximum by more than 0.002 and no location mean by more than 0.005, so the two eras
+     * agree well inside the reporting resolution. Two PEAK LOCATIONS did move, which matters
+     * only because Ball Speed in Play reads the whole curve. Do not "restore" the old value.
+     *
+     * curv STAYS 0. A quadratic fits this data, but inside a +/-7 mph window the demeaned
+     * v and v^2 correlate at 0.99941, so its endpoints are collinearity, not measurement.
+     * The eA-vs-speed polynomial, which has 20 to 95 mph of leverage, remains the authority
+     * on curvature and its nine published multipliers are untouched.
+     *
+     * THIS CONSTANT HAS FOUR OTHER HOMES and nothing checks that they agree: Setup C23 in
+     * KewCOR Calculator v1.xlsx (the oracle the fixtures are recalculated from), the Website
+     * mirror of this file, the help text in kewcor-session.html, and KewCOR-HANDOVER.md.
+     * Change one, change all five. */
+    slope: -0.00612,        // Setup C23, dPBCoR/dVin
     curv: 0.0,              // Setup C24, deliberately zero
     wearFactor: 0.44,       // Setup C25, a 70 mph glancing wear shot in 50 mph impacts
     tau: 52.0,              // Setup C26, wear-curve time constant
