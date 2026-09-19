@@ -161,9 +161,29 @@ const LOC_ALL = [3,4,5,6,7];
 // record there. Impacts that happened and produced no numbers.
 const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',mfrEdited:false,pmNote:'',pmWarn:'',use7:false,
                             spec:{}, shots:{}, missed:{}, archive:null});
+/* TODAY, IN THE ROOM THE CANNON IS IN.
+ *
+ * This was `new Date().toISOString().slice(0,10)` in five places until BUILD 9.
+ * toISOString() is ALWAYS UTC. The lab is UTC-6 in summer and UTC-7 in winter, so every one
+ * of those five stamped TOMORROW'S date on anything created after 6pm local: a session, a
+ * ball's "in service since", a ball's "retired on".
+ *
+ * That is not cosmetic. The date is the key `sameDayRow` matches a session row on, so a row
+ * written under the wrong day does not find its own earlier row and writes a second one
+ * instead of updating it. It is also the date on every archive sheet.
+ *
+ * Found 2026-09-19. No session is known to have been stamped wrong by it, which is luck: the
+ * eA-vs-speed run and the 2026-09-18 work both went past 6pm local.
+ *
+ * Built from the local getters rather than toLocaleDateString, because the locale path
+ * depends on the browser's ICU data and this string is parsed by other code. */
+function todayLocal(){
+  const d=new Date(), p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+}
 const DEFAULT = {
   regBall:null,
-  date:new Date().toISOString().slice(0,10), person:'', temp:'',
+  date:todayLocal(), person:'', temp:'',
   // NO BALL AND NO FIGURES. The ball is chosen from the shelf on load — see pickLiveBall.
   // These used to be seeded with LT-89 and its impact counts from the day they were
   // typed; while the registry answers, applyBall overwrites them within a second and
@@ -529,7 +549,7 @@ const CORE_V = 7;
    the CORE's build -- so a change to this file alone left nothing on screen that moved, and
    there was no way to tell from the cannon machine whether a push had landed. BUILD 8 is the
    first page-only change to say so out loud. Bump it whenever this file changes. */
-const PAGE_BUILD = 8;
+const PAGE_BUILD = 9;
 let EP_BUILD = null;
 // Set from the last ping's health check. Null means nobody has pinged this session, so the
 // archive failure handler falls back to reading the error text; true/false is the real
@@ -1171,11 +1191,11 @@ const refusedNote = j => (j.refused && j.refused.length)
   : '';
 
 /* ── the shelf, written to ─────────────────────────────────────────────── */
-let NB={id:'', since:new Date().toISOString().slice(0,10), wear:'', otherPrior:'', status:'IN ROTATION'};
+let NB={id:'', since:todayLocal(), wear:'', otherPrior:'', status:'IN ROTATION'};
 // Set when the runner chose the ball rather than the operator, so the choice is stated
 // on screen instead of just appearing in the box.
 let BALLPICK='';
-let RB={id:'', status:'RETIRED', why:'', retiredOn:new Date().toISOString().slice(0,10),
+let RB={id:'', status:'RETIRED', why:'', retiredOn:todayLocal(),
         crackAt:'', notes:''};
 
 function addBall(){
@@ -1197,7 +1217,7 @@ function addBall(){
       const back=RG.rows.find(b=>b.id===id);
       if(!back) throw new Error('The endpoint wrote row '+j.row+', but the ball is not on '
         + 'the shelf when it is read back. Open the registry and look at row '+j.row+'.');
-      NB={id:'', since:new Date().toISOString().slice(0,10), wear:'', otherPrior:'', status:'IN ROTATION'};
+      NB={id:'', since:todayLocal(), wear:'', otherPrior:'', status:'IN ROTATION'};
       WR={busy:'', tone:'ok', msg:id+' is on the shelf at row '+j.row+' — and read back.',
           detail:'Effective age '+Math.round(back.age)+', stage '+(back.stage||'—')+'. '
                + refusedNote(j)};
@@ -1238,7 +1258,7 @@ function retireBall(){
           msg:b.id+' is '+RB.status+' — '+j.from+' → '+j.to+', row '+j.row+', read back.',
           detail:'It keeps its whole history and stops being offered for a session. '
                + refusedNote(j)};
-      RB={id:'', status:'RETIRED', why:'', retiredOn:new Date().toISOString().slice(0,10),
+      RB={id:'', status:'RETIRED', why:'', retiredOn:todayLocal(),
           crackAt:'', notes:''};
       render();
     })
@@ -1410,6 +1430,30 @@ function ballPickNote(){
   return '';
 }
 
+/* A DRAFT CARRIED OVER FROM ANOTHER DAY KEEPS THAT DAY'S DATE.
+ *
+ * The date is seeded once, when a blank session is made, and the draft then lives in
+ * localStorage until something clears it. Open the runner the next morning and the field
+ * still says yesterday. On 2026-09-19 a draft made the previous evening was one click from
+ * stamping a live session with the 18th.
+ *
+ * WARNED, NEVER CORRECTED AUTOMATICALLY. A session that genuinely ran across midnight has a
+ * right to its own date, and so does one being typed up from paper afterwards. The button is
+ * the operator's, not the page's. Silent once the session has been shot, because by then the
+ * date is part of the record rather than a default nobody has looked at. */
+function dateGuard(){
+  const today=todayLocal();
+  if(!S.date || S.date===today || ballPinned()) return '';
+  return `<div class="banner b-warn"><div>
+    <b>This session is dated ${esc(S.date)}. Today is ${today}.</b>
+    It is a draft left over from an earlier day. The date goes on every archive sheet, and it
+    is what the registry matches a session row on \u2014 a wrong one writes a second row
+    instead of finding the first.
+    <div class="row" style="margin-top:8px">
+      <button class="ghost" onclick="S.date='${today}';render()">Set it to ${today}</button>
+      <span class="muted">Leave it if this session really did run on ${esc(S.date)}.</span>
+    </div></div></div>`;
+}
 function ballGuard(){
   const b=S.regBall; if(!b || RG.state!=='ok') return '';
   const onFile = Math.round(b.otherPrior + b.logged), wearOnFile = Math.round(b.wear);
@@ -1478,7 +1522,7 @@ function scSession(){
     <div><label>Date</label><input id="f-date" type="date" value="${esc(S.date)}"
       oninput="S.date=this.value;render()"></div>
     ${field('Personnel','person')}${field('Temp (°F)','temp','number')}
-  </div></div>
+  </div>${dateGuard()}</div>
 
   <div class="card"><h3>Control paddle ${ib_('anchor')}</h3><div class="grid">
     <div><label>Anchor</label><select id="f-anchor" onchange="S.anchor=this.value;render()">
