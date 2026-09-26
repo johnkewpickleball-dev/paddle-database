@@ -36,7 +36,11 @@
    */
   // 7: velocity slope -0.00451 -> -0.00612 (2026-09-16). Every number this file
   //    produces moved, so the cache-buster HAD to move with it.
-  const BUILD = 7;
+  // 8: 2026-09-26. The 2 in location joins the set, and a shot the operator marked
+  //    with `x` now survives the trip to the archive instead of being re-derived as
+  //    USE there. classify() is unchanged and always was right; what was broken was
+  //    everything downstream of it. See _QC/INSTALL-2026-09-26-dropped-and-2in.md.
+  const BUILD = 8;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
@@ -79,7 +83,18 @@
     curv: 0.0,              // Setup C24, deliberately zero
     wearFactor: 0.44,       // Setup C25, a 70 mph glancing wear shot in 50 mph impacts
     tau: 52.0,              // Setup C26, wear-curve time constant
-    locations: [3, 4, 5, 6, 7],
+    /* THE LOCATIONS, IN FIRING ORDER, inches from the TIP. A standard run is the
+     * middle four, 3 through 6. `use2` prepends 2 in and `use7` appends 7 in, each on
+     * its own toggle, so a run is four, five or six blocks. The ORDER is not cosmetic:
+     * blocks are fired top-down, which is what puts the freshest ball at the top of the
+     * face and produces the documented tilt. A 2 in block is fired FIRST, before 3.
+     *
+     * 2 IN IS THE SLOWEST REBOUND ON THE FACE. Effective mass falls as the impact moves
+     * toward the tip, so the ball comes back at roughly 3 to 6 mph there against 13 to
+     * 16 mph at 6 in. The gate has less to measure, misses more, and a given error in
+     * the outbound reading is a larger share of the number. Expect more gate misses and
+     * a wider se at 2 in and read that block knowing it. */
+    locations: [2, 3, 4, 5, 6, 7],
     /* THE ANCHOR'S CONTROL SPOT — where the weekly reference block is shot.
      *
      * It was going to be the mirror image of the crosshair across the centerline: same
@@ -500,6 +515,11 @@
       const m = Math.max(0, Math.round(Number(miss[i]) || 0));
       return {
         location: loc, q: qIn, fired: s.fired, used: s.n, meanVin: s.meanVin,
+        // Two different reasons a shot is not in the average, kept apart because they
+        // are not the same event and the operator needs to see which one happened:
+        // `missed` the gate recorded nothing, `dropped` a person threw it out by hand.
+        // Both still count as impacts, because the ball does not care why.
+        dropped: s.rows.filter(function (r) { return r.status === 'DROPPED'; }).length,
         missed: m, impacts: s.fired + m,
         p50: s.mean, sd: s.sd, se: s.se, D: d,
         kewcor: s.mean == null || d == null ? null : Math.sqrt(s.mean * s.mean + d),

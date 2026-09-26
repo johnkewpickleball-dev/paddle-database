@@ -121,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js?v=7"></script>
+<script src="kewcor-core.js?v=8"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -156,10 +156,15 @@ const NOTES = {
 function bubble(k){ const [h,b]=NOTES[k]; ih.textContent=h; ib.textContent=b; info.showModal(); }
 
 /* ── session state, with a local draft so a refresh cannot cost you the day ── */
-const LOC_ALL = [3,4,5,6,7];
+/* EVERY location the rig can shoot, in FIRING ORDER, inches from the tip. The middle
+   four are the standard run; 2 in and 7 in are each an opt-in block on this paddle. The
+   order is the record of how the session is actually fired and the block corrections are
+   computed against it, so 2 in belongs at the FRONT, not appended. */
+const LOC_ALL = [2,3,4,5,6,7];
 // `missed` is keyed by location, like `shots`: how many impacts the speed gate did not
 // record there. Impacts that happened and produced no numbers.
-const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',mfrEdited:false,pmNote:'',pmWarn:'',use7:false,
+const blankPaddle = () => ({name:'',len:'',sw:'',mfr:'',mfrEdited:false,pmNote:'',pmWarn:'',
+                            use2:false, use7:false,
                             spec:{}, shots:{}, missed:{}, archive:null});
 /* TODAY, IN THE ROOM THE CANNON IS IN.
  *
@@ -540,16 +545,16 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 14;
+const WANT_BUILD = 15;
 /* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
    change the other. If the loaded core reports a different BUILD, the browser served a
    cached file and the header says so in plain words. */
-const CORE_V = 7;
+const CORE_V = 8;
 /* THE RUNNER'S OWN BUILD. The line below used to call K.BUILD the "page build", which is
    the CORE's build -- so a change to this file alone left nothing on screen that moved, and
    there was no way to tell from the cannon machine whether a push had landed. BUILD 8 is the
    first page-only change to say so out loud. Bump it whenever this file changes. */
-const PAGE_BUILD = 9;
+const PAGE_BUILD = 10;
 let EP_BUILD = null;
 // Set from the last ping's health check. Null means nobody has pinged this session, so the
 // archive failure handler falls back to reading the error text; true/false is the real
@@ -954,7 +959,11 @@ const PRE_NEED = () => K.C.preWarmup + K.C.preUsed;
 const controlSpotQ = () => K.qForLocation(A().length, +S.controlSpot || K.C.controlSpot);
 const controlBlock = () => ctrlBlock(S.mirror, controlSpotQ());
 const effAge = () => K.effectiveAge(parseFloat(S.prior)||0, parseFloat(S.wear)||0);
-const locsFor = p => p.use7 ? LOC_ALL : LOC_ALL.slice(0,4);
+/* The blocks this paddle is being shot at, in firing order. Two independent toggles, so
+   all four combinations are legal: 3-6 as standard, 2-6, 3-7, or the full 2-7 sweep. A
+   draft saved before BUILD 10 has no `use2` at all, which reads as false and restores as
+   the four-block run it was. */
+const locsFor = p => LOC_ALL.filter(l => l===2 ? !!p.use2 : (l===7 ? !!p.use7 : true));
 const groupsFor = p => locsFor(p).map(l=>parseShots(p.shots[l]||''));
 // Shots the gate missed, per location. Whole numbers, never negative — a typo here
 // silently ages the ball, so it is clamped rather than trusted.
@@ -963,6 +972,8 @@ const missedFor = p => locsFor(p).map(l=>{
   return isFinite(n) && n > 0 ? n : 0;
 });
 const missedTotal = p => missedFor(p).reduce((a,n)=>a+n,0);
+// The standard four-block run. Still named because the ball-budget estimate on the
+// session screen plans in standard paddles, not in whatever this one paddle is doing.
 const STD_RUN = K.C.perLoc * 4;
 function paddleShotCounts(){
   return S.paddles.map(p=>{
@@ -970,7 +981,9 @@ function paddleShotCounts(){
     // The ball aged for the missed ones too, so they belong in the total that positions
     // this paddle on the wear curve. Only the ESTIMATE for an unstarted paddle ignores
     // them — there is nothing to have missed yet.
-    return rec ? rec + miss : (p.name ? (p.use7?STD_RUN+K.C.perLoc:STD_RUN) : 0);
+    // The estimate for an unstarted paddle follows its own toggles rather than assuming
+    // four blocks: a 2 in or 7 in run puts ten more impacts on the ball, each way.
+    return rec ? rec + miss : (p.name ? K.C.perLoc * locsFor(p).length : 0);
   });
 }
 function timeline(){
@@ -1804,20 +1817,33 @@ function scPaddle(idx){
         <span class="muted">Impacts that happened with no numbers. They age the ball and
           are left out of the average.</span></div></div>`;
   }).join('')}
-  <div class="card" style="padding:11px 18px"><label style="display:flex;gap:9px;align-items:center;margin:0;font-size:14px;color:var(--ink)">
+  <div class="card" style="padding:11px 18px">
+    <label style="display:flex;gap:9px;align-items:center;margin:0;font-size:14px;color:var(--ink)">
+    <input type="checkbox" style="width:auto" ${p.use2?'checked':''}
+      onchange="S.paddles[${idx}].use2=this.checked;render()">
+    Extend to the 2 in location</label>
+    <p class="muted" style="margin:5px 0 12px">Out toward the tip, shot FIRST, before 3 in.
+      Adds ten shots and one more block. The rebound there is the slowest on the face, about
+      3 to 6 mph, so expect more gate misses and a wider se than the other blocks.</p>
+    <label style="display:flex;gap:9px;align-items:center;margin:0;font-size:14px;color:var(--ink)">
     <input type="checkbox" style="width:auto" ${p.use7?'checked':''}
       onchange="S.paddles[${idx}].use7=this.checked;render()">
     Extend to the 7 in location</label>
     <p class="muted" style="margin:5px 0 0">Chasing a trend out toward the bottom of the paddle. Adds ten shots and one more block.</p></div>
   ${!R?`<div class="banner b-mute">Fill in the paddle's length and swing weight, shoot the PRE block, then paste to see results.</div>`:`
   <div class="card"><h3>By location ${ib_('block')}</h3>
-    <table><thead><tr><th>Loc (in)</th><th>Recorded</th><th>Gate missed</th><th>Used</th>
+    <table><thead><tr><th>Loc (in)</th><th>Recorded</th><th>Gate missed</th><th>Dropped</th><th>Used</th>
       <th>Mean Vin</th><th>PBCoR @50</th><th>se</th><th>D applied</th><th>KewCOR</th></tr></thead><tbody>
       ${R.res.map(r=>`<tr><td><b>${r.location}</b></td><td>${r.fired}</td>
-        <td>${r.missed?`<b>${r.missed}</b>`:'—'}</td><td>${r.used}</td>
+        <td>${r.missed?`<b>${r.missed}</b>`:'—'}</td>
+        <td>${r.dropped?`<b>${r.dropped}</b>`:'—'}</td><td>${r.used}</td>
         <td>${f(r.meanVin,1)}</td><td>${f(r.p50)}</td><td>${f(r.se)}</td>
         <td>${f(r.D,5)}</td><td><b>${f(r.kewcor,3)}</b></td></tr>`).join('')}
     </tbody></table>
+    ${R.res.some(r=>r.dropped)?`<p class="muted"><b>${
+      R.res.reduce((a,r)=>a+r.dropped,0)} shot${R.res.reduce((a,r)=>a+r.dropped,0)===1?'':'s'}
+      dropped by hand.</b> Your x, and it stands: no average on this paddle includes them, here
+      or in the archive. They are still on the record and still count against the ball's age.</p>`:''}
     ${R.res.some(r=>r.missed)?`<p class="muted"><b>${
       R.res.reduce((a,r)=>a+r.missed,0)} impact${R.res.reduce((a,r)=>a+r.missed,0)===1?'':'s'}
       the gate did not record.</b> They are counted against the ball's age and against this
@@ -2172,10 +2198,18 @@ function archivePayload(idx){
   // Shots in FIRED ORDER, location by location. The sheet groups by the location column
   // rather than by position, but the order is kept because it is the record of what
   // happened and because the block corrections were computed against it.
+  /* FIVE fields, not four. The fifth is the operator's own `x`, and it is the whole
+     reason this build exists: the archive sheet re-derives Status from the speed gate,
+     which has no way to know a person looked at that shot and threw it out. Before
+     BUILD 10 the flag stopped here, so every hand-dropped shot came back as USE in the
+     archive and went into the published average. On the Power FX of 2026-09-25 that put
+     six rejected shots back into the face map and moved the paddle across a band
+     boundary. The mark is data about the shot, so it travels with the shot. */
   const shots=[];
   R.res.forEach(r => (r.rows||[]).forEach(sh =>
     shots.push([r.location, num(sh.vin), num(sh.vout),
-                sh.gateCor==null||!isFinite(sh.gateCor) ? '' : sh.gateCor])));
+                sh.gateCor==null||!isFinite(sh.gateCor) ? '' : sh.gateCor,
+                sh.dropped ? 'x' : ''])));
   return {
     op:'archive',
     a:{
