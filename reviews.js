@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "joola-power-fx-review",
+    "title": "JOOLA Power FX Review — First Hits",
+    "teaser": "JOOLA's cheapest launch paddle ever at $179.95 is also the stiffest paddle in the entire database: KewCOR 0.417 (Power, Mid) and Tier 3 spin durability (15% loss), a loud, high-pitched full-foam build that's the opposite of the softer Gen-4 trend.",
+    "chips": ["Perseus", "Full-Foam", "Tier 3 Spin Durability", "First Hits"],
+    "date": "2026-09-30",
+    "search": "joola power fx perseus 16mm full foam gen-4 propulsion core epp eva almost floating tier 3 spin durability kewcor 0.417 power mid stiffest feel map 179.95 launch price first hits first impressions",
+    "img": "joola-power-fx"
+  },
+  {
     "slug": "gearbox-pressure-x-8m-elongated-review",
     "title": "Gearbox Pressure X 8M Elongated Review",
     "teaser": "The MPP half of Gearbox's Pressure X pairing plays stiffer and tighter than the traditional floating-core feel MPP usually delivers, testing Tier 2 for spin durability, a counter-intuitive companion to the EPP 8E.",
