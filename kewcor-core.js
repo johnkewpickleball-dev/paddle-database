@@ -40,7 +40,12 @@
   //    with `x` now survives the trip to the archive instead of being re-derived as
   //    USE there. classify() is unchanged and always was right; what was broken was
   //    everything downstream of it. See _QC/INSTALL-2026-09-26-dropped-and-2in.md.
-  const BUILD = 8;
+  // 9: 2026-10-10. The ball correction can be TYPED, replacing the one the control
+  //    blocks measured. It is not a quiet yellow cell: it changes the correction mode
+  //    string, which travels to the archive sheet, the Curves feed and the registry
+  //    row, so a typed correction cannot be mistaken for a measured one anywhere
+  //    downstream. See _QC/INSTALL-2026-10-10-correction-override.md.
+  const BUILD = 9;
 
   // ── constants, mirroring the Setup tab ────────────────────────────────────
   const C = {
@@ -354,6 +359,66 @@
     return Math.abs(t) > 2
       ? { mode: 'RAMP (drift is real)', ramp: true, t, diff, sed, ballAge: age }
       : { mode: 'POOLED (drift is noise)', ramp: false, t, diff, sed, ballAge: age };
+  }
+
+  /* THE TYPED BALL CORRECTION — an override, and a loud one.
+   *
+   * D is normally measured: shoot the control paddle, compare it against the frozen
+   * P_ref, and the difference of squares is the correction. Everything about the sheet
+   * is built on that being a measurement rather than a choice, which is why D is gray
+   * and why `archive_test.js` asserts it is bit-identical when a paddle spec is
+   * corrected. A miscalibrated scale must not be able to reach the ball.
+   *
+   * SO WHY ALLOW A TYPED ONE AT ALL. Because the measurement can fail in ways the
+   * arithmetic cannot see. A control block shot on a cracked ball, a session whose
+   * blocks disagree by more than wear can explain, a historical re-run with no control
+   * block at all. The back-analysis workbook has had a typed P_ctrl since 2026-08-23
+   * for exactly that, and it stamps HISTORICAL RE-RUN on everything it touches. This is
+   * the same idea in the runner, with the same rule: the number may be typed, but it may
+   * never be typed QUIETLY.
+   *
+   * TWO WAYS IN, ONE STATE OUT. `by: 'pctrl'` types the control paddle's figure and D
+   * follows; `by: 'd'` types the correction and P_ctrl follows. Both end with the pair
+   * pinned and consistent, so D = P_ref^2 - P_ctrl^2 remains true on the sheet whichever
+   * way it was entered. Typing D above P_ref^2 would need an imaginary P_ctrl, so it is
+   * refused rather than quietly clamped.
+   *
+   * The warnings are advisory and never block: John is the one who knows why he is
+   * typing it. They exist so an absent-minded decimal point is visible before it ships.
+   */
+  const OVERRIDE_MODE = 'OVERRIDE - ball correction typed in, not measured';
+  const pCtrlFromD = (pRef, d) => Math.sqrt(pRef * pRef - d);
+
+  function correctionOverride(pRef, o) {
+    const off = { on: false, by: null, pCtrl: null, D: null, typed: null, warn: null, error: null };
+    if (!o || !o.on) return off;
+    const by = o.by === 'd' ? 'd' : 'pctrl';
+    const v = typeof o.value === 'number' ? o.value : parseFloat(o.value);
+    if (!isFinite(v)) return Object.assign({}, off, { on: true, by,
+      error: 'Type a number for the ball correction, or switch the override off.' });
+
+    let pCtrl, d;
+    if (by === 'd') {
+      d = v;
+      if (d > pRef * pRef) return Object.assign({}, off, { on: true, by, typed: v,
+        error: 'D cannot exceed P_ref squared (' + (pRef * pRef).toFixed(5) + '); there is no '
+             + 'control reading that would produce it.' });
+      pCtrl = pCtrlFromD(pRef, d);
+    } else {
+      pCtrl = v;
+      if (!(pCtrl > 0)) return Object.assign({}, off, { on: true, by, typed: v,
+        error: 'P_ctrl must be greater than zero.' });
+      d = D(pRef, pCtrl);
+    }
+
+    let warn = null;
+    if (pCtrl < 0.25 || pCtrl > 0.55)
+      warn = 'P_ctrl of ' + pCtrl.toFixed(4) + ' is outside anything this lab has measured '
+           + '(0.25 to 0.55). Check the decimal point.';
+    else if (Math.abs(d) > 0.08)
+      warn = 'A correction of ' + d.toFixed(5) + ' is larger than any session on file. '
+           + 'Check it before you archive.';
+    return { on: true, by, pCtrl: pCtrl, D: d, typed: v, warn: warn, error: null };
   }
 
   /* POOLED D — MID and POST set it. PRE does not, unless it is all there is.
@@ -754,6 +819,7 @@
   return { BUILD, C, ANCHORS, effMass, pbcor, correctTo50, qForLocation, controlQ, strikeLocation,
            classify, summarize, median, MISHIT_FLOOR, splitPre,
            effectiveAge, D, curveFraction, driftMode, pooledD, pooledSource,
+           correctionOverride, pCtrlFromD, OVERRIDE_MODE,
            ballTimeline, segmentFor,
            blockCorrections, locationResults, faceSummary, midAdvice, ballStage,
            BANDS, BAND_LO, BAND_HI, BAND_SEAM, BAND_LINEAR_ARC, bandFrac, bandPosition,

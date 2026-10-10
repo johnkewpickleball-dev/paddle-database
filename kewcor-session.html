@@ -121,7 +121,7 @@
 <dialog id="info"><div class="dh" id="ih"></div><div class="db" id="ib"></div>
   <div class="df"><button class="ghost" onclick="info.close()">Close</button></div></dialog>
 
-<script src="kewcor-core.js?v=8"></script>
+<script src="kewcor-core.js?v=9"></script>
 <script>
 'use strict';
 const K = window.KewCOR;
@@ -197,6 +197,10 @@ const DEFAULT = {
   anchor:'Anchor 2', ballId:'', prior:'', wear:'', deflection:'',
   paddles:[blankPaddle(),blankPaddle()],
   pre:'', mid:'', post:'', mirror:'', midAfter:2, endedEarly:false,
+  /* THE TYPED BALL CORRECTION, off unless somebody turns it on. `by` is 'pctrl' or 'd'.
+     It lives in the session rather than on a paddle: the correction describes the ball
+     and the control paddle, which do not change between paddles in a session. */
+  dOver:{on:false, by:'pctrl', val:''},
   // Which spot the weekly control block was shot at. Logged on every anchor row so a
   // change is visible in the record instead of silently stepping the series.
   controlSpot:6,
@@ -545,16 +549,16 @@ function forgetRegistry(){
 // 6, which had this check about to announce that the RUNNER was the stale one — the exact
 // opposite of the truth, and a full afternoon of looking for a newer page that does not
 // exist. If you bump one, bump the other.
-const WANT_BUILD = 15;
+const WANT_BUILD = 16;
 /* What this page ASKED the browser for. Kept next to the tag it mirrors: change one,
    change the other. If the loaded core reports a different BUILD, the browser served a
    cached file and the header says so in plain words. */
-const CORE_V = 8;
+const CORE_V = 9;
 /* THE RUNNER'S OWN BUILD. The line below used to call K.BUILD the "page build", which is
    the CORE's build -- so a change to this file alone left nothing on screen that moved, and
    there was no way to tell from the cannon machine whether a push had landed. BUILD 8 is the
    first page-only change to say so out loud. Bump it whenever this file changes. */
-const PAGE_BUILD = 10;
+const PAGE_BUILD = 11;
 let EP_BUILD = null;
 // Set from the last ping's health check. Null means nobody has pinged this session, so the
 // archive failure handler falls back to reading the error text; true/false is the real
@@ -959,6 +963,18 @@ const PRE_NEED = () => K.C.preWarmup + K.C.preUsed;
 const controlSpotQ = () => K.qForLocation(A().length, +S.controlSpot || K.C.controlSpot);
 const controlBlock = () => ctrlBlock(S.mirror, controlSpotQ());
 const effAge = () => K.effectiveAge(parseFloat(S.prior)||0, parseFloat(S.wear)||0);
+/* The typed correction, resolved. Returns {on:false} when it is off or unusable, so every
+   caller can ask one question. A draft saved before BUILD 11 has no `dOver` at all, which
+   reads as off. */
+const overNow = () => {
+  /* The core takes `value`; the session stores `val`, because that is what the input box
+     binds to and renaming the state would strand every saved draft. Map it here, in the
+     one place both sides meet, rather than teaching either end about the other's spelling. */
+  const d = S.dOver || {};
+  const o = K.correctionOverride(A().pRef, {on:d.on, by:d.by, value:d.val});
+  return (o.on && o.error) ? {on:false, by:o.by, error:o.error, typed:o.typed} : o;
+};
+const overLive = () => { const o = overNow(); return o.on ? o : null; };
 /* The blocks this paddle is being shot at, in firing order. Two independent toggles, so
    all four combinations are legal: 3-6 as standard, 2-6, 3-7, or the full 2-7 sweep. A
    draft saved before BUILD 10 has no `use2` at all, which reads as false and restores as
@@ -1096,11 +1112,13 @@ function sessionRowValues(){
     S.date, S.ballId, S.anchor, numOrBlank(S.temp),
     pre.n||'',  pre.n?n6(pre.mean):'',  pre.n?n6(pre.se):'',
     post.n||'', post.n?n6(post.mean):'', post.n?n6(post.se):'',
-    n6(K.pooledD(A().pRef, pre, post.n?post:null, mid.n?mid:null)),
+    // The D THAT WAS USED, not the one the blocks measured, so the registry and the
+    // archive never disagree about which correction produced the published numbers.
+    n6(overLive() ? overLive().D : K.pooledD(A().pRef, pre, post.n?post:null, mid.n?mid:null)),
     Math.round(tl.ageAfter), fired,
     mid.n||'',  mid.n?n6(mid.mean):'',  mid.n?n6(mid.se):'',
     mid.n?Math.round(tl.ageMid):'',
-    'LIVE'
+    overLive() ? 'OVERRIDE' : 'LIVE'
   ];
 }
 
@@ -1663,6 +1681,54 @@ function preCount(sp){
     age the ball like any other.${ib_('preWarmup')}</div></div>`;
 }
 
+/* THE OVERRIDE BANNER. Shown on every screen that prints a KewCOR while the correction
+   is typed, because the one failure this feature could cause is somebody reading a number
+   off this page having forgotten the correction is not a measurement. */
+function overBanner(){
+  const o=overNow();
+  if(o.error) return `<div class="banner b-warn"><b>The typed ball correction is not usable,
+    so the measured one is still in force.</b> ${esc(o.error)}</div>`;
+  if(!o.on) return '';
+  return `<div class="banner b-warn"><div><b>BALL CORRECTION TYPED IN, NOT MEASURED.</b>
+    P_ctrl ${f(o.pCtrl)} and D ${f(o.D,5)} are in force on every paddle in this session,
+    entered as ${o.by==='d'?'a correction':'a control reading'}. The control blocks are still
+    shot, still saved and still shown, and they are not setting the numbers. The archive
+    sheet, the website feed and the registry row all say so.${
+      o.warn?`<br><b>Check this:</b> ${esc(o.warn)}`:''}</div></div>`;
+}
+/* The control itself. It lives on the POST screen, with the drift verdict, because that is
+   where the question "do I believe these control blocks" gets asked. */
+function overrideCard(){
+  const o=overNow(), pre=preCtrl(), post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
+  const measured=(pre.n||post.n||mid.n)
+    ? K.pooledD(A().pRef, pre, post.n?post:null, mid.n?mid:null) : null;
+  const mPc = measured==null ? null : K.pCtrlFromD(A().pRef, measured);
+  return `<div class="card"><h3>Ball correction</h3>
+  <table><thead><tr><th></th><th>P_ctrl</th><th>D</th></tr></thead><tbody>
+    <tr><td>Measured by the control blocks</td><td>${f(mPc)}</td><td>${f(measured,5)}</td></tr>
+    <tr><td><b>In force</b></td><td><b>${f(o.on?o.pCtrl:mPc)}</b></td>
+        <td><b>${f(o.on?o.D:measured,5)}</b></td></tr>
+  </tbody></table>
+  <label style="display:flex;gap:9px;align-items:center;margin:10px 0 0;font-size:14px;color:var(--ink)">
+    <input type="checkbox" style="width:auto" ${S.dOver.on?'checked':''}
+      onchange="S.dOver.on=this.checked;render()">
+    Type the ball correction instead of measuring it</label>
+  ${S.dOver.on?`<div class="row" style="margin-top:9px;align-items:center">
+    <select style="width:auto" onchange="S.dOver.by=this.value;render()">
+      <option value="pctrl" ${S.dOver.by!=='d'?'selected':''}>Enter P_ctrl</option>
+      <option value="d" ${S.dOver.by==='d'?'selected':''}>Enter D</option>
+    </select>
+    <input type="text" inputmode="decimal" autocomplete="off" style="width:120px"
+      value="${esc(S.dOver.val)}" oninput="S.dOver.val=this.value;render()"
+      placeholder="${S.dOver.by==='d'?'0.04278':'0.3571'}">
+    <span class="muted">${S.dOver.by==='d'
+      ? 'D in force. P_ctrl follows from it, so the sheet\'s own formula still holds.'
+      : 'The control paddle figure you believe. D follows from it.'}</span></div>`:''}
+  <p class="muted" style="margin-bottom:0">Use it when the control blocks cannot be trusted:
+    a cracked ball, a fixture that moved, blocks that disagree by more than wear can explain.
+    It is never the way to reach a number you wanted. Everything downstream is stamped
+    OVERRIDE, and the archive shows the measured figure beside the typed one.</p></div>`;
+}
 function scControl(which){
   const key = which==='PRE'?'pre':which==='MID'?'mid':'post';
   const sum = which==='PRE' ? preCtrl() : ctrlBlock(S[key]);
@@ -1697,7 +1763,7 @@ function scControl(which){
   ${S.endedEarly&&which==='POST'?`<div class="banner b-ok"><b>Session ended after two paddles.</b>
      The MID block you shot has become the POST block — nothing was wasted.</div>`:''}
   ${adv?`<div class="banner ${adv.verdict==='SHOOT IT'?'b-warn':'b-mute'}"><b>${adv.verdict}.</b> ${adv.why}</div>`:''}
-  ${verdict}${NOSORT}
+  ${verdict}${which==='POST'?overBanner()+overrideCard():''}${NOSORT}
   ${isPre?`<div class="banner b-warn"><div><b>And it matters twice as much in this block.</b>
     The first ${K.C.preWarmup} shots are dropped BY POSITION, before the speed gate is
     applied. Paste this block sorted and the page discards the ${K.C.preWarmup} slowest
@@ -1734,8 +1800,14 @@ function paddleResults(idx){
   const pre=preCtrl(); if(!pre.n) return null;
   const post=ctrlBlock(S.post), mid=ctrlBlock(S.mid);
   const tl=timeline();
-  const dm=K.driftMode({pre,post:post.n?post:null,ballAge:tl.agePre});
-  const pooled=K.pooledD(A().pRef,pre,post.n?post:null,mid.n?mid:null);
+  const dm0=K.driftMode({pre,post:post.n?post:null,ballAge:tl.agePre});
+  const measured=K.pooledD(A().pRef,pre,post.n?post:null,mid.n?mid:null);
+  /* A typed correction replaces the measured one and flattens the ramp with it. One
+     figure, by construction: a typed number has no point on the wear curve to sit at,
+     so there is nothing to interpolate between. */
+  const ov=overLive();
+  const dm = ov ? {mode:K.OVERRIDE_MODE, ramp:false, t:null, measured:measured, over:ov} : dm0;
+  const pooled = ov ? ov.D : measured;
   const locs=locsFor(p), groups=groupsFor(p), miss=missedFor(p);
   if(!groups.some(g=>g.length)) return null;
   const bD=K.blockCorrections({slot:idx, tl,
@@ -1831,6 +1903,7 @@ function scPaddle(idx){
     Extend to the 7 in location</label>
     <p class="muted" style="margin:5px 0 0">Chasing a trend out toward the bottom of the paddle. Adds ten shots and one more block.</p></div>
   ${!R?`<div class="banner b-mute">Fill in the paddle's length and swing weight, shoot the PRE block, then paste to see results.</div>`:`
+  ${overBanner()}
   <div class="card"><h3>By location ${ib_('block')}</h3>
     <table><thead><tr><th>Loc (in)</th><th>Recorded</th><th>Gate missed</th><th>Dropped</th><th>Used</th>
       <th>Mean Vin</th><th>PBCoR @50</th><th>se</th><th>D applied</th><th>KewCOR</th></tr></thead><tbody>
@@ -1849,7 +1922,11 @@ function scPaddle(idx){
       the gate did not record.</b> They are counted against the ball's age and against this
       paddle's position on the wear curve, and left out of every average — a shot with no
       numbers cannot be averaged, but it still happened.</p>`:''}
-    <p class="muted" style="margin-bottom:0">${R.dm.ramp
+    <p class="muted" style="margin-bottom:0">${R.dm.over
+      ? 'TYPED: the D down this column was entered by hand, not measured. The control blocks said '
+        + f(R.dm.measured,5) + ', which would have put the maximum at '
+        + f(Math.sqrt(Math.max(0, Math.pow(Math.max(...R.res.map(r=>r.p50||0)),2) + R.dm.measured)),4) + '.'
+      : R.dm.ramp
       ? 'Each block is corrected at its own moment in the life of the ball — the spread down the D column is the face-map gradient this removes.'
       : 'POOLED: one correction for the whole session, so every block shows the same D. That is correct, not a bug.'}</p></div>
   ${R.summary?`<div class="card"><h3>Face map ${ib_('kewcor')}</h3>${faceChart(R.res)}
@@ -2218,8 +2295,17 @@ function archivePayload(idx){
       // ONE D PER PADDLE since 2026-08-27, flat across every location. The old label
       // said "per location block" and was left behind by that change; an archive sheet
       // that describes its own arithmetic wrongly is worse than one that says nothing.
-      mode: R.dm.ramp ? 'RAMP - one D per paddle, taken at its own midpoint'
+      mode: R.dm.over ? K.OVERRIDE_MODE
+          : R.dm.ramp ? 'RAMP - one D per paddle, taken at its own midpoint'
                       : 'POOLED - one D for the session',
+      /* The override travels whole: what was typed, which way it was entered, and the
+         measured figure it replaced. The sheet shows both side by side, because a reader
+         a year from now needs to see what the control blocks actually said before they
+         can judge the decision to set it aside. */
+      ov: R.dm.over ? {on:true, by:R.dm.over.by, typed:n6(R.dm.over.typed),
+                       pCtrl:n6(R.dm.over.pCtrl), D:R.dm.over.D,
+                       measuredD:n6(R.dm.measured),
+                       measuredPCtrl:n6(K.pCtrlFromD(A().pRef, R.dm.measured))} : null,
       sp:{ sw:num(p.sw), len:num(p.len), w:num(sp.w), wt:num(sp.wt),
            tw:num(sp.tw), bp:num(sp.bp) },
       pre:{n:pre.n||'', mean:n6(pre.mean), se:n6(pre.se)},
