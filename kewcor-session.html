@@ -558,7 +558,7 @@ const CORE_V = 9;
    the CORE's build -- so a change to this file alone left nothing on screen that moved, and
    there was no way to tell from the cannon machine whether a push had landed. BUILD 8 is the
    first page-only change to say so out loud. Bump it whenever this file changes. */
-const PAGE_BUILD = 11;
+const PAGE_BUILD = 12;
 let EP_BUILD = null;
 // Set from the last ping's health check. Null means nobody has pinged this session, so the
 // archive failure handler falls back to reading the error text; true/false is the real
@@ -1975,9 +1975,10 @@ function scResults(){
     <div class="row">
       <button class="ghost" onclick="openReport(${p._i})">Client report →</button>
       <button class="ghost" onclick="copyReport(${p._i}, this)">Copy the link</button>
-      <span class="muted">${done && S.sent.session
+      <span class="muted">${done
         ? 'The whole report travels in the link, so it works for anyone you send it to.'
-        : 'It will open, and it will be stamped DRAFT until the POST block is shot and the session is logged.'}</span>
+        : 'It will open, and it will be stamped DRAFT until the POST block is shot. Logging '
+          + 'the registry row is not part of that: it moves no number on the report.'}</span>
     </div>
     ${p.archive
       ? `<div class="banner b-ok"><div><b>Saved as ${esc(p.archive.name)}.</b>
@@ -2202,7 +2203,8 @@ function setMode(m){ S.mode=m; WR={busy:'',msg:'',tone:'',detail:''}; window.scr
  * One paddle, one report, one link. The payload is only what the report DISPLAYS —
  * see the note on encodeReport — and it is built here rather than on the report page
  * because everything it needs is session state, and because the DRAFT stamp is a fact
- * about the session that the report page has no way to work out for itself.
+ * about the session -- whether the POST block has been shot -- that the report page has no
+ * way to work out for itself.
  *
  * A report is a SNAPSHOT. Nothing is stored, so re-issuing gives you a second link
  * rather than updating the first. For a document you hand to somebody else that is the
@@ -2217,10 +2219,19 @@ function reportPayload(idx){
      There is no "no PRE block" case here: without one there is no correction and so no
      KewCOR at all, paddleResults returns null above, and no report button is drawn. A
      branch for it would be a branch that can never run, which reads like a handled case
-     and is not one. */
+     and is not one.
+
+     ONE TRIGGER, not two. Until BUILD 12 an unlogged session also stamped DRAFT. That was
+     wrong twice over. It is not a fact about the numbers -- logging the registry row moves
+     no figure on this page -- and because a report is a snapshot, a link issued before the
+     row was sent stayed stamped for ever, so in the normal order of work (read the card,
+     open the report, then send the row) every report John issued carried it. Whether the
+     lab finished its own bookkeeping is not the client's business and was never evidence
+     that the result was provisional. The POST block is: without it the ball correction is
+     still moving, and so is every KewCOR below. */
   const draft = !post.n
     ? 'the POST ball correction has not been shot, so the ball correction is not final'
-    : !S.sent.session ? 'this session has not been logged to the registry' : '';
+    : '';
   const sp=p.spec||{};
   return {
     v:1, d:S.date, m:p.name, mfr:p.mfr||'', p:S.person||'', t:S.temp===''?null:+S.temp,
