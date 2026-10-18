@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "bread-butter-loco-2-review",
+    "title": "Bread & Butter Loco 2 Review (Elongated and Hybrid)",
+    "teaser": "The same Paddle of the Year winner with one change: durable Space Dust Grit. The elongated launches first and the hybrid follows in a few weeks. Spin jumps from Good to Elite (2,448 and 2,411 RPM), cannon testing earns a provisional Tier 1 for spin durability, and the feel and KewCOR (0.424 and 0.429, Power Mid) stay put.",
+    "chips": ["Elongated", "Elite Spin", "Tier 1 (provisional)", "Dual Certified"],
+    "date": "2026-10-18",
+    "search": "bread and butter loco 2 elongated hybrid space dust grit full foam epp eva cfc gen-4 elite spin tier 1 spin durability provisional kewcor 0.424 0.429 power mid dual certified usap upa-a 220 johnkew code paddle of the year original loco",
+    "img": "bread-butter-loco-2-elongated"
+  },
+  {
     "slug": "joola-power-fx-review",
     "title": "JOOLA Power FX Review — First Hits",
     "teaser": "JOOLA's cheapest launch paddle ever at $179.95 is also the stiffest paddle in the entire database: KewCOR 0.417 (Power, Mid) and Tier 3 spin durability (15% loss), a loud, high-pitched full-foam build that's the opposite of the softer Gen-4 trend.",
