@@ -86,21 +86,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   </div>
 </div>
 
-<!-- Spin Durability Tier info popup (tap the "i" on a badge) -->
-<div class="trend-dur-info-overlay" id="trendDurInfoOverlay" onclick="if(event.target===this)closeTrendDurInfo()">
-  <div class="trend-dur-info-box">
-    <h3>Spin Durability Tier<button class="trend-dur-info-close" onclick="closeTrendDurInfo()" aria-label="Close">&times;</button></h3>
-    <p>Spin durability tiers are based on an accelerated wear test that measures how well a paddle maintains spin over time. Initial spin is measured using a ball cannon (60&nbsp;MPH, paddle clamped at 30&deg;), followed by 100 impacts at 70&nbsp;MPH to simulate wear. Spin is then re-measured under identical conditions.</p>
-    <ul class="trend-dur-info-tiers">
-      <li class="trend-badge-tier-1"><b>Tier 1:</b> &lt;5% spin loss (Elite)</li>
-      <li class="trend-badge-tier-2"><b>Tier 2:</b> 5&ndash;9.9% spin loss</li>
-      <li class="trend-badge-tier-3"><b>Tier 3:</b> 10&ndash;19.9% spin loss</li>
-      <li class="trend-badge-tier-4"><b>Tier 4:</b> &ge;20% spin loss</li>
-    </ul>
-    <p>This accelerated laboratory test is designed to compare surface durability under controlled conditions. Actual on-court wear will vary based on play style, conditions, and maintenance.</p>
-  </div>
-</div>
-
 <style>
   .trend *{box-sizing:border-box;margin:0;padding:0}
   .trend{
@@ -183,13 +168,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .trend-badge-spin-Good{background:#059669;color:#fff}
   .trend-badge-spin-Fair{background:#d97706;color:#fff}
   .trend-badge-spin-Poor{background:#dc2626;color:#fff}
-  .trend-badge-tier{background:#eef2f7;color:#334155;display:inline-flex;align-items:center;gap:4px}
-  .trend-badge-tier-1{background:#e8f5ee;color:#15803d}
-  .trend-badge-tier-2{background:#e6f1fb;color:#1d4ed8}
-  .trend-badge-tier-3{background:#fdf2e3;color:#b45309}
-  .trend-badge-tier-4{background:#fdeaea;color:#c0392b}
-  .trend-dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
-  .trend-dur-i:hover{opacity:.65}
   .trend-card-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
   .trend-metric{text-align:center}
   .trend-metric-val{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--text)}
@@ -203,17 +181,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .trend-score-bar{height:5px;border-radius:3px;background:#e2e8f0;overflow:hidden}
   .trend-score-fill{height:100%;border-radius:3px;background:var(--green)}
 
-  /* durability info popup */
-  .trend-dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:20px}
-  .trend-dur-info-overlay.open{display:flex}
-  .trend-dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
-  .trend-dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy,#0d1f2d);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-  .trend-dur-info-box p{font-size:14px;line-height:1.6;color:#1a2535;margin-bottom:12px}
-  .trend-dur-info-tiers{list-style:none;margin:0 0 12px;padding:0}
-  .trend-dur-info-tiers li{font-size:14px;padding:7px 12px;border-radius:8px;margin-bottom:5px;font-weight:500}
-  .trend-dur-info-tiers li b{font-weight:700}
-  .trend-dur-info-close{background:none;border:none;font-size:22px;line-height:1;color:#64748b;cursor:pointer;padding:2px 4px;flex-shrink:0}
-  .trend-dur-info-close:hover{color:#1a2535}
 
   /* mobile: swap the row from horizontal-scroll to a bounded vertical-scroll column.
      .trend-row's max-height is set in JS to ~4 cards' worth so the "top 4, scroll for
@@ -250,19 +217,9 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .trend-card-photo{background:radial-gradient(circle at 50% 42%, #34608f 0%, #1a3a5c 48%, #0b1a2d 100%);border-color:#24374d}
   [data-theme="dark"] .trend-badge-shape{background:#16304d;color:#8ab4f8}
   [data-theme="dark"] .trend-badge-build{background:#2a2247;color:#c4b5fd}
-  [data-theme="dark"] .trend-badge-tier{background:#26313d;color:#cbd5e1}
-  [data-theme="dark"] .trend-badge-tier-1{background:#123528;color:#6ee7b7}
-  [data-theme="dark"] .trend-badge-tier-2{background:#16304d;color:#93c5fd}
-  [data-theme="dark"] .trend-badge-tier-3{background:#3a2c14;color:#fcd34d}
-  [data-theme="dark"] .trend-badge-tier-4{background:#3a1d1d;color:#fca5a5}
   [data-theme="dark"] .trend-score-bar{background:#2a3a49}
   [data-theme="dark"] .trend-discount-code{background:var(--green-light);color:#5fe0a0}
   [data-theme="dark"] .trend-empty{border-color:var(--border);color:var(--muted)}
-  [data-theme="dark"] .trend-dur-info-box{background:#17222e}
-  [data-theme="dark"] .trend-dur-info-box h3{color:#e6edf3}
-  [data-theme="dark"] .trend-dur-info-box p{color:#e6edf3}
-  [data-theme="dark"] .trend-dur-info-close{color:#96a7b8}
-  [data-theme="dark"] .trend-dur-info-close:hover{color:#e6edf3}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
@@ -312,7 +269,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       ['shape',['shape']],['build',['build','buildgeneration','generation']],
       ['thickness',['corethicknessmm','corethickness','thickness']],
       ['spinRPM',['spinrpm','rpm']],['spinCategory',['spincategory','spinrating']],
-      ['spinDurTier',['spindurabilitytier','spindurability','durabilitytier']],
       ['serveSpeed',['servespeedmph','servespeed','speed','servemph']],
       ['firepower',['firepower']]
     ];
@@ -344,7 +300,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         build:g(row,'build')?String(g(row,'build')).trim():'',
         thickness:parseNum(g(row,'thickness')),
         spinRPM:parseNum(g(row,'spinRPM')), spinCategory:g(row,'spinCategory')?String(g(row,'spinCategory')).trim():'',
-        spinDurTier:g(row,'spinDurTier')?String(g(row,'spinDurTier')).trim():'',
         serveSpeed:parseNum(g(row,'serveSpeed')), firepower:parseNum(g(row,'firepower'))
       });
     });
@@ -401,13 +356,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function fmtInt(v){ return v==null?'—':Math.round(v).toLocaleString(); }
   function fmt(v,dec){ dec=dec==null?1:dec; return v==null?'—':Number(v).toFixed(dec); }
   function spinBadge(cat){ if(!cat) return ''; return '<span class="trend-badge trend-badge-spin-'+esc(cat)+'" title="Spin Category">'+esc(cat)+' Spin</span>'; }
-  function durTierBadge(p){
-    var t=(p.spinDurTier||'').trim(); if(!t) return '';
-    var m=t.match(/[1-4]/); var cls=m?('trend-badge-tier-'+m[0]):''; var label=m?('Spin T'+m[0]):t;
-    return '<span class="trend-badge trend-badge-tier '+cls+'" title="Spin Durability Tier">'+esc(label)
-      +'<svg class="trend-dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openTrendDurInfo()">'
-      +'<circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>';
-  }
   function discountTypeOf(p){
     if(p.discount!=null && p.discount>0) return p.discount<1 ? 'pct' : 'usd';
     return null;
@@ -465,7 +413,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
       + '<div class="trend-card-badges">'
       +   (p.shape?'<span class="trend-badge trend-badge-shape" title="Shape">'+esc(p.shape)+'</span>':'')
       +   (p.build?'<span class="trend-badge trend-badge-build" title="Build">'+esc(p.build)+'</span>':'')
-      +   spinBadge(p.spinCategory) + durTierBadge(p)
+      +   spinBadge(p.spinCategory)
       + '</div>'
       + '<div class="trend-card-metrics">'
       +   '<div class="trend-metric"><div class="trend-metric-val">'+(p.spinRPM?fmtInt(p.spinRPM):'—')+'</div><div class="trend-metric-lbl">Spin RPM</div></div>'
@@ -581,9 +529,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     if(btnR) btnR.addEventListener('click', function(){ scrollTrendBy(1); });
     window.addEventListener('resize', debounceTrend(function(){ applyMobileHeightCap(); updateScrollUI(); },150));
   })();
-
-  window.openTrendDurInfo=function(){ document.getElementById('trendDurInfoOverlay').classList.add('open'); };
-  window.closeTrendDurInfo=function(){ document.getElementById('trendDurInfoOverlay').classList.remove('open'); };
 
   function load(url, fallback, cb){
     Papa.parse(url,{download:true,skipEmptyLines:true,complete:function(res){

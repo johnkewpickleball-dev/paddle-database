@@ -97,18 +97,9 @@
   .badge-spin-Elite{background:#7c3aed;color:#fff}.badge-spin-Good{background:#059669;color:#fff}
   .badge-spin-Fair{background:#d97706;color:#fff}.badge-spin-Poor{background:#dc2626;color:#fff}
   .badge-cert{background:#fff7ed;color:#c2410c}
-  .badge-tier{background:#eef2f7;color:#334155}
-  .badge-tier-1{background:#e8f5ee;color:#15803d}
-  .badge-tier-2{background:#e6f1fb;color:#1d4ed8}
-  .badge-tier-3{background:#fdf2e3;color:#b45309}
-  .badge-tier-4{background:#fdeaea;color:#c0392b}
   [data-theme="dark"] .badge-shape{background:#16304d;color:#8ab4f8}
   [data-theme="dark"] .badge-build{background:#2a2247;color:#c4b5fd}
   [data-theme="dark"] .badge-cert{background:#3a2a16;color:#fdba74}
-  [data-theme="dark"] .badge-tier-1{background:#123528;color:#6ee7b7}
-  [data-theme="dark"] .badge-tier-2{background:#16304d;color:#93c5fd}
-  [data-theme="dark"] .badge-tier-3{background:#3a2c14;color:#fcd34d}
-  [data-theme="dark"] .badge-tier-4{background:#3a1d1d;color:#fca5a5}
   .pr-video-card{display:flex;gap:14px;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;text-decoration:none;margin:14px 0 0}
   .pr-video-thumb{position:relative;flex:0 0 160px;width:160px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#0f172a}
   .pr-video-thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -288,16 +279,6 @@
   .pr-simmetric-label{color:var(--muted)}
   .pr-simmetric-val{font-weight:600;color:var(--navy)}
   [data-theme="dark"] .pr-simmetric-val{color:var(--text)}
-  .pr-simcard-dur{padding-top:10px}
-  .pr-simcard-dur-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
-  .pr-simcard-dur-row{display:flex;gap:14px;margin-bottom:6px}
-  .pr-simcard-dur-p{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--navy)}
-  [data-theme="dark"] .pr-simcard-dur-p{color:var(--text)}
-  .pr-simcard-dur-p img{width:22px;height:22px;border-radius:5px;object-fit:cover;border:1px solid var(--border)}
-  .pr-simcard-dur-match{font-size:12.5px;color:var(--muted)}
-  .pr-match-yes{color:var(--green);font-weight:700}
-  .pr-match-no{color:#dc2626;font-weight:700}
-  .pr-match-unknown{color:var(--muted);font-style:italic}
 
   /* who for / not for */
   .pr-forgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
@@ -384,9 +365,8 @@
   </div>
   <div id="prKewcorSeries" hidden></div>
 
-  <div class="pr-h2">Spin Durability</div>
-  <div class="pr-card">
-    <div id="prDurBadge" style="margin-bottom:10px"></div>
+  <div class="pr-h2" id="prDurH" hidden>Spin Durability</div>
+  <div class="pr-card" id="prDurCard" hidden>
     <div class="pr-prose" id="prDurNote"></div>
   </div>
 
@@ -504,7 +484,7 @@
     company:['company','brand'], paddle:['paddle','model','name'],
     shape:['shape'], build:['build','buildgeneration','generation'],
     process:['manufacturingprocess','process','manufacturing'],
-    spinCategory:['spincategory','spinrating'], spinDurTier:['spindurabilitytier','spindurability','durabilitytier'],
+    spinCategory:['spincategory','spinrating'],
     cert:['certificationstatus','certification','cert'], condition:['condition'], dateEntered:['dateentered','dateadded','entrydate','added'],
     warranty:['warranty'], surfaceTexture:['surfacetexture','texture'],
     surfaceLayup:['surfacelayup','layup'], coreType:['coretype','core'],
@@ -524,7 +504,7 @@
     spinZ:['spinzscore'], powerZ:['powerzscore'], popZ:['popzscore'],
     swingZ:['swingweightzscore'], twistZ:['twistweightzscore'], balanceZ:['balancepointzscore']
   };
-  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,spinDurTier:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1};
+  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1};
   function norm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
   function num(v){ if(v==null) return null; var x=String(v).replace(/[^0-9.\-]/g,''); if(x===''||x==='-'||x==='.') return null; var n=parseFloat(x); return isNaN(n)?null:n; }
   function buildColMap(headers){
@@ -561,7 +541,6 @@
   }
   function spinBadge(c){return c?'<span class="badge badge-spin-'+esc(c)+'" title="Spin Category">'+esc(c)+' Spin</span>':'';}
   function certBadge(c){ if(!c||c==='None')return ''; var s=''; if(c.indexOf('Dual')>-1)s='Dual Cert'; else if(c.indexOf('USAP')>-1)s='USAP'; else if(c.indexOf('UPA-A')>-1)s='UPA-A'; else return ''; return '<span class="badge badge-cert" title="Certification Status">'+s+'</span>'; }
-  function durTierBadge(p){ var t=(p.spinDurTier||'').trim(); if(!t) return ''; var m=t.match(/[1-4]/); var cls=m?('badge-tier-'+m[0]):''; var label=m?('Spin Tier '+m[0]):esc(t); return '<span class="badge badge-tier '+cls+'">'+label+'</span>'; }
 
   /* ================= radar (verbatim) ================= */
   var AX=[
@@ -974,11 +953,7 @@
   }
   function similarPaddleCard(target,cand){
     var q=cand.paddle, s=cand.sim;
-    var qImg=photoCandidates(q)[0], tImg=photoCandidates(target)[0];
-    var tTier=(target.spinDurTier||'').trim(), qTier=(q.spinDurTier||'').trim();
-    var knownTiers=!!(tTier&&qTier), tierMatch=knownTiers&&tTier.toLowerCase()===qTier.toLowerCase();
-    var matchHtml = !knownTiers ? '<span class="pr-match-unknown">Not enough data</span>'
-      : (tierMatch ? '<span class="pr-match-yes">&#10003; Yes</span>' : '<span class="pr-match-no">&#10005; No</span>');
+    var qImg=photoCandidates(q)[0];
     var compareUrl = comparisonLabUrl(target,q);
     return '<div class="pr-simcard">'
       +'<div class="pr-simcard-head">'
@@ -992,14 +967,6 @@
         +'</a>'
       +'</div>'
       +'<div class="pr-simcard-metrics">'+s.order.map(function(k){return simMetricRow(k,s.metrics[k]);}).join('')+'</div>'
-      +'<div class="pr-simcard-dur">'
-        +'<div class="pr-simcard-dur-label">Spin Durability Tier</div>'
-        +'<div class="pr-simcard-dur-row">'
-          +'<div class="pr-simcard-dur-p"><img src="'+esc(tImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>'+esc(tTier||'—')+'</span></div>'
-          +'<div class="pr-simcard-dur-p"><img src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>'+esc(qTier||'—')+'</span></div>'
-        +'</div>'
-        +'<div class="pr-simcard-dur-match">Spin Durability Match? '+matchHtml+'</div>'
-      +'</div>'
       +'</div>';
   }
   function similarPaddlesHtml(p,PADDLES_LOCAL){
@@ -1262,7 +1229,7 @@
     var strike = (!pr2.isSelkirk && pr2.savedAmt>0.005) ? '<span class="pr-strike">'+money(p.price)+'</span>' : '';
     var badges=[
       p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
-      spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
+      spinBadge(p.spinCategory), certBadge(p.cert)
     ].join('');
     var buyHtml = (p.link && /^https?:/i.test(p.link))
       ? '<a class="pr-buy" href="'+esc(p.link)+'" target="_blank" rel="noopener noreferrer">Buy Now →</a>' : '';
@@ -1326,7 +1293,7 @@
     document.getElementById('prBadges').innerHTML = [
       p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
       p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
-      spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
+      spinBadge(p.spinCategory), certBadge(p.cert)
     ].join('');
 
     var priceMain = pr.isSelkirk? money(p.price) : money(pr.finalPrice);
@@ -1427,8 +1394,8 @@
     else { kewcorSeriesEl.hidden = true; kewcorSeriesEl.innerHTML = ''; }
 
     // spin durability
-    document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
     document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? proseHtml(R.spinDurabilityNote) : '';
+    document.getElementById('prDurH').hidden = document.getElementById('prDurCard').hidden = !R.spinDurabilityNote;
 
     // feel map -- series reviews plot every shape's dot on one shared chart instead of a
     // separate chart per shape

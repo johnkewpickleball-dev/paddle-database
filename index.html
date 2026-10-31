@@ -190,24 +190,16 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 .mf-thumb.up.chosen{background:var(--green-light);border-color:var(--green);color:var(--green)}
 .mf-thumb.down.chosen{background:#fde8e8;border-color:#dc4d4d;color:#c23b3b}
 .mf-thumb:disabled{cursor:default;opacity:.85}
-.badge-tier{background:#eef2f7;color:#334155;display:inline-flex;align-items:center;gap:4px}
-.badge-tier-1{background:#e8f5ee;color:#15803d}
-.badge-tier-2{background:#e6f1fb;color:#1d4ed8}
-.badge-tier-3{background:#fdf2e3;color:#b45309}
-.badge-tier-4{background:#fdeaea;color:#c0392b}
-.dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
-.dur-i:hover{opacity:.65}
 /* The overlay itself scrolls (not a nested flex-centered box) — see the longer explanation
    above .modal-overlay for why centered-flex-item + internal overflow-y:auto is unreliable
    on iOS Safari for tall content. */
+.dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
+.dur-i:hover{opacity:.65}
 .dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .dur-info-overlay.open{display:block}
 .dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;margin:0 auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
 .dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .dur-info-box p{font-size:14px;line-height:1.6;color:var(--text);margin-bottom:12px}
-.dur-info-tiers{list-style:none;margin:0 0 12px;padding:0}
-.dur-info-tiers li{font-size:14px;padding:7px 12px;border-radius:8px;margin-bottom:5px;font-weight:500}
-.dur-info-tiers li b{font-weight:700}
 .dur-info-close{background:none;border:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 4px;flex-shrink:0}
 .dur-info-close:hover{color:var(--text)}
 .card-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
@@ -387,11 +379,6 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 [data-theme="dark"] .badge-proc{background:#123528;color:#6ee7b7}
 [data-theme="dark"] .badge-cert{background:#3a2a16;color:#fdba74}
 [data-theme="dark"] .badge-feel{background:#0e2f38;color:#67e8f9;border-color:#1d5866}
-[data-theme="dark"] .badge-tier{background:#26313d;color:#cbd5e1}
-[data-theme="dark"] .badge-tier-1{background:#123528;color:#6ee7b7}
-[data-theme="dark"] .badge-tier-2{background:#16304d;color:#93c5fd}
-[data-theme="dark"] .badge-tier-3{background:#3a2c14;color:#fcd34d}
-[data-theme="dark"] .badge-tier-4{background:#3a1d1d;color:#fca5a5}
 [data-theme="dark"] .mf-thumb.down.chosen{background:#3a1d1d;border-color:#a94442;color:#fca5a5}
   /* interactive star ratings */
   .mf-stars{display:inline-flex;align-items:center;gap:7px;line-height:1;vertical-align:middle;}
@@ -550,17 +537,6 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
     </div>
 
     <div class="filter-section">
-      <div class="filter-title">Spin Durability Tier</div>
-      <div class="filter-chip-group" id="durTierFilter">
-        <div class="chip active" data-val="">All</div>
-        <div class="chip" data-val="Tier 1">Tier 1</div>
-        <div class="chip" data-val="Tier 2">Tier 2</div>
-        <div class="chip" data-val="Tier 3">Tier 3</div>
-        <div class="chip" data-val="Tier 4">Tier 4</div>
-      </div>
-    </div>
-
-    <div class="filter-section">
       <div class="filter-title">Feel Quadrant<svg class="dur-i" style="margin-left:5px" viewBox="0 0 24 24" role="button" tabindex="0" title="About Feel Quadrants" onclick="openFeelInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></div>
       <div class="filter-chip-group" id="feelFilter">
         <div class="chip active" data-val="">All</div>
@@ -670,21 +646,6 @@ label.filter-label input[type=checkbox]{accent-color:var(--green);width:14px;hei
 </div>
 
 <!-- MODAL -->
-<div class="dur-info-overlay" id="durInfoOverlay" onclick="if(event.target===this)closeDurInfo()">
-  <div class="dur-info-box">
-    <h3>Spin Durability Tier<button class="dur-info-close" onclick="closeDurInfo()" aria-label="Close">&times;</button></h3>
-    <p>Spin durability tiers are based on an accelerated wear test that measures how well a paddle maintains spin over time. Initial spin is measured using a ball cannon (60&nbsp;MPH, paddle clamped at 30&deg;), followed by 100 impacts at 70&nbsp;MPH to simulate wear. Spin is then re-measured under identical conditions.</p>
-    <ul class="dur-info-tiers">
-      <li class="badge-tier-1"><b>Tier 1:</b> &lt;5% spin loss (Elite)</li>
-      <li class="badge-tier-2"><b>Tier 2:</b> 5&ndash;9.9% spin loss</li>
-      <li class="badge-tier-3"><b>Tier 3:</b> 10&ndash;19.9% spin loss</li>
-      <li class="badge-tier-4"><b>Tier 4:</b> &ge;20% spin loss</li>
-    </ul>
-    <p>This accelerated laboratory test is designed to compare surface durability under controlled conditions. Actual on-court wear will vary based on play style, conditions, and maintenance.</p>
-    <p>All Tier&nbsp;1&ndash;Tier&nbsp;3 ratings are confirmed through accelerated wear testing. Tier&nbsp;4 also includes untested traditional raw carbon fiber and spray-grit paddles, as every tested example of these surface types has exhibited approximately 20% or more spin loss.</p>
-  </div>
-</div>
-
 <div class="dur-info-overlay" id="feelInfoOverlay" onclick="if(event.target===this)closeFeelInfo()">
   <div class="dur-info-box">
     <h3>Feel Quadrants<button class="dur-info-close" onclick="closeFeelInfo()" aria-label="Close">&times;</button></h3>
@@ -733,7 +694,6 @@ function getFilters(){
     brand: brandSel.value,
     shape: chipVals('shapeFilter'),
     spin: chipVals('spinFilter'),
-    durTier: chipVals('durTierFilter'),
     feel: chipVals('feelFilter'),
     build: chipVals('buildFilter'),
     minPrice: +document.querySelector('#priceRange .dr-lo').value,
@@ -799,7 +759,6 @@ function applyFilters(forcedSort){
     // Multi-select groups: a paddle passes if it matches ANY selected value.
     if(f.shape.length && !f.shape.includes(p.shape)) return false;
     if(f.spin.length && !f.spin.includes(p.spinCategory)) return false;
-    if(f.durTier.length && !f.durTier.includes(p.spinDurTier)) return false;
     if(f.feel.length){
       const q=feelQuadOfPaddle(p);
       if(!q || !f.feel.includes(q)) return false;
@@ -888,20 +847,10 @@ function certBadge(cert){
   return `<span class="badge badge-cert" title="Certification Status">${short}</span>`;
 }
 
-function durTierBadge(p){
-  const t=(p.spinDurTier||'').trim();
-  if(!t) return '';
-  const m=t.match(/[1-4]/);
-  const cls = m ? ('badge-tier-'+m[0]) : '';
-  const label = m ? ('Spin T'+m[0]) : t;
-  return `<span class="badge badge-tier ${cls}" title="Spin Durability Tier">${label}<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openDurInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>`;
-}
 // Reparent a full-viewport overlay to be a direct child of <body> the first time it opens.
 // See the matching comment in openModal() — same Squarespace stacking issue applies to
 // every fixed, full-viewport overlay on this page, not just the paddle detail modal.
 function toBodyChild(el){ if(el && el.parentElement!==document.body) document.body.appendChild(el); }
-function openDurInfo(){ const el=document.getElementById('durInfoOverlay'); toBodyChild(el); el.classList.add('open'); if(window.jkOverlayOpen) window.jkOverlayOpen(); }
-function closeDurInfo(){ document.getElementById('durInfoOverlay').classList.remove('open'); if(window.jkOverlayClose) window.jkOverlayClose(); }
 function openFeelInfo(){ const el=document.getElementById('feelInfoOverlay'); toBodyChild(el); el.classList.add('open'); if(window.jkOverlayOpen) window.jkOverlayOpen(); }
 function closeFeelInfo(){ document.getElementById('feelInfoOverlay').classList.remove('open'); if(window.jkOverlayClose) window.jkOverlayClose(); }
 
@@ -1223,7 +1172,6 @@ function renderGrid(page){
         ${p.shape?`<span class="badge badge-shape" title="Shape">${p.shape}</span>`:''}
         ${p.build?`<span class="badge badge-build" title="Build">${p.build}</span>`:''}
         ${spinBadge(p.spinCategory)}
-        ${durTierBadge(p)}
       </div>
       <div class="card-metrics">
         <div class="metric"><div class="metric-val">${p.spinRPM?fmtInt(p.spinRPM):'—'}</div><div class="metric-lbl">Spin RPM</div></div>
@@ -1259,7 +1207,6 @@ function renderList(page){
         ${p.shape?`<span class="badge badge-shape" title="Shape">${p.shape}</span>`:''}
         ${p.build?`<span class="badge badge-build" title="Build">${p.build}</span>`:''}
         ${spinBadge(p.spinCategory)}
-        ${durTierBadge(p)}
       </div>
       <div class="list-metric">${p.spinRPM?fmtInt(p.spinRPM):'—'}<small>RPM</small></div>
       <div class="list-metric">${p.serveSpeed?fmt(p.serveSpeed):'—'}<small>MPH</small></div>
@@ -1321,11 +1268,11 @@ let _scrollLockY = 0, _scrollLockCount = 0;
 // holding the SEO "tip box" intro copy near the top (the two frosted-glass cards,
 // kept in the parent page on purpose for SEO). Re-parenting our own overlays to
 // <body> wasn't reliably enough to keep them on top of that block, so instead every
-// full-screen overlay here (paddle modal, photo zoom, Spin Durability / Feel Quadrant
+// full-screen overlay here (paddle modal, photo zoom, Feel Quadrant
 // info popovers) flags "something is open" on <body>. The tip-box Code Block (edited
 // directly in the Squarespace page editor, not this repo) has matching CSS that hides
 // on this class: body.jk-modal-open .jk-intro-wrap. Ref-counted since these overlays
-// can nest (e.g. a durability-tier info popover opened from inside the paddle modal),
+// can nest (e.g. an info popover opened from inside the paddle modal),
 // so the class must only clear once every one of them has closed.
 let _jkOverlayCount = 0;
 function jkOverlayOpen(){ _jkOverlayCount++; document.body.classList.add('jk-modal-open'); }
@@ -1776,7 +1723,6 @@ function setupMultiChipGroup(id){
 }
 setupMultiChipGroup('shapeFilter');
 setupMultiChipGroup('spinFilter');
-setupMultiChipGroup('durTierFilter');
 setupMultiChipGroup('feelFilter');
 setupMultiChipGroup('buildFilter');
 setupMultiChipGroup('thicknessFilter');
@@ -1854,7 +1800,7 @@ document.getElementById('resetBtn').addEventListener('click',()=>{
   document.getElementById('twistRange')._reset();
   document.getElementById('sortSelect').value='popularity-desc';
   document.querySelectorAll('#sortChips .chip').forEach(c=>c.classList.toggle('active', c.dataset.sort==='popularity-desc'));
-  ['shapeFilter','spinFilter','durTierFilter','feelFilter','buildFilter','thicknessFilter','certFilter','handleFilter','profileFilter'].forEach(id=>{
+  ['shapeFilter','spinFilter','feelFilter','buildFilter','thicknessFilter','certFilter','handleFilter','profileFilter'].forEach(id=>{
     const chips=document.getElementById(id).querySelectorAll('.chip');
     chips.forEach(c=>c.classList.remove('active'));
     chips[0].classList.add('active');
@@ -1920,7 +1866,6 @@ applyPaddleDeepLink();
       ['warranty',['warranty']],['surfaceLayup',['surfacelayup','layup']],
       ['coreType',['coretype','core']],['surfaceTexture',['surfacetexture','texture']],
       ['spinRPM',['spinrpm','rpm']],['spinCategory',['spincategory','spinrating']],
-      ['spinDurTier',['spindurabilitytier','spindurability','durabilitytier']],
       ['spinScore',['spinzscore','spinscore']],['length',['length','paddlelength']],
       ['width',['width','paddlewidth']],['handleLength',['handlelength','grip']],
       ['weight',['weight','staticweight']],['swingWeight',['swingweight']],
@@ -1981,7 +1926,7 @@ applyPaddleDeepLink();
         thickness:parseNum(g(row,'thickness')), condition:(()=>{const c=g(row,'condition');return(c==='New'||c==='Used')?c:'New';})(),
         cert:g(row,'cert'), warranty:g(row,'warranty'),
         surfaceLayup:g(row,'surfaceLayup'), coreType:g(row,'coreType'), surfaceTexture:g(row,'surfaceTexture'),
-        spinRPM, spinCategory, spinDurTier:g(row,'spinDurTier'), spinScore:parseNum(g(row,'spinScore')),
+        spinRPM, spinCategory, spinScore:parseNum(g(row,'spinScore')),
         length:parseNum(g(row,'length')), width:parseNum(g(row,'width')),
         handleLength:parseNum(g(row,'handleLength')), weight:parseNum(g(row,'weight')),
         swingWeight:parseNum(g(row,'swingWeight')), twistWeight:parseNum(g(row,'twistWeight')),

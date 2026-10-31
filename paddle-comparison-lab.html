@@ -378,11 +378,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .badge-spin-Elite{background:#7c3aed;color:#fff}.badge-spin-Good{background:#059669;color:#fff}
   .badge-spin-Fair{background:#d97706;color:#fff}.badge-spin-Poor{background:#dc2626;color:#fff}
   .badge-cert{background:#fff7ed;color:#c2410c}
-  .badge-tier{background:#eef2f7;color:#334155;display:inline-flex;align-items:center;gap:4px}
-  .badge-tier-1{background:#e8f5ee;color:#15803d}
-  .badge-tier-2{background:#e6f1fb;color:#1d4ed8}
-  .badge-tier-3{background:#fdf2e3;color:#b45309}
-  .badge-tier-4{background:#fdeaea;color:#c0392b}
   .dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
   .dur-i:hover{opacity:.65}
   .dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10050;align-items:center;justify-content:center;padding:20px}
@@ -390,9 +385,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .dur-info-box{background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:24px}
   .dur-info-box h3{font-size:18px;font-weight:600;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:12px}
   .dur-info-box p{font-size:14px;line-height:1.6;color:var(--text);margin-bottom:12px}
-  .dur-info-tiers{list-style:none;margin:0 0 12px;padding:0}
-  .dur-info-tiers li{font-size:14px;padding:7px 12px;border-radius:8px;margin-bottom:5px;font-weight:500}
-  .dur-info-tiers li b{font-weight:700}
   .dur-info-close{background:none;border:none;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 4px;flex-shrink:0}
   .dur-info-close:hover{color:var(--text)}
   .card-metrics{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;border-top:1px solid var(--border);padding-top:10px;margin-top:2px}
@@ -643,11 +635,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   [data-theme="dark"] .badge-build{background:#2a2247;color:#c4b5fd}
   [data-theme="dark"] .badge-proc{background:#123528;color:#6ee7b7}
   [data-theme="dark"] .badge-cert{background:#3a2a16;color:#fdba74}
-  [data-theme="dark"] .badge-tier{background:#26313d;color:#cbd5e1}
-  [data-theme="dark"] .badge-tier-1{background:#123528;color:#6ee7b7}
-  [data-theme="dark"] .badge-tier-2{background:#16304d;color:#93c5fd}
-  [data-theme="dark"] .badge-tier-3{background:#3a2c14;color:#fcd34d}
-  [data-theme="dark"] .badge-tier-4{background:#3a1d1d;color:#fca5a5}
   [data-theme="dark"] .pcl-eng-vote .mf-thumb.down.chosen{background:#3a1d1d;border-color:#a94442;color:#fca5a5}
   [data-theme="dark"] .score-bar,[data-theme="dark"] .perf-bar-wrap{background:#2a3a49}
   [data-theme="dark"] .discount-code{background:var(--green-light);color:#5fe0a0}
@@ -800,7 +787,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     company:['company','brand'], paddle:['paddle','model','name'],
     shape:['shape'], build:['build','buildgeneration','generation'],
     process:['manufacturingprocess','process','manufacturing'],
-    spinCategory:['spincategory','spinrating'], spinDurTier:['spindurabilitytier','spindurability','durabilitytier'],
+    spinCategory:['spincategory','spinrating'],
     cert:['certificationstatus','certification','cert'], condition:['condition'], dateEntered:['dateentered','dateadded','entrydate','added'],
     warranty:['warranty'], surfaceTexture:['surfacetexture','texture'],
     surfaceLayup:['surfacelayup','layup'], coreType:['coretype','core'],
@@ -821,7 +808,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     spinZ:['spinzscore'], powerZ:['powerzscore'], popZ:['popzscore'],
     swingZ:['swingweightzscore'], twistZ:['twistweightzscore'], balanceZ:['balancepointzscore']
   };
-  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,spinDurTier:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1,tiltBand:1};
+  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1,tiltBand:1};
 
   function norm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
   function num(v){ if(v==null) return null; var x=String(v).replace(/[^0-9.\-]/g,''); if(x===''||x==='-'||x==='.') return null; var n=parseFloat(x); return isNaN(n)?null:n; }
@@ -871,9 +858,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function money(v){return v==null?'—':'$'+Number(v).toFixed(2);}
   function spinBadge(c){return c?'<span class="badge badge-spin-'+esc(c)+'" title="Spin Category">'+esc(c)+' Spin</span>':'';}
   function certBadge(c){ if(!c||c==='None')return ''; var s=''; if(c.indexOf('Dual')>-1)s='Dual Cert'; else if(c.indexOf('USAP')>-1)s='USAP'; else if(c.indexOf('UPA-A')>-1)s='UPA-A'; else return ''; return '<span class="badge badge-cert" title="Certification Status">'+s+'</span>'; }
-  function durTierBadge(p){ var t=(p.spinDurTier||'').trim(); if(!t) return ''; var m=t.match(/[1-4]/); var cls=m?('badge-tier-'+m[0]):''; var label=m?('Spin T'+m[0]):esc(t); return '<span class="badge badge-tier '+cls+'" title="Spin Durability Tier">'+label+'<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Spin Durability Tiers" onclick="event.stopPropagation();openDurInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>'; }
-  window.openDurInfo=function(){ document.getElementById('durInfoOverlay').classList.add('open'); };
-  window.closeDurInfo=function(){ document.getElementById('durInfoOverlay').classList.remove('open'); };
 
   /* ---- photos ---- */
   // Source priority: explicit override → GitHub convention URL.
@@ -1117,7 +1101,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         + (p.shape?'<span class="badge badge-shape" title="Shape">'+esc(p.shape)+'</span>':'')
         + (p.build?'<span class="badge badge-build" title="Build">'+esc(p.build)+'</span>':'')
         + spinBadge(p.spinCategory)
-        + durTierBadge(p)
       + '</div>'
       + '<div class="card-metrics">'
         + '<div class="metric"><div class="metric-val">'+(p.spinRPM?fmtInt(p.spinRPM):'—')+'</div><div class="metric-lbl">Spin RPM</div></div>'
@@ -2186,7 +2169,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         + (p.shape?'<span class="badge badge-shape" title="Shape">'+esc(p.shape)+'</span>':'')
         + (p.build?'<span class="badge badge-build" title="Build">'+esc(p.build)+'</span>':'')
         + (p.process?'<span class="badge badge-proc" title="Manufacturing Process">'+esc(p.process)+'</span>':'')
-        + spinBadge(p.spinCategory)+durTierBadge(p)+certBadge(p.cert)+'</div>'
+        + spinBadge(p.spinCategory)+certBadge(p.cert)+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Performance</div><div class="perf-grid">'+perf+'</div></div>'
       + '<div class="modal-section"><div class="modal-section-title">Specifications</div><div class="spec-grid">'+specs+'</div>'+deflectionHTML+faceAreaHTML+layup+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Details</div><div class="spec-grid">'+details+'</div></div>'
@@ -2760,21 +2743,6 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
     <h3>KewCOR<button class="dur-info-close" onclick="closeKcMethodInfo()" aria-label="Close">&times;</button></h3>
     <p>Controlled laboratory data capturing efficiency of paddle-ball collision using a ball cannon and clamped paddle. Bands (Control, All-Court, Power, Very High Power) describe measured power only and are not a statement about USAP certification or any other standard.</p>
     <p>The scale from 0.340 to 0.445 is linear. Above 0.445, the scale compresses the remaining range so the crowded middle of the fleet stays readable: the top band is not drawn to the same scale as the rest.</p>
-  </div>
-</div>
-
-<div class="dur-info-overlay" id="durInfoOverlay" onclick="if(event.target===this)closeDurInfo()">
-  <div class="dur-info-box">
-    <h3>Spin Durability Tier<button class="dur-info-close" onclick="closeDurInfo()" aria-label="Close">&times;</button></h3>
-    <p>Spin durability tiers are based on an accelerated wear test that measures how well a paddle maintains spin over time. Initial spin is measured using a ball cannon (60&nbsp;MPH, paddle clamped at 30&deg;), followed by 100 impacts at 70&nbsp;MPH to simulate wear. Spin is then re-measured under identical conditions.</p>
-    <ul class="dur-info-tiers">
-      <li class="badge-tier-1"><b>Tier 1:</b> &lt;5% spin loss (Elite)</li>
-      <li class="badge-tier-2"><b>Tier 2:</b> 5&ndash;9.9% spin loss</li>
-      <li class="badge-tier-3"><b>Tier 3:</b> 10&ndash;19.9% spin loss</li>
-      <li class="badge-tier-4"><b>Tier 4:</b> &ge;20% spin loss</li>
-    </ul>
-    <p>This accelerated laboratory test is designed to compare surface durability under controlled conditions. Actual on-court wear will vary based on play style, conditions, and maintenance.</p>
-    <p>All Tier&nbsp;1&ndash;Tier&nbsp;3 ratings are confirmed through accelerated wear testing. Tier&nbsp;4 also includes untested traditional raw carbon fiber and spray-grit paddles, as every tested example of these surface types has exhibited approximately 20% or more spin loss.</p>
   </div>
 </div>
 

@@ -109,7 +109,7 @@ window.JKPaddleReview = (function(){
     company:['company','brand'], paddle:['paddle','model','name'],
     shape:['shape'], build:['build','buildgeneration','generation'],
     process:['manufacturingprocess','process','manufacturing'],
-    spinCategory:['spincategory','spinrating'], spinDurTier:['spindurabilitytier','spindurability','durabilitytier'],
+    spinCategory:['spincategory','spinrating'],
     cert:['certificationstatus','certification','cert'], condition:['condition'], dateEntered:['dateentered','dateadded','entrydate','added'],
     warranty:['warranty'], surfaceTexture:['surfacetexture','texture'],
     surfaceLayup:['surfacelayup','layup'], coreType:['coretype','core'],
@@ -129,7 +129,7 @@ window.JKPaddleReview = (function(){
     spinZ:['spinzscore'], powerZ:['powerzscore'], popZ:['popzscore'],
     swingZ:['swingweightzscore'], twistZ:['twistweightzscore'], balanceZ:['balancepointzscore']
   };
-  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,spinDurTier:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1};
+  var TEXT={company:1,paddle:1,shape:1,build:1,process:1,spinCategory:1,cert:1,condition:1,warranty:1,surfaceTexture:1,surfaceLayup:1,coreType:1,discountCode:1,link:1,dateEntered:1};
   function norm(h){return String(h).toLowerCase().replace(/[^a-z0-9]/g,'');}
   function num(v){ if(v==null) return null; var x=String(v).replace(/[^0-9.\-]/g,''); if(x===''||x==='-'||x==='.') return null; var n=parseFloat(x); return isNaN(n)?null:n; }
   function buildColMap(headers){
@@ -166,7 +166,6 @@ window.JKPaddleReview = (function(){
   }
   function spinBadge(c){return c?'<span class="badge badge-spin-'+esc(c)+'" title="Spin Category">'+esc(c)+' Spin</span>':'';}
   function certBadge(c){ if(!c||c==='None')return ''; var s=''; if(c.indexOf('Dual')>-1)s='Dual Cert'; else if(c.indexOf('USAP')>-1)s='USAP'; else if(c.indexOf('UPA-A')>-1)s='UPA-A'; else return ''; return '<span class="badge badge-cert" title="Certification Status">'+s+'</span>'; }
-  function durTierBadge(p){ var t=(p.spinDurTier||'').trim(); if(!t) return ''; var m=t.match(/[1-4]/); var cls=m?('badge-tier-'+m[0]):''; var label=m?('Spin Tier '+m[0]):esc(t); return '<span class="badge badge-tier '+cls+'">'+label+'</span>'; }
 
   /* ================= radar (verbatim) ================= */
   var AX=[
@@ -506,9 +505,7 @@ window.JKPaddleReview = (function(){
      Dimensions and Weight/Balance each counting once, already averaged). A candidate needs ALL 7
      top-level metrics present to be considered at all -- a paddle missing even one (e.g. no Feel
      Profile data yet) is excluded outright rather than scored on partial data, so it can't
-     surface as a "similar paddle" off an incomplete comparison. Spin Durability Tier is
-     categorical (Tier 1-4, or blank) so it gets a separate exact-match Yes/No box instead of a
-     percentage. */
+     surface as a "similar paddle" off an incomplete comparison. */
   var SIM_DIMENSION_KEYS=['length','width','thickness','handleLength'];
   var SIM_WEIGHT_KEYS=['weight','swingWeight','twistWeight','balance'];
   function simRatio(a,b){
@@ -582,11 +579,7 @@ window.JKPaddleReview = (function(){
   }
   function similarPaddleCard(target,cand){
     var q=cand.paddle, s=cand.sim;
-    var qImg=photoCandidates(q)[0], tImg=photoCandidates(target)[0];
-    var tTier=(target.spinDurTier||'').trim(), qTier=(q.spinDurTier||'').trim();
-    var knownTiers=!!(tTier&&qTier), tierMatch=knownTiers&&tTier.toLowerCase()===qTier.toLowerCase();
-    var matchHtml = !knownTiers ? '<span class="pr-match-unknown">Not enough data</span>'
-      : (tierMatch ? '<span class="pr-match-yes">&#10003; Yes</span>' : '<span class="pr-match-no">&#10005; No</span>');
+    var qImg=photoCandidates(q)[0];
     var compareUrl = comparisonLabUrl(target,q);
     return '<div class="pr-simcard">'
       +'<div class="pr-simcard-head">'
@@ -600,14 +593,6 @@ window.JKPaddleReview = (function(){
         +'</a>'
       +'</div>'
       +'<div class="pr-simcard-metrics">'+s.order.map(function(k){return simMetricRow(k,s.metrics[k]);}).join('')+'</div>'
-      +'<div class="pr-simcard-dur">'
-        +'<div class="pr-simcard-dur-label">Spin Durability Tier</div>'
-        +'<div class="pr-simcard-dur-row">'
-          +'<div class="pr-simcard-dur-p"><img src="'+esc(tImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>'+esc(tTier||'—')+'</span></div>'
-          +'<div class="pr-simcard-dur-p"><img src="'+esc(qImg)+'" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"><span>'+esc(qTier||'—')+'</span></div>'
-        +'</div>'
-        +'<div class="pr-simcard-dur-match">Spin Durability Match? '+matchHtml+'</div>'
-      +'</div>'
       +'</div>';
   }
   function similarPaddlesHtml(p,PADDLES_LOCAL){
@@ -842,9 +827,8 @@ window.JKPaddleReview = (function(){
   </div>
   <div id="prKewcorSeries" hidden></div>
 
-  <div class="pr-h2">Spin Durability</div>
-  <div class="pr-card">
-    <div id="prDurBadge" style="margin-bottom:10px"></div>
+  <div class="pr-h2" id="prDurH" hidden>Spin Durability</div>
+  <div class="pr-card" id="prDurCard" hidden>
     <div class="pr-prose" id="prDurNote"></div>
   </div>
 
@@ -1052,7 +1036,7 @@ window.JKPaddleReview = (function(){
       var strike = (!pr2.isSelkirk && pr2.savedAmt>0.005) ? '<span class="pr-strike">'+money(p.price)+'</span>' : '';
       var badges=[
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
-        spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
+        spinBadge(p.spinCategory), certBadge(p.cert)
       ].join('');
       var buyHtml = (p.link && /^https?:/i.test(p.link))
         ? '<a class="pr-buy" href="'+esc(p.link)+'" target="_blank" rel="noopener noreferrer">Buy Now →</a>' : '';
@@ -1122,7 +1106,7 @@ window.JKPaddleReview = (function(){
       document.getElementById('prBadges').innerHTML = [
         p.shape?'<span class="badge badge-shape">'+esc(p.shape)+'</span>':'',
         p.build?'<span class="badge badge-build">'+esc(p.build)+'</span>':'',
-        spinBadge(p.spinCategory), certBadge(p.cert), durTierBadge(p)
+        spinBadge(p.spinCategory), certBadge(p.cert)
       ].join('');
 
       var priceMain = pr.isSelkirk? money(p.price) : money(pr.finalPrice);
@@ -1230,8 +1214,8 @@ window.JKPaddleReview = (function(){
       else { kewcorSeriesEl.hidden = true; kewcorSeriesEl.innerHTML = ''; }
 
       // spin durability
-      document.getElementById('prDurBadge').innerHTML = durTierBadge(p) || '<span style="color:var(--muted);font-size:13px">Not yet tested.</span>';
       document.getElementById('prDurNote').innerHTML = R.spinDurabilityNote ? proseHtml(R.spinDurabilityNote) : '';
+      document.getElementById('prDurH').hidden = document.getElementById('prDurCard').hidden = !R.spinDurabilityNote;
 
       // feel map -- series reviews plot every shape's dot on one shared chart instead of a
       // separate chart per shape

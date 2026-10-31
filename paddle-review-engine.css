@@ -53,18 +53,9 @@
   .badge-spin-Elite{background:#7c3aed;color:#fff}.badge-spin-Good{background:#059669;color:#fff}
   .badge-spin-Fair{background:#d97706;color:#fff}.badge-spin-Poor{background:#dc2626;color:#fff}
   .badge-cert{background:#fff7ed;color:#c2410c}
-  .badge-tier{background:#eef2f7;color:#334155}
-  .badge-tier-1{background:#e8f5ee;color:#15803d}
-  .badge-tier-2{background:#e6f1fb;color:#1d4ed8}
-  .badge-tier-3{background:#fdf2e3;color:#b45309}
-  .badge-tier-4{background:#fdeaea;color:#c0392b}
   [data-theme="dark"] .pr-page .badge-shape{background:#16304d;color:#8ab4f8}
   [data-theme="dark"] .pr-page .badge-build{background:#2a2247;color:#c4b5fd}
   [data-theme="dark"] .pr-page .badge-cert{background:#3a2a16;color:#fdba74}
-  [data-theme="dark"] .pr-page .badge-tier-1{background:#123528;color:#6ee7b7}
-  [data-theme="dark"] .pr-page .badge-tier-2{background:#16304d;color:#93c5fd}
-  [data-theme="dark"] .pr-page .badge-tier-3{background:#3a2c14;color:#fcd34d}
-  [data-theme="dark"] .pr-page .badge-tier-4{background:#3a1d1d;color:#fca5a5}
 
   /* full-review video card */
   .pr-video-card{display:flex;gap:14px;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;text-decoration:none;margin:14px 0 0}
@@ -249,16 +240,6 @@
   .pr-simmetric-label{color:var(--muted)}
   .pr-simmetric-val{font-weight:600;color:var(--navy)}
   [data-theme="dark"] .pr-page .pr-simmetric-val{color:var(--text)}
-  .pr-simcard-dur{padding-top:10px}
-  .pr-simcard-dur-label{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:6px}
-  .pr-simcard-dur-row{display:flex;gap:14px;margin-bottom:6px}
-  .pr-simcard-dur-p{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--navy)}
-  [data-theme="dark"] .pr-page .pr-simcard-dur-p{color:var(--text)}
-  .pr-simcard-dur-p img{width:22px;height:22px;border-radius:5px;object-fit:cover;border:1px solid var(--border)}
-  .pr-simcard-dur-match{font-size:12.5px;color:var(--muted)}
-  .pr-match-yes{color:var(--green);font-weight:700}
-  .pr-match-no{color:#dc2626;font-weight:700}
-  .pr-match-unknown{color:var(--muted);font-style:italic}
 
   /* who for / not for */
   .pr-forgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
