@@ -11,35 +11,35 @@ window.PADDLE_MATCHUPS = [
       "Power vs Control"
     ],
     "date": "2026-08-02",
-    "search": "spartus spitfire enhance mpp turbo budget elongated power hollow feel elite spin tier 3 tier 4 pop kewcor control value 99",
+    "search": "spartus spitfire enhance mpp turbo budget elongated power hollow feel elite spin pop kewcor control value 99",
     "imgA": "spartus-spitfire",
     "imgB": "enhance-mpp-turbo"
   },
   {
     "slug": "honolulu-j2cr-blue-grit-vs-six-zero-coral-pro-hybrid",
     "title": "Honolulu J2CR Blue Grit vs Six Zero Coral Pro Hybrid",
-    "teaser": "Two premium Gen-4 foam Hybrids, both rare Tier 1 Elite-spin paddles with near-identical power. The J2CR is faster in the hand, crisper, and cheaper; the Coral Pro is more forgiving and softer.",
+    "teaser": "Two premium Gen-4 foam Hybrids, both rare Elite-spin paddles with near-identical power. The J2CR is faster in the hand, crisper, and cheaper; the Coral Pro is more forgiving and softer.",
     "chips": [
       "Both Hybrid",
       "$175.50 vs $198",
-      "Both Tier 1 spin"
+      "Both durable spin"
     ],
     "date": "2026-08-02",
-    "search": "honolulu j2cr long handle blue grit crystal blue endurance surface six zero coral pro hybrid tier 1 elite spin power kewcor forgiveness hand speed value",
+    "search": "honolulu j2cr long handle blue grit crystal blue endurance surface six zero coral pro hybrid elite spin power kewcor forgiveness hand speed value",
     "imgA": "honolulu-pickleball-co-j2cr-long-handle-blue-grit",
     "imgB": "six-zero-coral-pro-hybrid"
   },
   {
     "slug": "honolulu-j6fc-plus-vs-hurache-x-jelly-bean-2",
     "title": "Honolulu J6FC+ vs 11SIX24 Hurache-X Jelly Bean 2",
-    "teaser": "Two 2026 elongated foam paddles at a similar price. The Hurache-X Jelly Bean 2 wins spin and Tier 1 spin durability; the J6FC+ answers with more forgiveness and USAP certification.",
+    "teaser": "Two 2026 elongated foam paddles at a similar price. The Hurache-X Jelly Bean 2 wins on spin and spin durability; the J6FC+ answers with more forgiveness and USAP certification.",
     "chips": [
       "Both Elongated",
       "$175.50 vs $159.99",
       "Spin vs Forgiveness"
     ],
     "date": "2026-08-02",
-    "search": "honolulu j6fc j6fc+ 11six24 hurache-x jelly bean 2 elongated foam gen 4 usap upa-a spin tier 1 tier 4 forgiveness twist weight power all-court",
+    "search": "honolulu j6fc j6fc+ 11six24 hurache-x jelly bean 2 elongated foam gen 4 usap upa-a spin forgiveness twist weight power all-court",
     "imgA": "honolulu-pickleball-co-j6fc-plus",
     "imgB": "11six24-hurache-x-jelly-bean-2"
   },
@@ -53,7 +53,7 @@ window.PADDLE_MATCHUPS = [
       "Value vs Certification"
     ],
     "date": "2026-08-02",
-    "search": "joola kosmos pro v 11six24 ultre ultré power 2 hybrid elite spin tier 1 power usap upa-a certification value",
+    "search": "joola kosmos pro v 11six24 ultre ultré power 2 hybrid elite spin power usap upa-a certification value",
     "imgA": "joola-kosmos-pro-v",
     "imgB": "11six24-ultr-power-2"
   },
@@ -81,35 +81,35 @@ window.PADDLE_MATCHUPS = [
       "Spin vs Power"
     ],
     "date": "2026-08-01",
-    "search": "spartus spitfire pakle fuse budget elongated power spin tier 3 tier 4 value",
+    "search": "spartus spitfire pakle fuse budget elongated power spin value",
     "imgA": "spartus-spitfire",
     "imgB": "pakle-fuse"
   },
   {
     "slug": "11six24-ultre-jelly-bean-2-vs-six-zero-coral-pro-hybrid",
     "title": "11SIX24 Ultré Jelly Bean 2 vs Six Zero Coral Pro Hybrid",
-    "teaser": "Two Tier 1 spin hybrids. The spin is a near-tie, so it comes down to power, feel, and price.",
+    "teaser": "Two Elite-spin hybrids. The spin is a near-tie, so it comes down to power, feel, and price.",
     "chips": [
       "Both Hybrid",
       "Both Elite spin",
       "$159.99 vs $198"
     ],
     "date": "2026-08-01",
-    "search": "11six24 ultre ultré jelly bean 2 six zero coral pro hybrid tier 1 elite spin power all-court",
+    "search": "11six24 ultre ultré jelly bean 2 six zero coral pro hybrid elite spin power all-court",
     "imgA": "11six24-ultr-jelly-bean-2",
     "imgB": "six-zero-coral-pro-hybrid"
   },
   {
     "slug": "11six24-ultre-power-2-vs-honolulu-j6cr-blue-grit",
     "title": "11SIX24 Ultré Power 2 vs Honolulu J6CR Blue Grit",
-    "teaser": "Two of the only Tier 1 spin paddles, head to head. The spin is nearly a tie, so it comes down to shape, forgiveness, and price.",
+    "teaser": "Two of the few paddles with Elite spin that holds up, head to head. The spin is nearly a tie, so it comes down to shape, forgiveness, and price.",
     "chips": [
       "Hybrid vs Elongated",
       "Both Elite spin",
       "$199.99 vs $175.50"
     ],
     "date": "2026-08-01",
-    "search": "11six24 ultre ultré power 2 honolulu j6cr blue grit hybrid elongated tier 1 elite spin power",
+    "search": "11six24 ultre ultré power 2 honolulu j6cr blue grit hybrid elongated elite spin power",
     "imgA": "11six24-ultr-power-2",
     "imgB": "honolulu-pickleball-co-j6cr-blue-grit"
   }

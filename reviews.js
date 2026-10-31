@@ -4,37 +4,37 @@ window.PADDLE_REVIEWS = [
   {
     "slug": "bread-butter-loco-2-review",
     "title": "Bread & Butter Loco 2 Review (Elongated and Hybrid)",
-    "teaser": "The same Paddle of the Year winner with one change: durable Space Dust Grit. The elongated launches first and the hybrid follows in a few weeks. Spin jumps from Good to Elite (2,448 and 2,411 RPM), cannon testing earns a provisional Tier 1 for spin durability, and the feel and KewCOR (0.424 and 0.429, Power Mid) stay put.",
-    "chips": ["Elongated", "Elite Spin", "Tier 1 (provisional)", "Dual Certified"],
+    "teaser": "The same Paddle of the Year winner with one change: durable Space Dust Grit. The elongated launches first and the hybrid follows in a few weeks. Spin jumps from Good to Elite (2,448 and 2,411 RPM), cannon testing shows essentially no spin loss, and the feel and KewCOR (0.424 and 0.429, Power Mid) stay put.",
+    "chips": ["Elongated", "Elite Spin", "Durable Spin", "Dual Certified"],
     "date": "2026-10-18",
-    "search": "bread and butter loco 2 elongated hybrid space dust grit full foam epp eva cfc gen-4 elite spin tier 1 spin durability provisional kewcor 0.424 0.429 power mid dual certified usap upa-a 220 johnkew code paddle of the year original loco",
+    "search": "bread and butter loco 2 elongated hybrid space dust grit full foam epp eva cfc gen-4 elite spin spin durability provisional kewcor 0.424 0.429 power mid dual certified usap upa-a 220 johnkew code paddle of the year original loco",
     "img": "bread-butter-loco-2-elongated"
   },
   {
     "slug": "joola-power-fx-review",
     "title": "JOOLA Power FX Review — First Hits",
-    "teaser": "JOOLA's cheapest launch paddle ever at $179.95 is also the stiffest paddle in the entire database: KewCOR 0.417 (Power, Mid) and Tier 3 spin durability (15% loss), a loud, high-pitched full-foam build that's the opposite of the softer Gen-4 trend.",
-    "chips": ["Perseus", "Full-Foam", "Tier 3 Spin Durability", "First Hits"],
+    "teaser": "JOOLA's cheapest launch paddle ever at $179.95 is also the stiffest paddle in the entire database: KewCOR 0.417 (Power, Mid) and about 15% spin loss in cannon testing, a loud, high-pitched full-foam build that's the opposite of the softer Gen-4 trend.",
+    "chips": ["Perseus", "Full-Foam", "15% Spin Loss", "First Hits"],
     "date": "2026-09-30",
-    "search": "joola power fx perseus 16mm full foam gen-4 propulsion core epp eva almost floating tier 3 spin durability kewcor 0.417 power mid stiffest feel map 179.95 launch price first hits first impressions",
+    "search": "joola power fx perseus 16mm full foam gen-4 propulsion core epp eva almost floating spin durability kewcor 0.417 power mid stiffest feel map 179.95 launch price first hits first impressions",
     "img": "joola-power-fx"
   },
   {
     "slug": "gearbox-pressure-x-8m-elongated-review",
     "title": "Gearbox Pressure X 8M Elongated Review",
-    "teaser": "The MPP half of Gearbox's Pressure X pairing plays stiffer and tighter than the traditional floating-core feel MPP usually delivers, testing Tier 2 for spin durability, a counter-intuitive companion to the EPP 8E.",
+    "teaser": "The MPP half of Gearbox's Pressure X pairing plays stiffer and tighter than the traditional floating-core feel MPP usually delivers, losing about 5 to 10 percent of its spin in cannon testing, a counter-intuitive companion to the EPP 8E.",
     "chips": ["Elongated", "Good Spin", "Power, Mid"],
     "date": "2026-09-13",
-    "search": "gearbox pressure x 8m elongated gen-4 full foam sst mpp tpe expanding foam tuning pods carbon fiber tier 2 good spin power gx2",
+    "search": "gearbox pressure x 8m elongated gen-4 full foam sst mpp tpe expanding foam tuning pods carbon fiber good spin power gx2",
     "img": "gearbox-pressure-x-8m-elongated"
   },
   {
     "slug": "gearbox-pressure-x-8e-elongated-review",
     "title": "Gearbox Pressure X 8E Elongated Review",
-    "teaser": "Gearbox's Gen-4 return to form: a modified SST core, EPP foam, TPE band, and expanding foam tuning pods under a grit-infused carbon face, testing Tier 2 for spin durability with a counter-intuitive twist versus its MPP sibling.",
+    "teaser": "Gearbox's Gen-4 return to form: a modified SST core, EPP foam, TPE band, and expanding foam tuning pods under a grit-infused carbon face, losing about 5 to 10 percent of its spin in cannon testing, with a counter-intuitive twist versus its MPP sibling.",
     "chips": ["Elongated", "Good Spin", "Power, Mid"],
     "date": "2026-09-13",
-    "search": "gearbox pressure x 8e elongated gen-4 full foam sst epp tpe expanding foam tuning pods carbon fiber tier 2 good spin power gx2",
+    "search": "gearbox pressure x 8e elongated gen-4 full foam sst epp tpe expanding foam tuning pods carbon fiber good spin power gx2",
     "img": "gearbox-pressure-x-8e-elongated"
   },
   {
@@ -43,7 +43,7 @@ window.PADDLE_REVIEWS = [
     "teaser": "Friday's first full-foam paddle: an EPP core, EVA band, rubber Elastech layer, and a blow-molded T700 carbon frame that add up to a generous sweet spot and excellent spin for $159.",
     "chips": ["Elongated", "Good Spin", "$159 with code"],
     "date": "2026-08-07",
-    "search": "friday aura pro elongated full foam epp eva elastech blow molded carbon fiber tier 4 good spin power",
+    "search": "friday aura pro elongated full foam epp eva elastech blow molded carbon fiber good spin power",
     "img": "friday-aura-pro-elongated"
   },
   {
@@ -52,7 +52,7 @@ window.PADDLE_REVIEWS = [
     "teaser": "The original shape in Thrive's Ignite Pro lineup: a classic Gen-3 honeycomb-style feel, Lifetime warranty, and hand speed that splits the difference between the two newer Elongated builds.",
     "chips": ["Hybrid", "Good Spin", "$197.99 with code"],
     "date": "2026-08-04",
-    "search": "thrive ignite pro hybrid gen-3 honeycomb feel power tier 3 good spin lifetime warranty",
+    "search": "thrive ignite pro hybrid gen-3 honeycomb feel power good spin lifetime warranty",
     "img": "thrive-ignite-pro-hybrid"
   },
   {
@@ -61,7 +61,7 @@ window.PADDLE_REVIEWS = [
     "teaser": "The hand-speed pick of Thrive's two Ignite Pro Elongated builds: trimmed top corners for the fastest swing of the pair, with a smaller sweet spot as the tradeoff.",
     "chips": ["Elongated", "Elite Spin", "$197.99 with code"],
     "date": "2026-08-02",
-    "search": "thrive ignite pro elongated arc hand speed power tier 3 elite spin",
+    "search": "thrive ignite pro elongated arc hand speed power elite spin",
     "img": "thrive-ignite-pro-elongated-arc"
   },
   {
@@ -70,70 +70,70 @@ window.PADDLE_REVIEWS = [
     "teaser": "The forgiveness pick of Thrive's two Ignite Pro Elongated builds: the biggest sweet spot of the pair, with a swing that's not as easy to bring around as the tradeoff.",
     "chips": ["Elongated", "Elite Spin", "$197.99 with code"],
     "date": "2026-08-02",
-    "search": "thrive ignite pro elongated forgiveness sweet spot power tier 3 elite spin",
+    "search": "thrive ignite pro elongated forgiveness sweet spot power elite spin",
     "img": "thrive-ignite-pro-elongated"
   },
   {
     "slug": "honolulu-j3cr-blue-grit-review",
     "title": "Honolulu J3CR Blue Grit Review",
-    "teaser": "The Widebody piece of Honolulu's Core Reactor lineup, and the highest-firepower Widebody they've built: Tier 1 Elite spin durability and KewCOR 0.416, without sacrificing hand speed.",
-    "chips": ["Widebody", "Tier 1 Elite Spin", "$175.50 with code"],
+    "teaser": "The Widebody piece of Honolulu's Core Reactor lineup, and the highest-firepower Widebody they've built: Elite spin that holds up and KewCOR 0.416, without sacrificing hand speed.",
+    "chips": ["Widebody", "Elite Spin", "$175.50 with code"],
     "date": "2026-08-02",
-    "search": "honolulu j3cr blue grit widebody core reactor crystal blue endurance surface tier 1 elite spin power",
+    "search": "honolulu j3cr blue grit widebody core reactor crystal blue endurance surface elite spin power",
     "img": "honolulu-pickleball-co-j3cr-blue-grit"
   },
   {
     "slug": "11six24-ultre-jelly-bean-2-review",
     "title": "11SIX24 Ultré Jelly Bean 2 Review",
-    "teaser": "The first sub-Power 2 option 11SIX24 has ever offered in the Ultré shape: Tier 1 spin durability and Elite spin at $159.99, a genuinely new price tier, not a refresh.",
-    "chips": ["Hybrid", "Tier 1 Elite Spin", "$159.99 (launches Aug 21)"],
+    "teaser": "The first sub-Power 2 option 11SIX24 has ever offered in the Ultré shape: durable Elite spin at $159.99, a genuinely new price tier, not a refresh.",
+    "chips": ["Hybrid", "Elite Spin", "$159.99 (launches Aug 21)"],
     "date": "2026-08-01",
-    "search": "11six24 ultre ultré jelly bean 2 hybrid tier 1 elite spin hexgrit all-court control",
+    "search": "11six24 ultre ultré jelly bean 2 hybrid elite spin hexgrit all-court control",
     "img": "11six24-ultr-jelly-bean-2"
   },
   {
     "slug": "11six24-pegasus-jelly-bean-2-review",
     "title": "11SIX24 Pegasus Jelly Bean 2 Review",
-    "teaser": "11SIX24 moved the Pegasus Jelly Bean from a Tier 4 budget pick to Tier 1 Elite spin durability in one generation, at $159.99 with code JOHNKEW.",
-    "chips": ["Widebody", "Tier 1 Elite Spin", "$159.99 (launches Aug 21)"],
+    "teaser": "11SIX24 moved the Pegasus Jelly Bean from a budget pick whose spin wore down quickly to Elite spin that holds up, in one generation, at $159.99 with code JOHNKEW.",
+    "chips": ["Widebody", "Elite Spin", "$159.99 (launches Aug 21)"],
     "date": "2026-08-01",
-    "search": "11six24 pegasus jelly bean 2 widebody tier 1 elite spin hexgrit all-court control",
+    "search": "11six24 pegasus jelly bean 2 widebody elite spin hexgrit all-court control",
     "img": "11six24-pegasus-jelly-bean-2"
   },
   {
     "slug": "11six24-vapor-jelly-bean-2-review",
     "title": "11SIX24 Vapor Jelly Bean 2 Review",
-    "teaser": "Vapor's Jelly Bean 2 out-spins its own Power 2 flagship, moving from Tier 4 to Tier 1 spin durability at $159.99 with code JOHNKEW.",
-    "chips": ["Hybrid", "Tier 1 Elite Spin", "$159.99 (launches Aug 21)"],
+    "teaser": "Vapor's Jelly Bean 2 out-spins its own Power 2 flagship, going from a surface that wore down quickly to one that holds its spin, at $159.99 with code JOHNKEW.",
+    "chips": ["Hybrid", "Elite Spin", "$159.99 (launches Aug 21)"],
     "date": "2026-08-01",
-    "search": "11six24 vapor jelly bean 2 hybrid tier 1 elite spin hexgrit all-court control",
+    "search": "11six24 vapor jelly bean 2 hybrid elite spin hexgrit all-court control",
     "img": "11six24-vapor-jelly-bean-2"
   },
   {
     "slug": "11six24-hurache-x-jelly-bean-2-review",
     "title": "11SIX24 Hurache-X Jelly Bean 2 Review",
-    "teaser": "The last shape in the Jelly Bean 2 lineup: Tier 1 spin durability and Elite spin on the Elongated shape, at $159.99 with code JOHNKEW.",
-    "chips": ["Elongated", "Tier 1 Elite Spin", "$159.99 (launches Aug 21)"],
+    "teaser": "The last shape in the Jelly Bean 2 lineup: durable Elite spin on the Elongated shape, at $159.99 with code JOHNKEW.",
+    "chips": ["Elongated", "Elite Spin", "$159.99 (launches Aug 21)"],
     "date": "2026-08-01",
-    "search": "11six24 hurache-x jelly bean 2 elongated tier 1 elite spin hexgrit all-court control",
+    "search": "11six24 hurache-x jelly bean 2 elongated elite spin hexgrit all-court control",
     "img": "11six24-hurache-x-jelly-bean-2"
   },
   {
     "slug": "spartus-spitfire-review",
     "title": "Spartus Spitfire Review",
     "teaser": "One of the strongest budget paddles I've lab-tested: Elite spin, a big forgiving sweet spot, and Power-category firepower for $99 with code JOHNKEW.",
-    "chips": ["Elongated", "Tier 3 Spin", "$99 with code"],
+    "chips": ["Elongated", "Elite Spin", "$99 with code"],
     "date": "2026-07-27",
-    "search": "spartus spitfire budget elongated power elite spin tier 3 permagritnano",
+    "search": "spartus spitfire budget elongated power elite spin permagritnano",
     "img": "spartus-spitfire"
   },
   {
     "slug": "11six24-ultre-power-2",
     "title": "11SIX24 Ultré Power 2 Review",
-    "teaser": "11SIX24's flagship Hybrid: Tier 1 Elite spin durability and top-of-lineup firepower, built on the same HexGrit surface as the rest of the Power 2 line.",
-    "chips": ["Hybrid", "Tier 1 Elite Spin", "$199.99"],
+    "teaser": "11SIX24's flagship Hybrid: durable Elite spin and top-of-lineup firepower, built on the same HexGrit surface as the rest of the Power 2 line.",
+    "chips": ["Hybrid", "Elite Spin", "$199.99"],
     "date": "2026-06-20",
-    "search": "11six24 ultre ultré power 2 hybrid tier 1 elite spin hexgrit flagship",
+    "search": "11six24 ultre ultré power 2 hybrid elite spin hexgrit flagship",
     "img": "11six24-ultr-power-2"
   },
   {
@@ -148,17 +148,17 @@ window.PADDLE_REVIEWS = [
   {
     "slug": "six-zero-coral-pro-review",
     "title": "Six Zero Coral Pro Review",
-    "teaser": "A better version of the Coral: more spin, better spin retention, and a rare Tier 1 surface, across Elongated, Hybrid, and Widebody shapes.",
-    "chips": ["3 Shapes", "Tier 1 Spin", "$220"],
+    "teaser": "A better version of the Coral: more spin, better spin retention, and a rare durable surface, across Elongated, Hybrid, and Widebody shapes.",
+    "chips": ["3 Shapes", "Durable Spin", "$220"],
     "date": "2026-06-14",
-    "search": "six zero coral pro elongated hybrid widebody tier 1 spin diamond tough grit upa-a",
+    "search": "six zero coral pro elongated hybrid widebody spin diamond tough grit upa-a",
     "img": "six-zero-coral-pro-hybrid"
   },
   {
     "slug": "11six24-vapor-power-2-full-review",
     "title": "11SIX24 Vapor Power 2 Full Review",
-    "teaser": "We tested HexGrit spin durability with a ball cannon: Tier 1 results and elite firepower on 11SIX24's Hybrid flagship.",
-    "chips": ["Hybrid", "Tier 1 Elite Spin", "$199.99"],
+    "teaser": "We tested HexGrit spin durability with a ball cannon: excellent spin retention results and elite firepower on 11SIX24's Hybrid flagship.",
+    "chips": ["Hybrid", "Elite Spin", "$199.99"],
     "date": "2026-03-09",
     "search": "11six24 vapor power 2 hexgrit ball cannon spin durability kewcor",
     "img": "11six24-vapor-power-2"
