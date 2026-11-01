@@ -63,7 +63,7 @@ window.CANNON_SPIN={
    "wornRpm": 1108.9,
    "nNew": 10,
    "nWorn": 9,
-   "note": ""
+   "note": "Tested shape not recorded. Elongated is the only shape in the database."
   },
   {
    "name": "Pickleball Apes Zen S+",
@@ -182,7 +182,9 @@ window.CANNON_SPIN={
   {
    "name": "Bread & Butter Loco",
    "keys": [
-    "Bread & Butter||Loco Hybrid"
+    "Bread & Butter||Loco Elongated",
+    "Bread & Butter||Loco Hybrid",
+    "Bread & Butter||Loco Standard"
    ],
    "loss": 24.3,
    "band": "Heavy loss",
@@ -193,7 +195,7 @@ window.CANNON_SPIN={
    "wornRpm": 1352.9,
    "nNew": 7,
    "nWorn": 8,
-   "note": "Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested."
   },
   {
    "name": "Ascend Sonic",
@@ -732,7 +734,10 @@ window.CANNON_SPIN={
   {
    "name": "11SIX24 Jelly Bean 2",
    "keys": [
-    "11SIX24||Pegasus Jelly Bean 2"
+    "11SIX24||Hurache-X Jelly Bean 2",
+    "11SIX24||Pegasus Jelly Bean 2",
+    "11SIX24||Ultré Jelly Bean 2",
+    "11SIX24||Vapor Jelly Bean 2"
    ],
    "loss": -3.7,
    "band": "Holds",
@@ -743,7 +748,7 @@ window.CANNON_SPIN={
    "wornRpm": 2437.1,
    "nNew": 6,
    "nWorn": 10,
-   "note": "Pegasus shape tested."
+   "note": "All shapes. Pegasus shape tested."
   },
   {
    "name": "Bread & Butter Loco 2",
