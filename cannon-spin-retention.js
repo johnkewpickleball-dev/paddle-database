@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 45
+  "count": 43
  },
  "rows": [
   {
@@ -75,7 +75,7 @@ window.CANNON_SPIN={
    "conf": "high",
    "ciLo": 23.6,
    "ciHi": 38.8,
-   "newRpm": 2415.0,
+   "newRpm": 2415,
    "wornRpm": 1661.5,
    "nNew": 10,
    "nWorn": 10,
@@ -120,7 +120,7 @@ window.CANNON_SPIN={
    "keys": [
     "Element 6||Ignis"
    ],
-   "loss": 26.0,
+   "loss": 26,
    "band": "Heavy loss",
    "conf": "medium",
    "ciLo": 14.7,
@@ -190,8 +190,8 @@ window.CANNON_SPIN={
    "band": "Heavy loss",
    "conf": "low",
    "ciLo": 11.7,
-   "ciHi": 37.0,
-   "newRpm": 1788.0,
+   "ciHi": 37,
+   "newRpm": 1788,
    "wornRpm": 1352.9,
    "nNew": 7,
    "nWorn": 8,
@@ -221,7 +221,7 @@ window.CANNON_SPIN={
    "loss": 23.2,
    "band": "Heavy loss",
    "conf": "medium",
-   "ciLo": 12.0,
+   "ciLo": 12,
    "ciHi": 34.4,
    "newRpm": 2070.7,
    "wornRpm": 1590.4,
@@ -254,10 +254,10 @@ window.CANNON_SPIN={
    "loss": 22.1,
    "band": "Heavy loss",
    "conf": "medium",
-   "ciLo": 13.0,
+   "ciLo": 13,
    "ciHi": 31.3,
    "newRpm": 1473.1,
-   "wornRpm": 1147.0,
+   "wornRpm": 1147,
    "nNew": 10,
    "nWorn": 10,
    "note": "All shapes. Perseus shape tested."
@@ -323,28 +323,12 @@ window.CANNON_SPIN={
    "band": "Moderate loss",
    "conf": "medium",
    "ciLo": 12.2,
-   "ciHi": 27.0,
+   "ciHi": 27,
    "newRpm": 1454.9,
    "wornRpm": 1169.5,
    "nNew": 9,
    "nWorn": 10,
    "note": ""
-  },
-  {
-   "name": "Vatic Pro Saga Flash",
-   "keys": [
-    "Vatic Pro||Saga Flash"
-   ],
-   "loss": 17.9,
-   "band": "Moderate loss",
-   "conf": "low",
-   "ciLo": -2.8,
-   "ciHi": 38.6,
-   "newRpm": 1702.3,
-   "wornRpm": 1397.5,
-   "nNew": 3,
-   "nWorn": 4,
-   "note": "3 new and 4 worn shots after faulty inbound velocities were removed."
   },
   {
    "name": "Thrive Ignite Pro",
@@ -356,7 +340,7 @@ window.CANNON_SPIN={
    "loss": 17.8,
    "band": "Moderate loss",
    "conf": "low",
-   "ciLo": 10.0,
+   "ciLo": 10,
    "ciHi": 25.7,
    "newRpm": 1688.5,
    "wornRpm": 1387.2,
@@ -369,7 +353,7 @@ window.CANNON_SPIN={
    "keys": [
     "Engage||X2 Elongated"
    ],
-   "loss": 17.0,
+   "loss": 17,
    "band": "Moderate loss",
    "conf": "low",
    "ciLo": 7.5,
@@ -390,7 +374,7 @@ window.CANNON_SPIN={
    "band": "Moderate loss",
    "conf": "low",
    "ciLo": 5.4,
-   "ciHi": 28.0,
+   "ciHi": 28,
    "newRpm": 2505.2,
    "wornRpm": 2086.6,
    "nNew": 9,
@@ -411,7 +395,7 @@ window.CANNON_SPIN={
    "ciLo": 2.6,
    "ciHi": 30.7,
    "newRpm": 1708.2,
-   "wornRpm": 1424.0,
+   "wornRpm": 1424,
    "nNew": 10,
    "nWorn": 10,
    "note": "All shapes. R1 shape tested."
@@ -427,7 +411,7 @@ window.CANNON_SPIN={
    "band": "Moderate loss",
    "conf": "low",
    "ciLo": 8.2,
-   "ciHi": 22.0,
+   "ciHi": 22,
    "newRpm": 1661.4,
    "wornRpm": 1410.6,
    "nNew": 10,
@@ -439,7 +423,7 @@ window.CANNON_SPIN={
    "keys": [
     "Vatic Pro||V-Sol Tour Flash"
    ],
-   "loss": 15.0,
+   "loss": 15,
    "band": "Moderate loss",
    "conf": "low",
    "ciLo": 7.7,
@@ -552,7 +536,7 @@ window.CANNON_SPIN={
    "keys": [
     "Luzz||Pro 4 Inferno 2"
    ],
-   "loss": 9.0,
+   "loss": 9,
    "band": "Holds",
    "conf": "medium",
    "ciLo": -1.4,
@@ -562,24 +546,6 @@ window.CANNON_SPIN={
    "nNew": 10,
    "nWorn": 10,
    "note": ""
-  },
-  {
-   "name": "Six Zero Coral",
-   "keys": [
-    "Six Zero||Coral-Elongated",
-    "Six Zero||Coral-Hybrid",
-    "Six Zero||Coral-Widebody"
-   ],
-   "loss": 5.3,
-   "band": "Holds",
-   "conf": "low",
-   "ciLo": -13.2,
-   "ciHi": 23.8,
-   "newRpm": 1596.5,
-   "wornRpm": 1512.0,
-   "nNew": 4,
-   "nWorn": 5,
-   "note": "All shapes. Widebody tested. 4 new and 5 worn shots at 60 MPH."
   },
   {
    "name": "Honolulu J2CR Blue Grit",
@@ -605,9 +571,9 @@ window.CANNON_SPIN={
    "loss": 3.8,
    "band": "Holds",
    "conf": "high",
-   "ciLo": -1.0,
+   "ciLo": -1,
    "ciHi": 8.6,
-   "newRpm": 2879.0,
+   "newRpm": 2879,
    "wornRpm": 2769.6,
    "nNew": 9,
    "nWorn": 9,
@@ -637,7 +603,7 @@ window.CANNON_SPIN={
    "keys": [
     "Volair||CMD HYB"
    ],
-   "loss": -0.0,
+   "loss": 0,
    "band": "Holds",
    "conf": "high",
    "ciLo": -4.8,
@@ -676,8 +642,8 @@ window.CANNON_SPIN={
    "band": "Holds",
    "conf": "high",
    "ciLo": -12.7,
-   "ciHi": 11.0,
-   "newRpm": 2215.0,
+   "ciHi": 11,
+   "newRpm": 2215,
    "wornRpm": 2233.9,
    "nNew": 10,
    "nWorn": 10,
@@ -691,7 +657,7 @@ window.CANNON_SPIN={
    "loss": -1.9,
    "band": "Holds",
    "conf": "high",
-   "ciLo": -8.0,
+   "ciLo": -8,
    "ciHi": 4.1,
    "newRpm": 2476.2,
    "wornRpm": 2523.7,
@@ -704,7 +670,7 @@ window.CANNON_SPIN={
    "keys": [
     "Honolulu Pickleball Co.||J6CR Blue Grit"
    ],
-   "loss": -3.0,
+   "loss": -3,
    "band": "Holds",
    "conf": "high",
    "ciLo": -10.7,
@@ -720,7 +686,7 @@ window.CANNON_SPIN={
    "keys": [
     "Honolulu Pickleball Co.||J3CR Blue Grit"
    ],
-   "loss": -3.0,
+   "loss": -3,
    "band": "Holds",
    "conf": "high",
    "ciLo": -10.7,
