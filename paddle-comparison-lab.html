@@ -378,6 +378,21 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   .badge-spin-Elite{background:#7c3aed;color:#fff}.badge-spin-Good{background:#059669;color:#fff}
   .badge-spin-Fair{background:#d97706;color:#fff}.badge-spin-Poor{background:#dc2626;color:#fff}
   .badge-cert{background:#fff7ed;color:#c2410c}
+  .badge-cn{display:inline-flex;align-items:center;gap:4px;border:1.5px solid #334155;color:#334155;background:transparent;font-weight:600}
+  .badge-cn.cn-holds{border-style:solid;background:#f1f5f9}
+  .badge-cn.cn-moderate{border-style:dashed;background:transparent}
+  .badge-cn.cn-heavy{background:#334155;color:#fff}
+  .badge-cn.cn-gain{border-style:double;border-width:3px;background:#f1f5f9;padding-top:0;padding-bottom:0}
+  .cn-chip{display:inline-block;border:1.5px solid #334155;border-radius:12px;padding:1px 9px;font-size:12px;font-weight:700;margin-right:6px;white-space:nowrap}
+  .cn-chip.cn-holds{background:#f1f5f9}.cn-chip.cn-moderate{border-style:dashed}.cn-chip.cn-heavy{background:#334155;color:#fff}.cn-chip.cn-gain{border-style:double;border-width:3px;background:#f1f5f9}
+  .cn-info-list{list-style:none;margin:0 0 12px;padding:0}
+  .cn-info-list li{font-size:14px;line-height:1.55;padding:6px 0;border-bottom:1px solid rgba(100,116,139,.2)}
+  [data-theme="dark"] .badge-cn{border-color:#cbd5e1;color:#e2e8f0}
+  [data-theme="dark"] .badge-cn.cn-holds,[data-theme="dark"] .badge-cn.cn-gain{background:#26313d}
+  [data-theme="dark"] .badge-cn.cn-heavy{background:#cbd5e1;color:#0e1621}
+  [data-theme="dark"] .cn-chip{border-color:#cbd5e1;color:#e2e8f0}
+  [data-theme="dark"] .cn-chip.cn-holds,[data-theme="dark"] .cn-chip.cn-gain{background:#26313d}
+  [data-theme="dark"] .cn-chip.cn-heavy{background:#cbd5e1;color:#0e1621}
   .dur-i{width:14px;height:14px;cursor:pointer;flex-shrink:0;vertical-align:middle}
   .dur-i:hover{opacity:.65}
   .dur-info-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:10050;align-items:center;justify-content:center;padding:20px}
@@ -721,6 +736,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://johnkewpickleball-dev.github.io/paddle-database/cannon-spin-retention.js"></script>
 <script>
 (function(){
   "use strict";
@@ -856,6 +872,25 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
   function fmt(v,d){return v==null?'—':Number(v).toFixed(d==null?1:d);}
   function fmtInt(v){return v==null?'—':Math.round(v).toLocaleString();}
   function money(v){return v==null?'—':'$'+Number(v).toFixed(2);}
+  /* ---- Cannon-Tested Spin Durability (data: cannon-spin-retention.js, loaded from GitHub Pages) ---- */
+  var CN_GLYPH={'Holds':'\u2713','Moderate loss':'\u25BE','Heavy loss':'\u25BE\u25BE','Measurable gain':'\u25B4'};
+  var CN_CLASS={'Holds':'cn-holds','Moderate loss':'cn-moderate','Heavy loss':'cn-heavy','Measurable gain':'cn-gain'};
+  var _cnMap=null;
+  function cannonFor(p){
+    if(!_cnMap){ _cnMap={}; var d=window.CANNON_SPIN; if(d&&d.rows) d.rows.forEach(function(r){ r.keys.forEach(function(k){ _cnMap[k]=r; }); }); }
+    return _cnMap[p.company+'||'+p.paddle]||null;
+  }
+  function cannonLine(r){
+    var pct=(r.loss>0?'-':(r.loss<0?'+':''))+Math.abs(r.loss).toFixed(1)+'%';
+    return 'Cannon Spin Retention '+pct+' \u00B7 '+r.band+' \u00B7 '+(r.conf==='not rated'?'not rated for confidence':r.conf+' confidence')+(r.note?' \u00B7 '+r.note:'');
+  }
+  function cannonBadge(p){
+    var r=cannonFor(p); if(!r) return '';
+    return '<span class="badge badge-cn '+CN_CLASS[r.band]+'" title="'+esc(cannonLine(r))+'"><span aria-hidden="true">'+CN_GLYPH[r.band]+'</span> Cannon: '+esc(r.band)
+      +'<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Cannon-Tested Spin Durability" onclick="event.stopPropagation();openCannonInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>';
+  }
+  window.openCannonInfo=function(){ document.getElementById('cannonInfoOverlay').classList.add('open'); };
+  window.closeCannonInfo=function(){ document.getElementById('cannonInfoOverlay').classList.remove('open'); };
   function spinBadge(c){return c?'<span class="badge badge-spin-'+esc(c)+'" title="Spin Category">'+esc(c)+' Spin</span>':'';}
   function certBadge(c){ if(!c||c==='None')return ''; var s=''; if(c.indexOf('Dual')>-1)s='Dual Cert'; else if(c.indexOf('USAP')>-1)s='USAP'; else if(c.indexOf('UPA-A')>-1)s='UPA-A'; else return ''; return '<span class="badge badge-cert" title="Certification Status">'+s+'</span>'; }
 
@@ -1101,6 +1136,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         + (p.shape?'<span class="badge badge-shape" title="Shape">'+esc(p.shape)+'</span>':'')
         + (p.build?'<span class="badge badge-build" title="Build">'+esc(p.build)+'</span>':'')
         + spinBadge(p.spinCategory)
+        + cannonBadge(p)
       + '</div>'
       + '<div class="card-metrics">'
         + '<div class="metric"><div class="metric-val">'+(p.spinRPM?fmtInt(p.spinRPM):'—')+'</div><div class="metric-lbl">Spin RPM</div></div>'
@@ -2169,7 +2205,7 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
         + (p.shape?'<span class="badge badge-shape" title="Shape">'+esc(p.shape)+'</span>':'')
         + (p.build?'<span class="badge badge-build" title="Build">'+esc(p.build)+'</span>':'')
         + (p.process?'<span class="badge badge-proc" title="Manufacturing Process">'+esc(p.process)+'</span>':'')
-        + spinBadge(p.spinCategory)+certBadge(p.cert)+'</div>'
+        + spinBadge(p.spinCategory)+cannonBadge(p)+certBadge(p.cert)+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Performance</div><div class="perf-grid">'+perf+'</div></div>'
       + '<div class="modal-section"><div class="modal-section-title">Specifications</div><div class="spec-grid">'+specs+'</div>'+deflectionHTML+faceAreaHTML+layup+'</div>'
       + '<div class="modal-section"><div class="modal-section-title">Details</div><div class="spec-grid">'+details+'</div></div>'
@@ -2709,6 +2745,29 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 
 <div class="dur-info-overlay" id="feelOverlay" onclick="if(event.target===this)closeFeel()">
   <div class="dur-info-box" id="feelBox"></div>
+</div>
+
+<div class="dur-info-overlay" id="cannonInfoOverlay" onclick="if(event.target===this)closeCannonInfo()">
+  <div class="dur-info-box">
+    <h3>Cannon-Tested Spin Durability<button class="dur-info-close" onclick="closeCannonInfo()" aria-label="Close">&times;</button></h3>
+    <p><b>What it measures.</b> A ball cannon fires LT Pro 48 balls at 60&nbsp;MPH and a high-speed camera reads the spin (RPM) off the ball. The paddle then takes 100 impacts at 70&nbsp;MPH to simulate wear, and the same 10-shot test is repeated. The label on each paddle is the <b>Cannon Spin Retention</b>: the percent change in cannon spin from New to After 100 Impacts.</p>
+    <p><b>The four results.</b> These words describe what happened. They are not a ranking.</p>
+    <ul class="cn-info-list">
+      <li><span class="cn-chip cn-holds">&#10003; Holds</span> Spin dropped less than 12%.</li>
+      <li><span class="cn-chip cn-moderate">&#9662; Moderate loss</span> Spin dropped from 12% up to 20%.</li>
+      <li><span class="cn-chip cn-heavy">&#9662;&#9662; Heavy loss</span> Spin dropped 20% or more.</li>
+      <li><span class="cn-chip cn-gain">&#9652; Measurable gain</span> Spin increased, and the 95% confidence interval sits entirely above zero. Some textures gain spin as they are roughed up with use.</li>
+    </ul>
+    <p><b>Confidence.</b> Each result also carries a confidence level (high, medium or low) that shows how firmly the paddle sits inside its result. High means the whole 95% interval falls inside one result, medium means it spans two, and low means it spans all three. It describes the measurement, not paddle quality.</p>
+    <p><b>Read it carefully.</b></p>
+    <ul class="cn-info-list">
+      <li>This is a controlled lab comparison. It does not convert into games, hours or months of play.</li>
+      <li>Cannon spin is not comparable to spin a human swing produces. That is why the Spin Rating filter above is labeled &ldquo;Human-Generated.&rdquo;</li>
+      <li>Where a model was tested in one shape and carried to its other shapes, the paddle label says which shape was actually tested.</li>
+      <li>Paddles without a cannon result simply have no label yet. Hover a label to see the exact percentage.</li>
+    </ul>
+    <p><a href="https://www.johnkewpickleball.com/cannon-spin-durability" style="color:#1a7a4a;font-weight:700;text-decoration:none">See the full Cannon-Tested Spin Durability list &rarr;</a></p>
+  </div>
 </div>
 
 <div class="dur-info-overlay" id="kcInfoOverlay" onclick="if(event.target===this)closeKcInfo()">
