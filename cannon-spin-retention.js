@@ -735,7 +735,9 @@ window.CANNON_SPIN={
   },
   {
    "name": "Selkirk LABS Project Boomstik ST",
-   "keys": [],
+   "keys": [
+    "Selkirk||LABS Project Boomstik ST – Elongated"
+   ],
    "loss": 7,
    "band": "Holds",
    "conf": "medium",
