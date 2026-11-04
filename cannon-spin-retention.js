@@ -3,7 +3,7 @@
    named in "note". Loss is positive for spin lost, negative for spin gained. Published results are never recomputed. */
 window.CANNON_SPIN={
  "meta": {
-  "updated": "2026-11-01",
+  "updated": "2026-11-04",
   "ball": "LT Pro 48",
   "inboundMph": 60,
   "wearMph": 70,
@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 43
+  "count": 44
  },
  "rows": [
   {
@@ -732,6 +732,20 @@ window.CANNON_SPIN={
    "nNew": 9,
    "nWorn": 10,
    "note": "All shapes. Hybrid shape tested."
+  },
+  {
+   "name": "Selkirk LABS Project Boomstik ST",
+   "keys": [],
+   "loss": 7,
+   "band": "Holds",
+   "conf": "medium",
+   "ciLo": 0.4,
+   "ciHi": 13.6,
+   "newRpm": 2479.7,
+   "wornRpm": 2305.5,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Elongated shape tested."
   }
  ]
 };
