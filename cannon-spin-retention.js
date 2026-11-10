@@ -3,7 +3,7 @@
    named in "note". Loss is positive for spin lost, negative for spin gained. Published results are never recomputed. */
 window.CANNON_SPIN={
  "meta": {
-  "updated": "2026-11-04",
+  "updated": "2026-11-10",
   "ball": "LT Pro 48",
   "inboundMph": 60,
   "wearMph": 70,
@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 44
+  "count": 45
  },
  "rows": [
   {
@@ -749,6 +749,22 @@ window.CANNON_SPIN={
    "nNew": 10,
    "nWorn": 10,
    "note": "Elongated shape tested."
+  },
+  {
+   "name": "Honolulu J6CR M105 Blue Grit",
+   "keys": [
+    "Honolulu Pickleball Co.||J6CR M105 Blue Grit"
+   ],
+   "loss": -4.2,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -10.7,
+   "ciHi": 2.3,
+   "newRpm": 2061,
+   "wornRpm": 2147.2,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": ""
   }
  ]
 };
