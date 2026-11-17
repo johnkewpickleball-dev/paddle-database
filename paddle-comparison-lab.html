@@ -2750,22 +2750,16 @@ function toggleTheme(){ var r=document.documentElement, n=r.getAttribute('data-t
 <div class="dur-info-overlay" id="cannonInfoOverlay" onclick="if(event.target===this)closeCannonInfo()">
   <div class="dur-info-box">
     <h3>Cannon-Tested Spin Durability<button class="dur-info-close" onclick="closeCannonInfo()" aria-label="Close">&times;</button></h3>
-    <p><b>What it measures.</b> A ball cannon fires LT Pro 48 balls at 60&nbsp;MPH and a high-speed camera reads the spin (RPM) off the ball. The paddle then takes 100 impacts at 70&nbsp;MPH to simulate wear, and the same 10-shot test is repeated. The label on each paddle is the <b>Cannon Spin Retention</b>: the percent change in cannon spin from New to After 100 Impacts.</p>
-    <p><b>The four results.</b> These words describe what happened. They are not a ranking.</p>
+    <p><b>How it&rsquo;s measured.</b> A high-speed camera measures ball spin (RPM) over 10 shots with LT Pro 48 balls fired at 60&nbsp;mph. The paddle takes 100 impacts at 70&nbsp;mph to simulate wear, then we repeat the 10-shot test. Cannon Spin Retention is the percent change in average spin between the two tests. Hover over a paddle&rsquo;s label for the exact percentage.</p>
+    <p><b>What the labels mean</b></p>
     <ul class="cn-info-list">
-      <li><span class="cn-chip cn-holds">&#10003; Holds</span> The 95% interval reaches no loss, and its loss end does not pass 12%.</li>
-      <li><span class="cn-chip cn-moderate">&#9662; Moderate loss</span> Between Holds and 20% loss.</li>
-      <li><span class="cn-chip cn-heavy">&#9662;&#9662; Heavy loss</span> Spin dropped 20% or more.</li>
-      <li><span class="cn-chip cn-gain">&#9652; Measurable gain</span> The 95% interval sits entirely above zero. Some textures gain spin as they are roughed up with use.</li>
+      <li><span class="cn-chip cn-holds">&#10003; Holds</span> The 95% confidence interval includes 0% change and extends no farther than 12% loss.</li>
+      <li><span class="cn-chip cn-moderate">&#9662; Moderate loss</span> Average spin dropped by less than 20% and the result didn&rsquo;t meet the Holds criteria.</li>
+      <li><span class="cn-chip cn-heavy">&#9662;&#9662; Heavy loss</span> Average spin dropped by 20% or more.</li>
+      <li><span class="cn-chip cn-gain">&#9652; Measurable gain</span> The entire 95% confidence interval is above 0% change. Some textures gain spin as they roughen with use.</li>
     </ul>
-    <p><b>Confidence.</b> Each result also carries a confidence level (high, medium or low) that shows how far the 95% interval stretches across the 0% and 20% reference lines. High means it stays entirely within one zone (gain, 0% to 20% loss, or over 20% loss), medium means it spans two zones, and low means it spans all three. It describes the measurement, not paddle quality.</p>
-    <p><b>Read it carefully.</b></p>
-    <ul class="cn-info-list">
-      <li>This is a controlled lab comparison. It does not convert into games, hours or months of play.</li>
-      <li>Cannon spin is not comparable to spin a human swing produces. That is why the Spin Rating filter above is labeled &ldquo;Human-Generated.&rdquo;</li>
-      <li>Where a model was tested in one shape and carried to its other shapes, the paddle label says which shape was actually tested.</li>
-      <li>Paddles without a cannon result simply have no label yet. Hover a label to see the exact percentage.</li>
-    </ul>
+    <p><b>Confidence.</b> The 0% change and 20% loss lines mark three zones. Confidence is high if the 95% interval stays within one zone, medium if it spans two, and low if it spans all three. We calculate confidence when individual shot data are available. Confidence reflects measurement precision.</p>
+    <p><b>How to use it.</b> This is a controlled lab comparison. Use the Human-Generated filter for spin from a player&rsquo;s swing. The 100 impacts have no direct equivalent in games, hours, or months of play. When a result is shared across shapes, the label identifies the shape tested. Paddles without a cannon result have no label.</p>
     <p><a href="https://www.johnkewpickleball.com/cannon-spin-durability" style="color:#1a7a4a;font-weight:700;text-decoration:none">See the full Cannon-Tested Spin Durability list &rarr;</a></p>
   </div>
 </div>
