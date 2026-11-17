@@ -1,9 +1,9 @@
-/* Cannon Spin Retention data. Source: Work/Lab/Spin-RPM/cannon-spin-retention.json (production list, Nov 1 2026).
+/* Cannon Spin Retention data. Source: Work/Lab/Spin-RPM/cannon-spin-retention.json (interval-based Holds rule applied Nov 17 2026).
    "keys" are the paddle-database rows ("Company||Paddle") each result applies to; results carried across shapes are
    named in "note". Loss is positive for spin lost, negative for spin gained. Published results are never recomputed. */
 window.CANNON_SPIN={
  "meta": {
-  "updated": "2026-11-10",
+  "updated": "2026-11-17",
   "ball": "LT Pro 48",
   "inboundMph": 60,
   "wearMph": 70,
@@ -13,7 +13,13 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 45
+  "count": 45,
+  "verdictRules": {
+   "Measurable gain": "ciHi < 0",
+   "Holds": "ciLo <= 0 and ciHi <= 12",
+   "Moderate loss": "fails Holds and loss < 20",
+   "Heavy loss": "loss >= 20"
+  }
  },
  "rows": [
   {
@@ -522,7 +528,7 @@ window.CANNON_SPIN={
     "Gearbox||Pressure X 8E Elongated"
    ],
    "loss": 9.4,
-   "band": "Holds",
+   "band": "Moderate loss",
    "conf": "medium",
    "ciLo": 2.9,
    "ciHi": 15.9,
@@ -538,7 +544,7 @@ window.CANNON_SPIN={
     "Luzz||Pro 4 Inferno 2"
    ],
    "loss": 9,
-   "band": "Holds",
+   "band": "Moderate loss",
    "conf": "medium",
    "ciLo": -1.4,
    "ciHi": 19.5,
@@ -740,7 +746,7 @@ window.CANNON_SPIN={
     "Selkirk||LABS Project Boomstik ST – Elongated"
    ],
    "loss": 7,
-   "band": "Holds",
+   "band": "Moderate loss",
    "conf": "medium",
    "ciLo": 0.4,
    "ciHi": 13.6,
