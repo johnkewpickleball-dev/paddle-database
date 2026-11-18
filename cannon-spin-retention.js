@@ -13,14 +13,14 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 45,
+  "count": 49,
   "verdictRules": {
    "Measurable gain": "ciHi < 0",
    "Holds": "ciLo <= 0 and ciHi <= 12",
    "Moderate loss": "fails Holds and loss < 20",
    "Heavy loss": "loss >= 20"
   },
-  "confidenceRule": "95% interval vs the 0% and 20% reference lines: high = within one zone, medium = spans two, low = spans all three"
+  "confidenceRule": "95% interval vs the 0% and 20% reference lines: high = within one zone, medium = spans two, low = spans all three. For Holds, gain and 0-20% loss count as one zone."
  },
  "rows": [
   {
@@ -408,6 +408,20 @@ window.CANNON_SPIN={
    "note": "All shapes. R1 shape tested."
   },
   {
+   "name": "Selkirk Boomstik ST, Unit 2",
+   "keys": [],
+   "loss": 16.6,
+   "band": "Moderate loss",
+   "conf": "medium",
+   "ciLo": 10.4,
+   "ciHi": 22.7,
+   "newRpm": 2697.3,
+   "wornRpm": 2250.5,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Elongated shape tested. Extended wear test: first 10 shots compared with the 10 shots after 100 impacts."
+  },
+  {
    "name": "Chorus CODA Harmony Grit",
    "keys": [
     "Chorus||CODA Harmony Grit S",
@@ -424,22 +438,6 @@ window.CANNON_SPIN={
    "nNew": 10,
    "nWorn": 10,
    "note": "All shapes. Widebody tested."
-  },
-  {
-   "name": "Vatic Pro V-Sol Tour Flash",
-   "keys": [
-    "Vatic Pro||V-Sol Tour Flash"
-   ],
-   "loss": 15,
-   "band": "Moderate loss",
-   "conf": "medium",
-   "ciLo": 7.7,
-   "ciHi": 22.3,
-   "newRpm": 2030.9,
-   "wornRpm": 1725.8,
-   "nNew": 10,
-   "nWorn": 10,
-   "note": ""
   },
   {
    "name": "Aireo Cyclone Elongated",
@@ -556,13 +554,29 @@ window.CANNON_SPIN={
    "note": ""
   },
   {
+   "name": "Selkirk LABS Project Boomstik ST",
+   "keys": [
+    "Selkirk||LABS Project Boomstik ST – Elongated"
+   ],
+   "loss": 7,
+   "band": "Moderate loss",
+   "conf": "high",
+   "ciLo": 0.4,
+   "ciHi": 13.6,
+   "newRpm": 2479.7,
+   "wornRpm": 2305.5,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Elongated shape tested."
+  },
+  {
    "name": "Honolulu J2CR Blue Grit",
    "keys": [
     "Honolulu Pickleball Co.||J2CR Long Handle Blue Grit"
    ],
    "loss": 4.9,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -0.4,
    "ciHi": 10.3,
    "newRpm": 2076.1,
@@ -578,7 +592,7 @@ window.CANNON_SPIN={
    ],
    "loss": 3.8,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -1,
    "ciHi": 8.6,
    "newRpm": 2879,
@@ -586,6 +600,22 @@ window.CANNON_SPIN={
    "nNew": 9,
    "nWorn": 9,
    "note": ""
+  },
+  {
+   "name": "Enhance MPP Echo Widebody",
+   "keys": [
+    "Enhance||MPP Echo Widebody"
+   ],
+   "loss": 2.7,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -4.4,
+   "ciHi": 9.9,
+   "newRpm": 2156.1,
+   "wornRpm": 2097.0,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Widebody shape tested."
   },
   {
    "name": "11SIX24 Power 2",
@@ -613,7 +643,7 @@ window.CANNON_SPIN={
    ],
    "loss": 0,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -4.8,
    "ciHi": 4.7,
    "newRpm": 2078.2,
@@ -631,7 +661,7 @@ window.CANNON_SPIN={
    ],
    "loss": -0.7,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -7.1,
    "ciHi": 5.7,
    "newRpm": 1883.3,
@@ -648,7 +678,7 @@ window.CANNON_SPIN={
    ],
    "loss": -0.9,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -12.7,
    "ciHi": 11,
    "newRpm": 2215,
@@ -658,13 +688,29 @@ window.CANNON_SPIN={
    "note": "All shapes. Hybrid shape tested."
   },
   {
+   "name": "Gherkin Draco OP Widebody",
+   "keys": [
+    "Gherkin||Draco OP Widebody"
+   ],
+   "loss": -1.1,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -9.5,
+   "ciHi": 7.3,
+   "newRpm": 1736.5,
+   "wornRpm": 1755.5,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Widebody shape tested."
+  },
+  {
    "name": "Luzz Cannon XPP",
    "keys": [
     "Luzz||Cannon XPP"
    ],
    "loss": -1.9,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -8,
    "ciHi": 4.1,
    "newRpm": 2476.2,
@@ -680,7 +726,7 @@ window.CANNON_SPIN={
    ],
    "loss": -3,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -10.7,
    "ciHi": 4.6,
    "newRpm": 2535.3,
@@ -696,7 +742,7 @@ window.CANNON_SPIN={
    ],
    "loss": -3,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -10.7,
    "ciHi": 4.6,
    "newRpm": 2535.3,
@@ -715,7 +761,7 @@ window.CANNON_SPIN={
    ],
    "loss": -3.7,
    "band": "Holds",
-   "conf": "medium",
+   "conf": "high",
    "ciLo": -10.9,
    "ciHi": 3.5,
    "newRpm": 2349.9,
@@ -723,6 +769,57 @@ window.CANNON_SPIN={
    "nNew": 6,
    "nWorn": 10,
    "note": "All shapes. Pegasus shape tested."
+  },
+  {
+   "name": "Honolulu J6CR M105 Blue Grit",
+   "keys": [
+    "Honolulu Pickleball Co.||J6CR M105 Blue Grit"
+   ],
+   "loss": -4.2,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -10.7,
+   "ciHi": 2.3,
+   "newRpm": 2061,
+   "wornRpm": 2147.2,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": ""
+  },
+  {
+   "name": "Vatic Pro V-Sol Tour",
+   "keys": [
+    "Vatic Pro||V-Sol Tour Bloom",
+    "Vatic Pro||V-Sol Tour Elongated",
+    "Vatic Pro||V-Sol Tour Flash",
+    "Vatic Pro||V-Sol Tour Flash FT"
+   ],
+   "loss": -4.7,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -10.7,
+   "ciHi": 1.2,
+   "newRpm": 2226.9,
+   "wornRpm": 2331.9,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "All V-Sol Tour shapes. Bloom shape tested. EverGrit version 2."
+  },
+  {
+   "name": "Neonic Frost FLX NeoGrit",
+   "keys": [
+    "Neonic||Frost FLX"
+   ],
+   "loss": -6.8,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -14.1,
+   "ciHi": 0.5,
+   "newRpm": 2048.3,
+   "wornRpm": 2187.4,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Hybrid shape tested."
   },
   {
    "name": "Bread & Butter Loco 2",
@@ -740,38 +837,6 @@ window.CANNON_SPIN={
    "nNew": 9,
    "nWorn": 10,
    "note": "All shapes. Hybrid shape tested."
-  },
-  {
-   "name": "Selkirk LABS Project Boomstik ST",
-   "keys": [
-    "Selkirk||LABS Project Boomstik ST – Elongated"
-   ],
-   "loss": 7,
-   "band": "Moderate loss",
-   "conf": "high",
-   "ciLo": 0.4,
-   "ciHi": 13.6,
-   "newRpm": 2479.7,
-   "wornRpm": 2305.5,
-   "nNew": 10,
-   "nWorn": 10,
-   "note": "Elongated shape tested."
-  },
-  {
-   "name": "Honolulu J6CR M105 Blue Grit",
-   "keys": [
-    "Honolulu Pickleball Co.||J6CR M105 Blue Grit"
-   ],
-   "loss": -4.2,
-   "band": "Holds",
-   "conf": "medium",
-   "ciLo": -10.7,
-   "ciHi": 2.3,
-   "newRpm": 2061,
-   "wornRpm": 2147.2,
-   "nNew": 10,
-   "nWorn": 10,
-   "note": ""
   }
  ]
 };
