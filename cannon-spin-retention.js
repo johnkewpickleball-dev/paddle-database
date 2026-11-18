@@ -521,10 +521,12 @@ window.CANNON_SPIN={
    "note": ""
   },
   {
-   "name": "Gearbox Pressure X 8M Elongated & 8E Elongated",
+   "name": "Gearbox Pressure X 8M & 8E",
    "keys": [
     "Gearbox||Pressure X 8M Elongated",
-    "Gearbox||Pressure X 8E Elongated"
+    "Gearbox||Pressure X 8E Elongated",
+    "Gearbox||Pressure X 8M Hybrid",
+    "Gearbox||Pressure X 8E Hybrid"
    ],
    "loss": 9.4,
    "band": "Moderate loss",
@@ -535,7 +537,7 @@ window.CANNON_SPIN={
    "wornRpm": 1636.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "All shapes. Elongated shape tested."
   },
   {
    "name": "Luzz Pro 4 Inferno 2",
@@ -602,8 +604,10 @@ window.CANNON_SPIN={
    "note": ""
   },
   {
-   "name": "Enhance MPP Echo Widebody",
+   "name": "Enhance MPP Echo",
    "keys": [
+    "Enhance||MPP Echo Elongated",
+    "Enhance||MPP Echo Hybrid",
     "Enhance||MPP Echo Widebody"
    ],
    "loss": 2.7,
@@ -615,7 +619,7 @@ window.CANNON_SPIN={
    "wornRpm": 2097.0,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Widebody shape tested."
+   "note": "All shapes. Widebody shape tested."
   },
   {
    "name": "11SIX24 Power 2",
@@ -637,9 +641,11 @@ window.CANNON_SPIN={
    "note": "All shapes. Vapor shape tested."
   },
   {
-   "name": "Volair CMD HYB",
+   "name": "Volair CMD",
    "keys": [
-    "Volair||CMD HYB"
+    "Volair||CMD EL",
+    "Volair||CMD HYB",
+    "Volair||CMD WB"
    ],
    "loss": 0,
    "band": "Holds",
@@ -650,7 +656,7 @@ window.CANNON_SPIN={
    "wornRpm": 2079.1,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "All shapes. Hybrid shape tested."
   },
   {
    "name": "Six Zero Coral Pro",
@@ -688,8 +694,10 @@ window.CANNON_SPIN={
    "note": "All shapes. Hybrid shape tested."
   },
   {
-   "name": "Gherkin Draco OP Widebody",
+   "name": "Gherkin Draco OP",
    "keys": [
+    "Gherkin||Draco OP Elongated",
+    "Gherkin||Draco OP Hybrid",
     "Gherkin||Draco OP Widebody"
    ],
    "loss": -1.1,
@@ -701,7 +709,7 @@ window.CANNON_SPIN={
    "wornRpm": 1755.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Widebody shape tested."
+   "note": "All shapes. Widebody shape tested."
   },
   {
    "name": "Luzz Cannon XPP",
