@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 49,
+  "count": 51,
   "verdictRules": {
    "Measurable gain": "ciHi < 0",
    "Holds": "ciLo <= 0 and ciHi <= 12",
@@ -322,6 +322,23 @@ window.CANNON_SPIN={
    "note": ""
   },
   {
+   "name": "Revolin ARC",
+   "keys": [
+    "Revolin||ARC Elongated",
+    "Revolin||ARC Hybrid"
+   ],
+   "loss": 19.8,
+   "band": "Moderate loss",
+   "conf": "medium",
+   "ciLo": 12.9,
+   "ciHi": 26.7,
+   "newRpm": 1794.7,
+   "wornRpm": 1438.8,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "All shapes. Hybrid shape tested."
+  },
+  {
    "name": "Luzz Inferno Frozen",
    "keys": [
     "Luzz||Inferno Frozen"
@@ -586,6 +603,22 @@ window.CANNON_SPIN={
    "nNew": 10,
    "nWorn": 10,
    "note": ""
+  },
+  {
+   "name": "Pickle Poppers Pop N Rush",
+   "keys": [
+    "Pickle Poppers||Pop N Rush Elongated"
+   ],
+   "loss": 4.4,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -1.4,
+   "ciHi": 10.3,
+   "newRpm": 2518.7,
+   "wornRpm": 2407.6,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Elongated shape tested."
   },
   {
    "name": "RPM Jade Elongated 16",
