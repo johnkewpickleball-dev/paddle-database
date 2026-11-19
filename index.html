@@ -905,7 +905,7 @@ function cannonLine(r){
 }
 function cannonBadge(p){
   const r=cannonFor(p); if(!r) return '';
-  return `<span class="badge badge-cn ${CN_CLASS[r.band]}" title="${cannonLine(r).replace(/"/g,'&quot;')}"><span aria-hidden="true">${CN_GLYPH[r.band]}</span> Cannon: ${r.band}<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Cannon-Tested Spin Durability" onclick="event.stopPropagation();openCannonInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>`;
+  return `<span class="badge badge-cn ${CN_CLASS[r.band]}" title="${cannonLine(r).replace(/"/g,'&quot;')}"><span aria-hidden="true">${CN_GLYPH[r.band]}</span> Spin: ${r.band}<svg class="dur-i" viewBox="0 0 24 24" role="button" tabindex="0" title="About Cannon-Tested Spin Durability" onclick="event.stopPropagation();openCannonInfo()"><circle cx="12" cy="12" r="10.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7.6" r="1.5" fill="currentColor"/><rect x="10.8" y="10.6" width="2.4" height="6.8" rx="1.2" fill="currentColor"/></svg></span>`;
 }
 function openCannonInfo(){ const el=document.getElementById('cannonInfoOverlay'); toBodyChild(el); el.classList.add('open'); if(window.jkOverlayOpen) window.jkOverlayOpen(); }
 function closeCannonInfo(){ document.getElementById('cannonInfoOverlay').classList.remove('open'); if(window.jkOverlayClose) window.jkOverlayClose(); }
