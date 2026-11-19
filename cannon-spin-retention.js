@@ -847,9 +847,10 @@ window.CANNON_SPIN={
    "note": "All V-Sol Tour shapes. Bloom shape tested. EverGrit version 2."
   },
   {
-   "name": "Neonic NeoGrit Frost FLX",
+   "name": "Neonic NeoGrit FLX",
    "keys": [
-    "Neonic||NeoGrit Frost FLX"
+    "Neonic||NeoGrit Frost FLX",
+    "Neonic||NeoGrit Swift FLX"
    ],
    "loss": -6.8,
    "band": "Holds",
@@ -860,7 +861,7 @@ window.CANNON_SPIN={
    "wornRpm": 2187.4,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Hybrid shape tested."
+   "note": "All shapes. Hybrid (Frost FLX) shape tested."
   },
   {
    "name": "Bread & Butter Loco 2",
