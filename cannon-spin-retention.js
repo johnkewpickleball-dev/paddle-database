@@ -847,9 +847,9 @@ window.CANNON_SPIN={
    "note": "All V-Sol Tour shapes. Bloom shape tested. EverGrit version 2."
   },
   {
-   "name": "Neonic Frost FLX NeoGrit",
+   "name": "Neonic NeoGrit Frost FLX",
    "keys": [
-    "Neonic||Frost FLX"
+    "Neonic||NeoGrit Frost FLX"
    ],
    "loss": -6.8,
    "band": "Holds",
