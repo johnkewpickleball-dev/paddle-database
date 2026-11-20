@@ -3,7 +3,7 @@
    named in "note". Loss is positive for spin lost, negative for spin gained. Published results are never recomputed. */
 window.CANNON_SPIN={
  "meta": {
-  "updated": "2026-11-17",
+  "updated": "2026-11-20",
   "ball": "LT Pro 48",
   "inboundMph": 60,
   "wearMph": 70,
@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 51,
+  "count": 52,
   "verdictRules": {
    "Measurable gain": "ciHi < 0",
    "Holds": "ciLo <= 0 and ciHi <= 12",
@@ -879,6 +879,23 @@ window.CANNON_SPIN={
    "nNew": 9,
    "nWorn": 10,
    "note": "All shapes. Hybrid shape tested."
+  },
+  {
+   "name": "Holbrook Fuze VantaGrit",
+   "keys": [
+    "Holbrook||Fuze VantaGrit Elongated",
+    "Holbrook||Fuze VantaGrit Hybrid"
+   ],
+   "loss": 27.1,
+   "band": "Heavy loss",
+   "conf": "medium",
+   "ciLo": 16,
+   "ciHi": 38.1,
+   "newRpm": 1729.8,
+   "wornRpm": 1261.2,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Both VantaGrit shapes. Hybrid shape tested. Production unit."
   }
  ]
 };
