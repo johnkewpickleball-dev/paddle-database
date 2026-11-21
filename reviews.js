@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "top-3-budget-paddles-2026-q4",
+    "title": "Top 3 Budget Paddles of 2026 (Q4)",
+    "teaser": "The Spartus Spitfire, Vatic V-Sol Tour and Neonic NeoGrit FLX: three soft-hollow, Elite-spin paddles at about $110. Full stats, cannon spin durability, the Spitfire's 100-game real-world results, and why power paddles are going soft-hollow. Winner to be chosen in December.",
+    "chips": ["Budget Picks", "Soft-Hollow", "Elite Spin", "Durable Grits"],
+    "date": "2026-11-21",
+    "search": "top 3 budget paddles 2026 q4 spartus spitfire vatic v-sol tour flash ft neonic neogrit flx swift elongated 16mm full foam grit elite spin cannon spin retention kewcor firepower soft hollow feel map trend 110 johnkew code",
+    "img": "vatic-pro-v-sol-tour-flash-ft"
+  },
+  {
     "slug": "neonic-neogrit-flx-review",
     "title": "Neonic NeoGrit FLX Review (Frost and Swift)",
     "teaser": "Two soft-feeling, forgiving full-foam paddles that hide real firepower: KewCOR 0.424 (Frost, hybrid) and 0.422 (Swift, elongated), Elite spin, and a cannon result that Holds (+6.8%, high confidence), at $110. The Frost is stiffer and poppier; the Swift is softer, more controllable, and my pick.",
