@@ -20,7 +20,14 @@ window.CANNON_SPIN={
    "Moderate loss": "fails Holds and loss < 20",
    "Heavy loss": "loss >= 20"
   },
-  "confidenceRule": "95% interval vs the 0% and 20% reference lines: high = within one zone, medium = spans two, low = spans all three. For Holds, gain and 0-20% loss count as one zone."
+  "confidenceRule": "95% interval vs the 0% and 20% reference lines: high = within one zone, medium = spans two, low = spans all three. For Holds, gain and 0-20% loss count as one zone.",
+  "gritTypes": [
+   "raw carbon fiber (peel-ply)",
+   "coated peel-ply",
+   "grit-infused peel-ply",
+   "bonded grit particles",
+   "friction-based, rubber-like surface"
+  ]
  },
  "rows": [
   {
@@ -37,7 +44,12 @@ window.CANNON_SPIN={
    "wornRpm": 1392.7,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "DuraSpin",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Selkirk OMNI",
@@ -54,7 +66,12 @@ window.CANNON_SPIN={
    "wornRpm": 1332.8,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Elongated shape tested."
+   "note": "All shapes. Elongated shape tested.",
+   "grit": {
+    "name": "Infinigrit",
+    "type": "bonded grit particles",
+    "particle": null
+   }
   },
   {
    "name": "Pickle Poppers Pop N Treasure",
@@ -70,7 +87,13 @@ window.CANNON_SPIN={
    "wornRpm": 1108.9,
    "nNew": 10,
    "nWorn": 9,
-   "note": "Tested shape not recorded. Elongated is the only shape in the database."
+   "note": "Tested shape not recorded. Elongated is the only shape in the database.",
+   "grit": {
+    "name": "EVERGRIT",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide",
+    "star": "Same name as Vatic's EverGrit, but different brand and different grit."
+   }
   },
   {
    "name": "Pickleball Apes Zen S+",
@@ -86,7 +109,12 @@ window.CANNON_SPIN={
    "wornRpm": 1661.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "SilverBack Grit",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Enhance MPP Turbo",
@@ -104,7 +132,12 @@ window.CANNON_SPIN={
    "wornRpm": 1425.4,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes."
+   "note": "All shapes.",
+   "grit": {
+    "name": "ArmorGrit (version 1)",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Scoop Sidewinder F2E",
@@ -120,7 +153,12 @@ window.CANNON_SPIN={
    "wornRpm": 1104.1,
    "nNew": 7,
    "nWorn": 6,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "DEF-Grit",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Element 6 Ignis",
@@ -136,7 +174,12 @@ window.CANNON_SPIN={
    "wornRpm": 1937.8,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Engage Axiom",
@@ -152,7 +195,12 @@ window.CANNON_SPIN={
    "wornRpm": 1617.8,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Mark unMARKed 2026",
@@ -168,7 +216,12 @@ window.CANNON_SPIN={
    "wornRpm": 1964.4,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "VelosiGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Proton Series 3-Project Flamingo",
@@ -184,7 +237,12 @@ window.CANNON_SPIN={
    "wornRpm": 1468.5,
    "nNew": 10,
    "nWorn": 9,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Bread & Butter Loco",
@@ -202,7 +260,12 @@ window.CANNON_SPIN={
    "wornRpm": 1352.9,
    "nNew": 7,
    "nWorn": 8,
-   "note": "All shapes. Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested.",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Ascend Sonic",
@@ -218,7 +281,12 @@ window.CANNON_SPIN={
    "wornRpm": 1602.4,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Wika Next-X",
@@ -234,7 +302,12 @@ window.CANNON_SPIN={
    "wornRpm": 1590.4,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "W-S|GRIT",
+    "type": "grit-infused peel-ply",
+    "particle": "glass"
+   }
   },
   {
    "name": "Luzz Glider 2026",
@@ -250,7 +323,12 @@ window.CANNON_SPIN={
    "wornRpm": 1384.7,
    "nNew": 6,
    "nWorn": 7,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "984-Aero Grit",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "JOOLA Pro V",
@@ -267,7 +345,12 @@ window.CANNON_SPIN={
    "wornRpm": 1147,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Perseus shape tested."
+   "note": "All shapes. Perseus shape tested.",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Speedup Tide",
@@ -285,7 +368,12 @@ window.CANNON_SPIN={
    "wornRpm": 1321.6,
    "nNew": 9,
    "nWorn": 10,
-   "note": "All shapes. Widebody shape tested."
+   "note": "All shapes. Widebody shape tested.",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "11SIX24 Power",
@@ -303,7 +391,12 @@ window.CANNON_SPIN={
    "wornRpm": 1170.9,
    "nNew": 10,
    "nWorn": 9,
-   "note": "All shapes. Pegasus shape tested."
+   "note": "All shapes. Pegasus shape tested.",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Warping Point Sophon",
@@ -319,7 +412,12 @@ window.CANNON_SPIN={
    "wornRpm": 1369.2,
    "nNew": 9,
    "nWorn": 9,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "Aero Fusion",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Revolin ARC",
@@ -336,7 +434,12 @@ window.CANNON_SPIN={
    "wornRpm": 1438.8,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested.",
+   "grit": {
+    "name": "TerraGrit",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Luzz Inferno Frozen",
@@ -370,7 +473,12 @@ window.CANNON_SPIN={
    "wornRpm": 1387.2,
    "nNew": 8,
    "nWorn": 7,
-   "note": "All shapes. Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested.",
+   "grit": {
+    "name": "Clear Fusion Grit",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Engage X2 Elongated",
@@ -386,7 +494,12 @@ window.CANNON_SPIN={
    "wornRpm": 2157.1,
    "nNew": 7,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "Micro Weave",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Gearbox GX2 Power",
@@ -403,7 +516,12 @@ window.CANNON_SPIN={
    "wornRpm": 2086.6,
    "nNew": 9,
    "nWorn": 9,
-   "note": "All shapes."
+   "note": "All shapes.",
+   "grit": {
+    "name": null,
+    "type": "raw carbon fiber (peel-ply)",
+    "particle": null
+   }
   },
   {
    "name": "Ronbus Tenon",
@@ -422,7 +540,12 @@ window.CANNON_SPIN={
    "wornRpm": 1424,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. R1 shape tested."
+   "note": "All shapes. R1 shape tested.",
+   "grit": {
+    "name": "NanoBond",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Selkirk Boomstik ST, Unit 2",
@@ -436,7 +559,12 @@ window.CANNON_SPIN={
    "wornRpm": 2250.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Elongated shape tested. Extended wear test: first 10 shots compared with the 10 shots after 100 impacts."
+   "note": "Elongated shape tested. Extended wear test: first 10 shots compared with the 10 shots after 100 impacts.",
+   "grit": {
+    "name": "InfiniGrit Ultra",
+    "type": "bonded grit particles",
+    "particle": null
+   }
   },
   {
    "name": "Chorus CODA Harmony Grit",
@@ -454,7 +582,12 @@ window.CANNON_SPIN={
    "wornRpm": 1410.6,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Widebody tested."
+   "note": "All shapes. Widebody tested.",
+   "grit": {
+    "name": "Harmony Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Aireo Cyclone Elongated",
@@ -470,7 +603,12 @@ window.CANNON_SPIN={
    "wornRpm": 1477.6,
    "nNew": 9,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "NanoGraph",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "JOOLA Power FX",
@@ -486,7 +624,12 @@ window.CANNON_SPIN={
    "wornRpm": 1615.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Spartus Spitfire",
@@ -503,7 +646,12 @@ window.CANNON_SPIN={
    "wornRpm": 2127.5,
    "nNew": 10,
    "nWorn": 9,
-   "note": "All shapes. Elongated shape tested."
+   "note": "All shapes. Elongated shape tested.",
+   "grit": {
+    "name": "PermaGritNano",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Wika QD Fire 2",
@@ -519,7 +667,12 @@ window.CANNON_SPIN={
    "wornRpm": 1645.6,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Six Zero Boulder Opal",
@@ -535,7 +688,12 @@ window.CANNON_SPIN={
    "wornRpm": 1506.2,
    "nNew": 10,
    "nWorn": 9,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "SharkSkin",
+    "type": "coated peel-ply",
+    "particle": null
+   }
   },
   {
    "name": "Gearbox Pressure X 8M & 8E",
@@ -554,7 +712,12 @@ window.CANNON_SPIN={
    "wornRpm": 1636.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Elongated shape tested."
+   "note": "All shapes. Elongated shape tested.",
+   "grit": {
+    "name": "SpinLock",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Luzz Pro 4 Inferno 2",
@@ -586,7 +749,12 @@ window.CANNON_SPIN={
    "wornRpm": 2305.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Elongated shape tested."
+   "note": "Elongated shape tested.",
+   "grit": {
+    "name": "InfiniGrit Ultra",
+    "type": "bonded grit particles",
+    "particle": null
+   }
   },
   {
    "name": "Honolulu J2CR Blue Grit",
@@ -602,7 +770,12 @@ window.CANNON_SPIN={
    "wornRpm": 1973.8,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "Crystal Blue Endurance Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Pickle Poppers Pop N Rush",
@@ -618,7 +791,12 @@ window.CANNON_SPIN={
    "wornRpm": 2407.6,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Elongated shape tested."
+   "note": "Elongated shape tested.",
+   "grit": {
+    "name": "MagmaGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "RPM Jade Elongated 16",
@@ -634,7 +812,12 @@ window.CANNON_SPIN={
    "wornRpm": 2769.6,
    "nNew": 9,
    "nWorn": 9,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "SICmatrix",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Enhance MPP Echo",
@@ -652,7 +835,12 @@ window.CANNON_SPIN={
    "wornRpm": 2097.0,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Widebody shape tested."
+   "note": "All shapes. Widebody shape tested.",
+   "grit": {
+    "name": "ArmorGrit+",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "11SIX24 Power 2",
@@ -671,7 +859,12 @@ window.CANNON_SPIN={
    "wornRpm": null,
    "nNew": null,
    "nWorn": null,
-   "note": "All shapes. Vapor shape tested."
+   "note": "All shapes. Vapor shape tested.",
+   "grit": {
+    "name": "HexGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Volair CMD",
@@ -689,7 +882,12 @@ window.CANNON_SPIN={
    "wornRpm": 2079.1,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested.",
+   "grit": {
+    "name": "HexGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Six Zero Coral Pro",
@@ -707,7 +905,12 @@ window.CANNON_SPIN={
    "wornRpm": 1896.2,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Widebody tested."
+   "note": "All shapes. Widebody tested.",
+   "grit": {
+    "name": "Double Diamond Tough Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "industrial diamond dust"
+   }
   },
   {
    "name": "Spartus P1",
@@ -724,7 +927,12 @@ window.CANNON_SPIN={
    "wornRpm": 2233.9,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested.",
+   "grit": {
+    "name": "PermaGrit",
+    "type": "bonded grit particles",
+    "particle": null
+   }
   },
   {
    "name": "Gherkin Draco OP",
@@ -742,7 +950,12 @@ window.CANNON_SPIN={
    "wornRpm": 1755.5,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Widebody shape tested."
+   "note": "All shapes. Widebody shape tested.",
+   "grit": {
+    "name": "GripNotGrit",
+    "type": "friction-based, rubber-like surface",
+    "particle": null
+   }
   },
   {
    "name": "Luzz Cannon XPP",
@@ -758,7 +971,12 @@ window.CANNON_SPIN={
    "wornRpm": 2523.7,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": null,
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Luzz Cannon XPP, Unit 2",
@@ -772,7 +990,12 @@ window.CANNON_SPIN={
    "wornRpm": 2454.9,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Extended wear test: first 10 shots compared with the 10 shots after 100 impacts."
+   "note": "Extended wear test: first 10 shots compared with the 10 shots after 100 impacts.",
+   "grit": {
+    "name": null,
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Honolulu Pickleball Co. Blue Grit",
@@ -788,7 +1011,12 @@ window.CANNON_SPIN={
    "wornRpm": 2612.6,
    "nNew": 8,
    "nWorn": 10,
-   "note": "Other Blue Grit shapes. J3CR shape tested."
+   "note": "Other Blue Grit shapes. J3CR shape tested.",
+   "grit": {
+    "name": "Crystal Blue Endurance Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Honolulu J3CR Blue Grit",
@@ -804,7 +1032,12 @@ window.CANNON_SPIN={
    "wornRpm": 2612.6,
    "nNew": 8,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "Crystal Blue Endurance Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "11SIX24 Jelly Bean 2",
@@ -823,7 +1056,12 @@ window.CANNON_SPIN={
    "wornRpm": 2437.1,
    "nNew": 6,
    "nWorn": 10,
-   "note": "All shapes. Pegasus shape tested."
+   "note": "All shapes. Pegasus shape tested.",
+   "grit": {
+    "name": "HexGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Honolulu J6CR M105 Blue Grit",
@@ -839,7 +1077,12 @@ window.CANNON_SPIN={
    "wornRpm": 2147.2,
    "nNew": 10,
    "nWorn": 10,
-   "note": ""
+   "note": "",
+   "grit": {
+    "name": "Crystal Blue Endurance Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Vatic Pro V-Sol Tour",
@@ -858,7 +1101,12 @@ window.CANNON_SPIN={
    "wornRpm": 2331.9,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All V-Sol Tour shapes. Bloom shape tested. EverGrit version 2."
+   "note": "All V-Sol Tour shapes. Bloom shape tested. EverGrit version 2.",
+   "grit": {
+    "name": "EverGrit (v2)",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Neonic NeoGrit FLX",
@@ -875,7 +1123,12 @@ window.CANNON_SPIN={
    "wornRpm": 2187.4,
    "nNew": 10,
    "nWorn": 10,
-   "note": "All shapes. Hybrid (Frost FLX) shape tested."
+   "note": "All shapes. Hybrid (Frost FLX) shape tested.",
+   "grit": {
+    "name": "NeoGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Bread & Butter Loco 2",
@@ -892,7 +1145,12 @@ window.CANNON_SPIN={
    "wornRpm": 2160.7,
    "nNew": 9,
    "nWorn": 10,
-   "note": "All shapes. Hybrid shape tested."
+   "note": "All shapes. Hybrid shape tested.",
+   "grit": {
+    "name": "Space Dust Grit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   },
   {
    "name": "Holbrook Fuze VantaGrit",
@@ -909,7 +1167,12 @@ window.CANNON_SPIN={
    "wornRpm": 1261.2,
    "nNew": 10,
    "nWorn": 10,
-   "note": "Both VantaGrit shapes. Hybrid shape tested. Production unit."
+   "note": "Both VantaGrit shapes. Hybrid shape tested. Production unit.",
+   "grit": {
+    "name": "VantaGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
   }
  ]
 };
