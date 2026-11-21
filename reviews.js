@@ -2,6 +2,15 @@
 /* Edit with the paddle-reviews-admin dashboard, then commit this file to paddle-database/reviews.js */
 window.PADDLE_REVIEWS = [
   {
+    "slug": "neonic-neogrit-flx-review",
+    "title": "Neonic NeoGrit FLX Review (Frost and Swift)",
+    "teaser": "Two soft-feeling, forgiving full-foam paddles that hide real firepower: KewCOR 0.424 (Frost, hybrid) and 0.422 (Swift, elongated), Elite spin, and a cannon result that Holds (+6.8%, high confidence), at $110. The Frost is stiffer and poppier; the Swift is softer, more controllable, and my pick.",
+    "chips": ["Hybrid and Elongated", "Elite Spin", "Holds Spin", "Power, Mid"],
+    "date": "2026-11-21",
+    "search": "neonic neogrit flx frost swift hybrid elongated 16mm full foam mpp eva t700 carbon gen-4 grit infused peel ply silicon carbide elite spin holds cannon spin retention kewcor 0.424 0.422 power mid soft forgiving 110 johnkew code",
+    "img": "neonic-neogrit-swift-flx"
+  },
+  {
     "slug": "bread-butter-loco-2-review",
     "title": "Bread & Butter Loco 2 Review (Elongated and Hybrid)",
     "teaser": "The same Paddle of the Year winner with one change: durable Space Dust Grit. The elongated launches first and the hybrid follows in a few weeks. Spin jumps from Good to Elite (2,448 and 2,411 RPM), cannon testing shows essentially no spin loss, and the feel and KewCOR (0.424 and 0.429, Power Mid) stay put.",

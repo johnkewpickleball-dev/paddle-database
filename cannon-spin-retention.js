@@ -564,7 +564,8 @@ window.CANNON_SPIN={
     "name": "InfiniGrit Ultra",
     "type": "bonded grit particles",
     "particle": null
-   }
+   },
+   "dbKey": "Selkirk||LABS Project Boomstik ST – Elongated"
   },
   {
    "name": "Chorus CODA Harmony Grit",
@@ -995,7 +996,8 @@ window.CANNON_SPIN={
     "name": null,
     "type": "grit-infused peel-ply",
     "particle": "silicon carbide"
-   }
+   },
+   "dbKey": "Luzz||Cannon XPP"
   },
   {
    "name": "Honolulu Pickleball Co. Blue Grit",
