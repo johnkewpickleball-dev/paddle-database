@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 52,
+  "count": 53,
   "verdictRules": {
    "Measurable gain": "ciHi < 0",
    "Holds": "ciLo <= 0 and ciHi <= 12",
@@ -759,6 +759,20 @@ window.CANNON_SPIN={
    "nNew": 10,
    "nWorn": 10,
    "note": ""
+  },
+  {
+   "name": "Luzz Cannon XPP, Unit 2",
+   "keys": [],
+   "loss": 2,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -3,
+   "ciHi": 7,
+   "newRpm": 2504.8,
+   "wornRpm": 2454.9,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Extended wear test: first 10 shots compared with the 10 shots after 100 impacts."
   },
   {
    "name": "Honolulu Pickleball Co. Blue Grit",
