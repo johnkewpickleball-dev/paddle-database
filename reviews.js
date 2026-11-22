@@ -8,7 +8,8 @@ window.PADDLE_REVIEWS = [
     "chips": ["Budget Picks", "Soft-Hollow", "Elite Spin", "Durable Grits"],
     "date": "2026-11-21",
     "search": "top 3 budget paddles 2026 q4 spartus spitfire vatic v-sol tour flash ft neonic neogrit flx swift elongated 16mm full foam grit elite spin cannon spin retention kewcor firepower soft hollow feel map trend 110 johnkew code",
-    "img": "vatic-pro-v-sol-tour-flash-ft"
+    "img": "top3-budget-paddles-banner",
+    "banner": true
   },
   {
     "slug": "neonic-neogrit-flx-review",
