@@ -635,8 +635,8 @@ window.CANNON_SPIN={
   {
    "name": "Spartus Spitfire",
    "keys": [
-    "Spartus||Spitfire",
-    "Spartus||Spitfire Elongated"
+    "Spartus||Spitfire Elongated",
+    "Spartus||Spitfire Widebody"
    ],
    "loss": 14.1,
    "band": "Moderate loss",
