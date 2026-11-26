@@ -3,7 +3,7 @@
    named in "note". Loss is positive for spin lost, negative for spin gained. Published results are never recomputed. */
 window.CANNON_SPIN={
  "meta": {
-  "updated": "2026-11-20",
+  "updated": "2026-11-26",
   "ball": "LT Pro 48",
   "inboundMph": 60,
   "wearMph": 70,
@@ -13,7 +13,7 @@ window.CANNON_SPIN={
    12,
    20
   ],
-  "count": 53,
+  "count": 54,
   "verdictRules": {
    "Measurable gain": "ciHi < 0",
    "Holds": "ciLo <= 0 and ciHi <= 12",
@@ -848,7 +848,6 @@ window.CANNON_SPIN={
    "keys": [
     "11SIX24||Hurache-X Power 2",
     "11SIX24||Pegasus Power 2",
-    "11SIX24||Ultré Power 2",
     "11SIX24||Vapor Power 2"
    ],
    "loss": 0.3,
@@ -860,7 +859,7 @@ window.CANNON_SPIN={
    "wornRpm": null,
    "nNew": null,
    "nWorn": null,
-   "note": "All shapes. Vapor shape tested.",
+   "note": "Hurache-X, Pegasus and Vapor shapes. Vapor shape tested.",
    "grit": {
     "name": "HexGrit",
     "type": "grit-infused peel-ply",
@@ -1172,6 +1171,27 @@ window.CANNON_SPIN={
    "note": "Both VantaGrit shapes. Hybrid shape tested. Production unit.",
    "grit": {
     "name": "VantaGrit",
+    "type": "grit-infused peel-ply",
+    "particle": "silicon carbide"
+   }
+  },
+  {
+   "name": "11SIX24 Ultré Power 2",
+   "keys": [
+    "11SIX24||Ultré Power 2"
+   ],
+   "loss": -2.5,
+   "band": "Holds",
+   "conf": "high",
+   "ciLo": -6.6,
+   "ciHi": 1.6,
+   "newRpm": 2265.0,
+   "wornRpm": 2322.4,
+   "nNew": 10,
+   "nWorn": 10,
+   "note": "Ultré shape tested.",
+   "grit": {
+    "name": "HexGrit",
     "type": "grit-infused peel-ply",
     "particle": "silicon carbide"
    }
